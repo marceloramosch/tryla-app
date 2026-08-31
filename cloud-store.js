@@ -121,12 +121,12 @@
     const chip = document.createElement("div");
     chip.id = "novaCloudChip";
     chip.style.cssText =
-      "position:fixed;bottom:14px;right:14px;z-index:9000;background:#0D2244;color:#fff;" +
+      "position:fixed;bottom:14px;right:14px;z-index:9000;background:#171433;color:#fff;" +
       "font:600 12px Arial;padding:8px 12px;border-radius:20px;display:flex;gap:10px;" +
       "align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25);";
     chip.innerHTML =
       '<span>☁️ Nube · ' + (email || "") + "</span>" +
-      '<button id="novaLogout" style="background:#2D6BC4;border:0;color:#fff;cursor:pointer;' +
+      '<button id="novaLogout" style="background:#5B54FF;border:0;color:#fff;cursor:pointer;' +
       'font:700 11px Arial;padding:4px 10px;border-radius:12px;">Salir</button>';
     document.body.appendChild(chip);
     document.getElementById("novaLogout").addEventListener("click", async () => {
@@ -140,20 +140,20 @@
     return new Promise((resolve) => {
       const ov = document.createElement("div");
       ov.style.cssText =
-        "position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0D2244,#1a3a7a);" +
+        "position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0A0640,#5B54FF);" +
         "display:flex;align-items:center;justify-content:center;font-family:Arial;";
       ov.innerHTML =
         '<div style="background:#fff;border-radius:16px;padding:36px 32px;width:340px;max-width:90vw;' +
         'box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
         '<div style="text-align:center;margin-bottom:22px;">' +
-        '<div style="font:800 26px Arial;color:#0D2244;letter-spacing:3px;">NOVA</div>' +
-        '<div style="font:600 9px Arial;color:#2D6BC4;letter-spacing:3px;">FOOD TRAILERS · CRM</div>' +
+        '<div style="font:800 26px Arial;color:#171433;letter-spacing:3px;">TRYLA</div>' +
+        '<div style="font:600 9px Arial;color:#5B54FF;letter-spacing:3px;">CRM</div>' +
         "</div>" +
         '<input id="novaEmail" type="email" placeholder="Correo" autocomplete="username" ' +
         'style="width:100%;padding:12px;margin-bottom:10px;border:1px solid #ccd;border-radius:8px;font:14px Arial;">' +
         '<input id="novaPass" type="password" placeholder="Contraseña" autocomplete="current-password" ' +
         'style="width:100%;padding:12px;margin-bottom:14px;border:1px solid #ccd;border-radius:8px;font:14px Arial;">' +
-        '<button id="novaLoginBtn" style="width:100%;padding:12px;background:#2D6BC4;color:#fff;border:0;' +
+        '<button id="novaLoginBtn" style="width:100%;padding:12px;background:#5B54FF;color:#fff;border:0;' +
         'border-radius:8px;font:700 14px Arial;cursor:pointer;">Entrar</button>' +
         '<div id="novaErr" style="color:#DC2626;font:13px Arial;margin-top:12px;text-align:center;min-height:18px;"></div>' +
         "</div>";
