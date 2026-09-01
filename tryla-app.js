@@ -2,6 +2,31 @@
   // Espera a que la nube sincronice los datos (modo local resuelve al instante)
   await (window.__novaReady || Promise.resolve());
 
+  // ===== Tema claro/oscuro (claro es el primario/por defecto) =====
+  (function () {
+    const btn = document.getElementById("themeToggle");
+    if (!btn) return;
+    function apply(theme) {
+      if (theme === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+        btn.textContent = "☀️";
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+        btn.textContent = "🌙";
+      }
+    }
+    let current = "light";
+    try {
+      current = localStorage.getItem("trylaTheme") === "dark" ? "dark" : "light";
+    } catch (e) {}
+    apply(current);
+    btn.addEventListener("click", () => {
+      current = current === "dark" ? "light" : "dark";
+      apply(current);
+      try { localStorage.setItem("trylaTheme", current); } catch (e) {}
+    });
+  })();
+
   // Guarda en localStorage y, si la nube está activa, también la sube.
   // guardWrites=true revisa primero si otro dispositivo cambio este dato desde
   // que se cargo la pagina, y avisa antes de sobreescribirlo (clientes/cotizaciones).
