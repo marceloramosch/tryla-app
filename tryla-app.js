@@ -89,10 +89,10 @@
   const paySaldo = document.getElementById("paySaldo");
   const payInvoiceBtn = document.getElementById("payInvoiceBtn");
 
-  const PRICES_KEY = "trylaCatalogPrices";
-  const CLIENTS_KEY = "trylaClients";
-  const QUOTES_KEY = "trylaQuotes";
-  const ACTIVITY_KEY = "trylaActivityLog";
+  const PRICES_KEY = "novaCatalogPrices";
+  const CLIENTS_KEY = "novaClients";
+  const QUOTES_KEY = "novaQuotes";
+  const ACTIVITY_KEY = "novaActivityLog";
   const ACTIVITY_MAX = 200;
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
