@@ -39,12 +39,9 @@
   const fEntrega = document.getElementById("fEntrega");
   const fFecha = document.getElementById("fFecha");
   const fGarantia = document.getElementById("fGarantia");
-  const fDeposito = document.getElementById("fDeposito");
   const fIdioma = document.getElementById("fIdioma");
 
   const tSubtotal = document.getElementById("tSubtotal");
-  const tDeposito = document.getElementById("tDeposito");
-  const tSaldo = document.getElementById("tSaldo");
 
   const previewWrap = document.getElementById("previewWrap");
   const previewDoc = document.getElementById("previewDoc");
@@ -131,6 +128,9 @@
   }
 
   let lineItems = [];
+  // Deposito historico de la cotizacion cargada (ya no editable desde el formulario;
+  // se preserva solo para no romper el saldo de invoices ya facturados).
+  let loadedDeposito = 0;
   let payments = []; // pagos de la cotizacion seleccionada en Invoices { id, fecha, monto, concepto }
   let currentQuoteId = null;
   let finSelectedQuoteId = null; // cotizacion seleccionada en la pestaña Financiamiento
@@ -367,15 +367,11 @@
 
   function updateTotals() {
     const subtotal = lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0), 0);
-    const deposito = parseFloat(fDeposito.value) || 0;
+    const deposito = loadedDeposito || 0;
     const saldo = subtotal - deposito;
     tSubtotal.textContent = formatMoney(subtotal);
-    tDeposito.textContent = `- ${formatMoney(deposito)}`;
-    tSaldo.textContent = formatMoney(saldo);
     return { subtotal, deposito, saldo };
   }
-
-  fDeposito.addEventListener("input", updateTotals);
 
   document.getElementById("addCustomLine").addEventListener("click", () => {
     addLineItem("", 0);
@@ -1258,7 +1254,7 @@
     fEntrega.value = q.entrega || "";
     fFecha.value = q.fecha || "";
     fGarantia.value = q.garantia || "1 Año — Tryla";
-    fDeposito.value = q.deposito || 0;
+    loadedDeposito = q.deposito || 0;
     fIdioma.value = q.idioma || "es";
     fClientSelect.value = q.clientId || "";
     specsEl.value = (q.notas || []).join("\n");
@@ -1347,8 +1343,6 @@
       contact: "CONTACTO",
       deliverTo: "ENTREGA EN",
       warranty: "GARANTIA",
-      paymentMethod: "FORMA DE PAGO",
-      paymentMethodText: (dep) => `Deposito inicial de ${formatMoney(dep)} USD; saldo restante segun calendario de pagos acordado durante la construccion`,
       components: "Componentes de la cotizacion",
       qty: "CANT",
       description: "DESCRIPCION",
@@ -1358,13 +1352,11 @@
       notesTitle: "Notas y especificaciones adicionales",
       priceSummary: "Resumen de precio",
       subtotal: "Subtotal",
-      deposit: "Deposito inicial",
-      remainingBalance: "SALDO RESTANTE",
       termsTitle: "Terminos y notas",
       warrantyNoteTitle: "Garantia",
       warrantyNoteText: "Este trailer incluye la garantia indicada arriba, gestionada a traves de Tryla, cubriendo defectos de fabricacion. La garantia no cubre mal uso, danos accidentales ni desgaste normal.",
       paymentScheduleTitle: "Calendario de pagos",
-      paymentScheduleText: "El deposito inicial es requerido para iniciar la construccion. El saldo restante se pagara en abonos acordados durante el periodo de construccion. El pago completo debe realizarse antes de la entrega.",
+      paymentScheduleText: "La forma de pago se acuerda directamente entre Tryla y el cliente antes de iniciar la construccion. El pago completo debe realizarse antes de la entrega.",
       constructionTitle: "Construccion y entrega",
       constructionText: (dest) => `La entrega estimada es en ${dest} una vez completada la construccion y liquidado el pago.`,
       destinationFallback: "el destino acordado",
@@ -1402,7 +1394,6 @@
       invColDate: "FECHA",
       invColConcept: "CONCEPTO",
       invColAmount: "MONTO",
-      invDepositRow: "Deposito inicial",
       invSummaryTitle: "Resumen",
       invTotalSale: "Total de la venta",
       invTotalPaid: "Total pagado",
@@ -1424,8 +1415,6 @@
       contact: "CONTACT",
       deliverTo: "DELIVERY TO",
       warranty: "WARRANTY",
-      paymentMethod: "PAYMENT TERMS",
-      paymentMethodText: (dep) => `Initial deposit of ${formatMoney(dep)} USD; remaining balance according to the payment schedule agreed during construction`,
       components: "Quote components",
       qty: "QTY",
       description: "DESCRIPTION",
@@ -1435,13 +1424,11 @@
       notesTitle: "Additional notes and specifications",
       priceSummary: "Price summary",
       subtotal: "Subtotal",
-      deposit: "Initial deposit",
-      remainingBalance: "REMAINING BALANCE",
       termsTitle: "Terms and notes",
       warrantyNoteTitle: "Warranty",
       warrantyNoteText: "This trailer includes the warranty indicated above, handled through Tryla, covering manufacturing defects. The warranty does not cover misuse, accidental damage or normal wear and tear.",
       paymentScheduleTitle: "Payment schedule",
-      paymentScheduleText: "The initial deposit is required to start construction. The remaining balance will be paid in installments agreed during the construction period. Full payment must be made before delivery.",
+      paymentScheduleText: "Payment terms are agreed directly between Tryla and the customer before construction begins. Full payment must be made before delivery.",
       constructionTitle: "Construction and delivery",
       constructionText: (dest) => `Estimated delivery is in ${dest} once construction is complete and payment is settled.`,
       destinationFallback: "the agreed destination",
@@ -1479,7 +1466,6 @@
       invColDate: "DATE",
       invColConcept: "CONCEPT",
       invColAmount: "AMOUNT",
-      invDepositRow: "Initial deposit",
       invSummaryTitle: "Summary",
       invTotalSale: "Total sale",
       invTotalPaid: "Total paid",
@@ -1591,16 +1577,9 @@
 
     const fechaHoy = new Date().toLocaleDateString(t.locale, { year: "numeric", month: "long", day: "numeric" });
 
-    // Filas: deposito inicial (si hay) + cada abono
+    // Filas: cada abono registrado (el deposito historico, si lo hay, no se
+    // desglosa como linea; solo se descuenta del saldo final).
     const rows = [];
-    if (deposito > 0) {
-      rows.push(`
-        <tr>
-          <td>${escapeHtml(q.fecha || "")}</td>
-          <td>${t.invDepositRow}</td>
-          <td class="num">${formatMoney(deposito)}</td>
-        </tr>`);
-    }
     qPayments.forEach((p) => {
       rows.push(`
         <tr>
@@ -1738,7 +1717,7 @@
   }
 
   function buildPreview() {
-    const { subtotal, deposito, saldo } = updateTotals();
+    const { subtotal } = updateTotals();
     const t = I18N[fIdioma.value] || I18N.es;
 
     const fechaVal = fFecha.value
@@ -1783,7 +1762,6 @@
         <tr><td class="label">${t.contact}</td><td>${escapeHtml(fContacto.value)}</td></tr>
         <tr><td class="label">${t.deliverTo}</td><td>${escapeHtml(fEntrega.value)}</td></tr>
         <tr><td class="label">${t.warranty}</td><td>${escapeHtml(fGarantia.value)}</td></tr>
-        <tr><td class="label">${t.paymentMethod}</td><td>${t.paymentMethodText(deposito)}</td></tr>
       </table>
 
       <div class="doc-section">${t.components}</div>
@@ -1799,9 +1777,7 @@
 
       <div class="doc-section">${t.priceSummary}</div>
       <table class="doc-pricing">
-        <tr><td class="label">${t.subtotal}</td><td style="width:140px;">${formatMoney(subtotal)}</td></tr>
-        <tr><td class="label">${t.deposit}</td><td>- ${formatMoney(deposito)}</td></tr>
-        <tr class="total"><td class="label">${t.remainingBalance}</td><td>${formatMoney(saldo)}</td></tr>
+        <tr class="total"><td class="label">${t.total}</td><td style="width:140px;">${formatMoney(subtotal)}</td></tr>
       </table>
 
       ${finIncluirPdf.checked && currentFinancePlan ? financeExhibitBody(t, currentFinancePlan, fCliente.value) : ""}
@@ -1869,7 +1845,7 @@
     fNumero.value = nextQuoteNumber();
     fEntrega.value = "";
     fFecha.value = new Date().toISOString().slice(0, 10);
-    fDeposito.value = "0";
+    loadedDeposito = 0;
     fIdioma.value = "es";
     fClientSelect.value = "";
     specsEl.value = "";

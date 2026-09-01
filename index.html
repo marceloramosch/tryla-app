@@ -248,6 +248,7 @@
   .doc-footer b{ color:var(--dark); }
 
   @media print{
+    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     header, .tabs, .layout, .actions, .panel, footer, #novaCloudChip, .preview-actions{ display:none !important; }
     #previewWrap{ display:block !important; margin:0; }
     #previewDoc{ border:none; padding:0; max-width:none; }
@@ -392,7 +393,6 @@
           </div>
           <div class="field-row">
             <div class="field"><label>Garantia</label><input id="fGarantia" type="text" value="1 Año — Tryla"></div>
-            <div class="field"><label>Deposito inicial (USD)</label><input id="fDeposito" type="number" min="0" step="50" value="0"></div>
           </div>
           <div class="field-row">
             <div class="field" style="max-width:220px;">
@@ -417,9 +417,7 @@
           <button id="addCustomLine" type="button" class="btn-small">+ Agregar linea personalizada</button>
 
           <div class="totals">
-            <div class="row"><span>Subtotal</span><span id="tSubtotal">$0.00</span></div>
-            <div class="row"><span>Deposito inicial</span><span id="tDeposito">- $0.00</span></div>
-            <div class="row total"><span>Saldo restante</span><span id="tSaldo">$0.00</span></div>
+            <div class="row total"><span>Total</span><span id="tSubtotal">$0.00</span></div>
           </div>
           <div class="hint" style="margin-top:8px;">El financiamiento y los pagos/invoice de esta cotizacion se manejan en las pestañas <b>Financiamiento</b> e <b>Invoices</b> (despues de guardarla).</div>
 
