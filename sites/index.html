@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cargando...</title>
+<style>
+  @font-face{font-family:'Unbounded';src:url('../fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
+  @font-face{font-family:'Sora';src:url('../fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
+  @font-face{font-family:'Barlow';src:url('../fonts/barlow-400.woff2') format('woff2');font-weight:400;font-display:swap;}
+  @font-face{font-family:'Barlow';src:url('../fonts/barlow-600.woff2') format('woff2');font-weight:600;font-display:swap;}
+  @font-face{font-family:'Barlow';src:url('../fonts/barlow-700.woff2') format('woff2');font-weight:700;font-display:swap;}
+
+  :root{
+    --ink:#06070A; --panel:#14171F; --border:#242832;
+    --accent:#5B54FF; --accent-dim:#3B36D6; --accent-light:#C9C6FF;
+    --white:#FFFFFF; --gray:#9AA0AF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink);color:var(--white);font-family:'Barlow',Arial,sans-serif;}
+  a{color:var(--accent-light);text-decoration:none;}
+  a:hover{color:#fff;}
+  img{max-width:100%;display:block;}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px;}
+
+  #loading{min-height:100vh;display:flex;align-items:center;justify-content:center;font:600 14px Barlow,Arial;color:var(--gray);}
+
+  header.hero{position:relative;min-height:78vh;display:flex;align-items:flex-end;overflow:hidden;background:linear-gradient(165deg,#06070A 0%,#06038D 100%);}
+  header.hero .heroImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;}
+  header.hero .heroOverlay{position:absolute;inset:0;background:linear-gradient(to top, rgba(6,7,10,0.95) 10%, rgba(6,7,10,0.35) 60%, rgba(6,7,10,0.15) 100%);}
+  header.hero .heroContent{position:relative;padding:48px 24px 56px;width:100%;}
+  .brandRow{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .brandRow img.logo{width:34px;height:34px;border-radius:9px;object-fit:cover;}
+  .brandRow .logoFallback{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-dim));display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  h1.rname{font-family:'Sora',Barlow,Arial,sans-serif;font-weight:700;font-size:clamp(32px,6vw,58px);line-height:1.05;margin:0 0 10px;}
+  p.tagline{font-size:clamp(14px,2vw,18px);color:var(--accent-light);margin:0 0 22px;max-width:640px;}
+  .ctaRow{display:flex;flex-wrap:wrap;gap:12px;}
+  .btn{display:inline-block;padding:12px 20px;border-radius:8px;font-weight:700;font-size:14px;}
+  .btn.primary{background:var(--accent);color:#fff;}
+  .btn.ghost{border:1.5px solid rgba(255,255,255,0.35);color:#fff;}
+
+  section{padding:56px 0;}
+  section h2{font-family:'Sora',Barlow,Arial,sans-serif;font-size:26px;margin:0 0 18px;}
+  .desc{color:#C7CAD4;font-size:16px;line-height:1.7;max-width:720px;}
+
+  .menuGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;}
+  .menuItem{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .menuItem .mTop{display:flex;justify-content:space-between;gap:12px;font-weight:700;font-size:15px;}
+  .menuItem .mPrice{color:var(--accent-light);}
+  .menuItem .mDesc{color:var(--gray);font-size:13px;margin-top:6px;line-height:1.5;}
+
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .gallery img{width:100%;height:180px;object-fit:cover;border-radius:10px;}
+
+  footer{border-top:1px solid var(--border);padding:36px 0 28px;color:var(--gray);font-size:13px;}
+  .contactGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:22px;}
+  .contactGrid div b{display:block;color:#fff;font-size:13px;margin-bottom:4px;}
+  .socialRow{display:flex;gap:14px;margin-top:8px;}
+  .kitBadge{margin-top:22px;padding-top:18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);}
+  .kitBadge img{width:16px;height:16px;border-radius:4px;}
+
+  #notFound{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:linear-gradient(165deg,#06070A 0%,#06038D 100%);}
+  #notFound h1{font-family:'Unbounded',Arial,sans-serif;font-size:22px;letter-spacing:-0.3px;}
+  #notFound p{color:var(--gray);max-width:360px;}
+</style>
+</head>
+<body>
+
+<div id="loading">Cargando...</div>
+<div id="app" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../supabase-config.js"></script>
+<script>
+(function () {
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function getSubdomain() {
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("s")) return qs.get("s").toLowerCase();
+
+    const host = location.hostname;
+    // localhost / IP / previews: usa ?s=subdominio para probar
+    if (host === "localhost" || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return null;
+
+    const parts = host.split(".");
+    // subdominio.thetryla.com -> ["subdominio","thetryla","com"]  (o mas para *.github.io, etc.)
+    if (parts.length >= 3) return parts[0].toLowerCase();
+    return null;
+  }
+
+  function logoBlockHtml(site) {
+    if (site.logo_url) {
+      return `<img class="logo" src="${escapeHtml(site.logo_url)}" alt="${escapeHtml(site.restaurant_name)}">`;
+    }
+    return `<div class="logoFallback"><svg viewBox="0 0 120 120" width="19" height="19"><polygon points="24,28 96,28 104,46 32,46" fill="#fff"/><polygon points="58,46 78,46 98,92 78,92" fill="#fff"/></svg></div>`;
+  }
+
+  function render(site) {
+    document.title = site.restaurant_name + (site.tagline ? " — " + site.tagline : "");
+
+    const menuHtml = (site.menu || []).length
+      ? `<section><div class="wrap"><h2>Menu</h2><div class="menuGrid">${
+          site.menu.map((m) => `
+            <div class="menuItem">
+              <div class="mTop"><span>${escapeHtml(m.name)}</span>${m.price ? `<span class="mPrice">$${escapeHtml(m.price)}</span>` : ""}</div>
+              ${m.desc ? `<div class="mDesc">${escapeHtml(m.desc)}</div>` : ""}
+            </div>`).join("")
+        }</div></div></section>`
+      : "";
+
+    const galleryHtml = (site.gallery || []).length
+      ? `<section><div class="wrap"><h2>Galeria</h2><div class="gallery">${
+          site.gallery.map((u) => `<img src="${escapeHtml(u)}" alt="${escapeHtml(site.restaurant_name)}">`).join("")
+        }</div></div></section>`
+      : "";
+
+    const contactBits = [];
+    if (site.address) contactBits.push(`<div><b>Ubicacion</b>${escapeHtml(site.address)}</div>`);
+    if (site.hours) contactBits.push(`<div><b>Horario</b>${escapeHtml(site.hours)}</div>`);
+    if (site.phone) contactBits.push(`<div><b>Telefono</b><a href="tel:${escapeHtml(site.phone)}">${escapeHtml(site.phone)}</a></div>`);
+    if (site.email) contactBits.push(`<div><b>Correo</b><a href="mailto:${escapeHtml(site.email)}">${escapeHtml(site.email)}</a></div>`);
+
+    const socials = [];
+    if (site.instagram) socials.push(`<a href="https://instagram.com/${escapeHtml(site.instagram.replace(/^@/, ""))}" target="_blank" rel="noopener">Instagram</a>`);
+    if (site.facebook) socials.push(`<a href="https://facebook.com/${escapeHtml(site.facebook)}" target="_blank" rel="noopener">Facebook</a>`);
+    if (site.tiktok) socials.push(`<a href="https://tiktok.com/@${escapeHtml(site.tiktok.replace(/^@/, ""))}" target="_blank" rel="noopener">TikTok</a>`);
+
+    const ctaRow = [];
+    if (site.phone) ctaRow.push(`<a class="btn primary" href="tel:${escapeHtml(site.phone)}">Llamar</a>`);
+    if (site.address) ctaRow.push(`<a class="btn ghost" href="https://maps.google.com/?q=${encodeURIComponent(site.address)}" target="_blank" rel="noopener">Como llegar</a>`);
+
+    document.getElementById("app").innerHTML = `
+      <header class="hero">
+        ${site.hero_image_url ? `<img class="heroImg" src="${escapeHtml(site.hero_image_url)}" alt="">` : ""}
+        <div class="heroOverlay"></div>
+        <div class="heroContent wrap">
+          <div class="brandRow">
+            ${logoBlockHtml(site)}
+          </div>
+          <h1 class="rname">${escapeHtml(site.restaurant_name)}</h1>
+          ${site.tagline ? `<p class="tagline">${escapeHtml(site.tagline)}</p>` : ""}
+          <div class="ctaRow">${ctaRow.join("")}</div>
+        </div>
+      </header>
+
+      ${site.description ? `<section><div class="wrap"><h2>Sobre nosotros</h2><p class="desc">${escapeHtml(site.description)}</p></div></section>` : ""}
+      ${menuHtml}
+      ${galleryHtml}
+
+      <footer>
+        <div class="wrap">
+          <div class="contactGrid">${contactBits.join("")}</div>
+          ${socials.length ? `<div class="socialRow">${socials.join("")}</div>` : ""}
+          ${site.kit_included ? `
+          <div class="kitBadge">
+            <img src="../assets/tryla_logo_alt.png" alt="Tryla">
+            <span>Trailer y sitio por <a href="https://thetryla.com" target="_blank" rel="noopener">Tryla</a> — Food Trailers</span>
+          </div>` : ""}
+        </div>
+      </footer>
+    `;
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "";
+  }
+
+  function renderNotFound() {
+    document.title = "Tryla — Sitio no encontrado";
+    document.body.innerHTML = `
+      <div id="notFound">
+        <img src="../assets/tryla_logo_alt.png" alt="Tryla" style="width:48px;height:48px;border-radius:12px;margin-bottom:16px;">
+        <h1>Este sitio todavia no esta listo</h1>
+        <p>Si eres el dueno de este restaurante, tu sitio esta en construccion o aun no se ha publicado. <a href="https://thetryla.com">Conoce Tryla</a></p>
+      </div>`;
+  }
+
+  async function main() {
+    const subdomain = getSubdomain();
+    const cfg = window.NOVA_SUPABASE || {};
+    if (!subdomain || !cfg.url || !cfg.anonKey || typeof supabase === "undefined") {
+      renderNotFound();
+      return;
+    }
+    try {
+      const sb = supabase.createClient(cfg.url, cfg.anonKey);
+      const { data, error } = await sb
+        .from("tryla_sites")
+        .select("*")
+        .eq("subdomain", subdomain)
+        .eq("published", true)
+        .maybeSingle();
+      if (error || !data) {
+        renderNotFound();
+        return;
+      }
+      render(data);
+    } catch (e) {
+      console.warn("[TrylaSites] Error cargando sitio:", e);
+      renderNotFound();
+    }
+  }
+
+  main();
+})();
+</script>
+</body>
+</html>

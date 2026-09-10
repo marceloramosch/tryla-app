@@ -402,6 +402,7 @@
     <button class="tab-btn" data-tab="intel">Location Intelligence</button>
     <button class="tab-btn" data-tab="finance">Financiamiento</button>
     <button class="tab-btn" data-tab="invoices">Invoices</button>
+    <button class="tab-btn" data-tab="sites">Sitios Web</button>
     <button class="tab-btn" data-tab="dashboard">Resumen</button>
   </div>
 
@@ -797,6 +798,96 @@
     </div>
   </div>
 
+  <!-- ===================== TAB: SITIOS WEB ===================== -->
+  <div class="tab-panel" id="tab-sites">
+    <div class="panel">
+      <h2 id="sitesFormTitle">Nuevo sitio web</h2>
+      <div class="hint">Cada restaurante obtiene su propio sitio en <code>subdominio.thetryla.com</code>, con sus fotos, menu y datos de contacto. Viene con el kit de fotos del trailer si aplica.</div>
+
+      <div class="field-row">
+        <div class="field"><label>Nombre del restaurante</label><input id="sName" type="text" placeholder="Tacos El Sol"></div>
+        <div class="field"><label>Subdominio</label><input id="sSubdomain" type="text" placeholder="tacos-el-sol"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Eslogan</label><input id="sTagline" type="text" placeholder="Los mejores tacos de la ciudad"></div>
+        <div class="field">
+          <label>Plantilla</label>
+          <select id="sTemplate">
+            <option value="kit-classic">Kit Classic (con fotos del trailer)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Descripcion</label><textarea id="sDescription" rows="2" placeholder="Cuentales de que se trata el restaurante..."></textarea></div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Logo</label>
+          <input id="sLogoFile" type="file" accept="image/*">
+          <div id="sLogoPreviewWrap" class="hint" style="display:none;">Logo actual: <a id="sLogoPreview" href="#" target="_blank">ver</a></div>
+        </div>
+        <div class="field">
+          <label>Foto principal (hero)</label>
+          <input id="sHeroFile" type="file" accept="image/*">
+          <div id="sHeroPreviewWrap" class="hint" style="display:none;">Foto actual: <a id="sHeroPreview" href="#" target="_blank">ver</a></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Galeria de fotos (puedes seleccionar varias)</label>
+        <input id="sGalleryFile" type="file" accept="image/*" multiple>
+        <div id="sGalleryPreview" class="hint"></div>
+      </div>
+
+      <h2 style="margin-top:18px;">Menu</h2>
+      <div id="sMenuRows"></div>
+      <div class="actions"><button id="btnAddMenuRow" type="button">+ Agregar platillo</button></div>
+
+      <h2 style="margin-top:18px;">Contacto</h2>
+      <div class="field-row">
+        <div class="field"><label>Telefono</label><input id="sPhone" type="text" placeholder="+1 (555) 123-4567"></div>
+        <div class="field"><label>Correo</label><input id="sEmail" type="email" placeholder="hola@restaurante.com"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Direccion / ubicacion</label><input id="sAddress" type="text" placeholder="Donde encuentran el trailer"></div>
+        <div class="field"><label>Horario</label><input id="sHours" type="text" placeholder="Lun-Sab 11am-8pm"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Instagram</label><input id="sInstagram" type="text" placeholder="@usuario"></div>
+        <div class="field"><label>Facebook</label><input id="sFacebook" type="text" placeholder="usuario o pagina"></div>
+        <div class="field"><label>TikTok</label><input id="sTiktok" type="text" placeholder="@usuario"></div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" style="max-width:240px;">
+          <label><input id="sPublished" type="checkbox"> Publicado (visible al publico)</label>
+        </div>
+        <div class="field" style="max-width:240px;">
+          <label><input id="sKitIncluded" type="checkbox" checked> Incluye kit del trailer</label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="btnSaveSite" type="button">Guardar sitio</button>
+        <button id="btnCancelEditSite" type="button" style="display:none;">Cancelar edicion</button>
+      </div>
+      <div id="sitesFormMsg" class="hint"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Sitios</h2>
+      <div class="field" style="max-width:320px;">
+        <input id="sitesSearch" type="text" placeholder="Buscar por nombre o subdominio...">
+      </div>
+      <div class="table-scroll">
+        <table class="crm">
+          <thead>
+            <tr><th>Restaurante</th><th>Subdominio</th><th>Plantilla</th><th>Estatus</th><th>Actualizado</th><th></th></tr>
+          </thead>
+          <tbody id="sitesTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== TAB: RESUMEN ===================== -->
   <div class="tab-panel" id="tab-dashboard">
     <div class="panel">
@@ -869,6 +960,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="cloud-store.js"></script>
+<script src="sites-store.js"></script>
+<script src="sites-builder.js"></script>
 <script src="data/trailers.js"></script>
 <script src="data/components.js"></script>
 <script src="data/equipment-i18n.js"></script>
