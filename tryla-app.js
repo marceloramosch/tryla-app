@@ -9,10 +9,10 @@
     function apply(theme) {
       if (theme === "dark") {
         document.documentElement.setAttribute("data-theme", "dark");
-        btn.textContent = "☀️";
+        btn.setAttribute("aria-checked", "true");
       } else {
         document.documentElement.removeAttribute("data-theme");
-        btn.textContent = "🌙";
+        btn.setAttribute("aria-checked", "false");
       }
     }
     let current = "light";
@@ -25,6 +25,26 @@
       apply(current);
       try { localStorage.setItem("trylaTheme", current); } catch (e) {}
     });
+  })();
+
+  // ===== Idioma de la cotizacion: toggle coqueton ES/EN sobre el <select> real =====
+  (function () {
+    const toggle = document.getElementById("langToggle");
+    const thumb = document.getElementById("langThumb");
+    const select = document.getElementById("fIdioma");
+    if (!toggle || !select) return;
+    function reflect() {
+      const isEn = select.value === "en";
+      toggle.setAttribute("aria-checked", isEn ? "true" : "false");
+      thumb.textContent = isEn ? "EN" : "ES";
+    }
+    toggle.addEventListener("click", () => {
+      select.value = select.value === "en" ? "es" : "en";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      reflect();
+    });
+    select.addEventListener("change", reflect);
+    reflect();
   })();
 
   // Guarda en localStorage y, si la nube está activa, también la sube.
@@ -1281,6 +1301,7 @@
     fGarantia.value = q.garantia || "1 Año — Tryla";
     loadedDeposito = q.deposito || 0;
     fIdioma.value = q.idioma || "es";
+    fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = q.clientId || "";
     specsEl.value = (q.notas || []).join("\n");
     lineItems = (q.lineItems || []).map((l) => ({ ...l }));
@@ -1872,6 +1893,7 @@
     fFecha.value = new Date().toISOString().slice(0, 10);
     loadedDeposito = 0;
     fIdioma.value = "es";
+    fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = "";
     specsEl.value = "";
     sizePresetEl.value = "";
