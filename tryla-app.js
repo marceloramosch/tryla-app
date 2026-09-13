@@ -1202,6 +1202,12 @@
           }
         });
 
+        const shareBtn = document.createElement("button");
+        shareBtn.type = "button";
+        shareBtn.className = "btn-small";
+        shareBtn.textContent = q.sharedQuoteId ? "Actualizar link" : "Compartir";
+        shareBtn.addEventListener("click", () => shareQuote(q.id));
+
         const delBtn = document.createElement("button");
         delBtn.type = "button";
         delBtn.className = "btn-small";
@@ -1227,6 +1233,7 @@
         actionsTd.appendChild(loadBtn);
         actionsTd.appendChild(dupBtn);
         actionsTd.appendChild(invoiceBtn);
+        actionsTd.appendChild(shareBtn);
         actionsTd.appendChild(delBtn);
 
         tbody.appendChild(tr);
@@ -1348,6 +1355,7 @@
       payments: existing && existing.payments ? existing.payments : [],
       invoiceCreated: existing ? !!existing.invoiceCreated : false,
       invoiceCreatedAt: existing ? existing.invoiceCreatedAt : null,
+      sharedQuoteId: existing ? existing.sharedQuoteId || null : null,
       status: "Borrador",
       updatedAt: Date.now(),
     };
@@ -1855,6 +1863,37 @@
     `;
 
     previewWrap.classList.add("show");
+  }
+
+  // ===== Compartir cotizacion por link publico (thetryla.com/?quote=<id>) =====
+  async function shareQuote(id) {
+    const q = quotes.find((x) => x.id === id);
+    if (!q) return;
+    if (!window.SharedQuotes || !window.SharedQuotes.ready) {
+      alert("Compartir requiere estar conectado a la nube (Supabase).");
+      return;
+    }
+    loadQuote(id);
+    buildPreview();
+    const html = previewDoc.innerHTML.replace(
+      'src="assets/tryla_logo.png"',
+      'src="https://thetryla.app/assets/tryla_logo.png"'
+    );
+    try {
+      const shareId = await window.SharedQuotes.save(html, q.cliente, q.number, q.sharedQuoteId);
+      q.sharedQuoteId = shareId;
+      persistQuotes();
+      renderQuotesTable();
+      const link = `https://thetryla.com/?quote=${shareId}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        alert("Link copiado al portapapeles:\n" + link);
+      } catch (e) {
+        prompt("Copia este link para compartir:", link);
+      }
+    } catch (e) {
+      alert("No se pudo compartir la cotizacion: " + (e.message || e));
+    }
   }
 
   function escapeHtml(str) {
