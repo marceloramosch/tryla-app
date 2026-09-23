@@ -161,6 +161,7 @@
           <td>${s.updated_at ? new Date(s.updated_at).toLocaleDateString() : ""}</td>
           <td>
             <button type="button" data-edit="${escapeHtml(s.id)}">Editar</button>
+            <button type="button" data-portal="${escapeHtml(s.subdomain)}" data-name="${escapeHtml(s.restaurant_name)}">Portal cliente</button>
             <button type="button" data-del="${escapeHtml(s.id)}">Borrar</button>
           </td>
         </tr>`).join("")
@@ -171,6 +172,9 @@
         const site = sites.find((s) => s.id === btn.dataset.edit);
         if (site) loadSiteIntoForm(site);
       });
+    });
+    tbody.querySelectorAll("[data-portal]").forEach((btn) => {
+      btn.addEventListener("click", () => sharePortalLink(btn.dataset.portal, btn.dataset.name));
     });
     tbody.querySelectorAll("[data-del]").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -184,6 +188,26 @@
         }
       });
     });
+  }
+
+  // ===== Portal del cliente: link privado para que edite su propio sitio =====
+  async function sharePortalLink(subdomain, restaurantName) {
+    if (!window.ClientPortal || !window.ClientPortal.ready) {
+      alert("El portal de cliente requiere estar conectado a la nube (Supabase).");
+      return;
+    }
+    try {
+      const token = await window.ClientPortal.generate(restaurantName, subdomain);
+      const link = `https://thetryla.com/?portal=${token}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        alert("Link del portal de cliente copiado al portapapeles:\n" + link);
+      } catch (e) {
+        prompt("Copia este link para darle acceso al cliente:", link);
+      }
+    } catch (e) {
+      alert("No se pudo generar el portal de cliente: " + (e.message || e));
+    }
   }
 
   async function refresh() {
