@@ -2,13 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>TrylApp</title>
-<meta name="description" content="TrylApp — tu portal como cliente Tryla: edita tu sitio, y proximamente location intelligence y guia de permisos.">
+<meta name="description" content="TrylApp — tu portal como cliente Tryla: ubicacion, tu sitio, permisos, chef talent y operacion del trailer.">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#06070A">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://thetryla.app/">
 <meta property="og:site_name" content="TrylApp">
@@ -17,117 +20,178 @@
 <meta property="og:image" content="https://thetryla.app/assets/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<link rel="stylesheet" href="location-intel.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   @font-face{font-family:'Unbounded';src:url('fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
   @font-face{font-family:'Sora';src:url('fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
   @font-face{font-family:'Barlow';src:url('fonts/barlow-400.woff2') format('woff2');font-weight:400;font-display:swap;}
   @font-face{font-family:'Barlow';src:url('fonts/barlow-600.woff2') format('woff2');font-weight:600;font-display:swap;}
   @font-face{font-family:'Barlow';src:url('fonts/barlow-700.woff2') format('woff2');font-weight:700;font-display:swap;}
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0; height:100%;}
   body{
-    font-family:'Barlow',Arial,sans-serif; background:linear-gradient(165deg,#06070A 0%,#06038D 140%); min-height:100vh; color:#171433;
+    font-family:'Barlow',Arial,sans-serif; background:#06070A; min-height:100vh; color:#171433;
+    overscroll-behavior-y:none;
   }
-  .top{ display:flex; align-items:center; justify-content:space-between; max-width:720px; margin:0 auto; padding:28px 20px 0; }
-  .brand{ display:flex; align-items:center; gap:10px; }
-  .brand .mark{ width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#5B54FF,#3B36D6);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
-  .brand .word{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:16px; color:#fff; letter-spacing:-0.2px; }
-  .top a.site-link{ font:700 13px/1 Arial,sans-serif; color:#fff; text-decoration:none; border:1.5px solid rgba(255,255,255,.35); padding:9px 16px; border-radius:8px; }
+
+  /* ================= App shell (iOS-style) ================= */
+  #app{ display:flex; flex-direction:column; height:100dvh; }
+
+  .ios-nav{
+    flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 12px;
+    background:linear-gradient(165deg,#06070A 0%,#06038D 160%);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .ios-nav .brand{ display:flex; align-items:center; gap:9px; }
+  .ios-nav .mark{ width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#5B54FF,#3B36D6);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .ios-nav .word{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:15px; color:#fff; letter-spacing:-0.2px; }
+  .ios-nav .client-name{ font-size:11px; color:#C9C6FF; font-weight:600; }
+  .ios-nav a.site-link{ font:700 12px/1 'Sora',Arial,sans-serif; color:#fff; text-decoration:none; border:1.5px solid rgba(255,255,255,.3); padding:8px 12px; border-radius:20px; }
+
+  .ios-screens{ flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; background:#F2F1F8; }
+  .ios-screen{ display:none; padding:18px 16px calc(28px + env(safe-area-inset-bottom,0px)); max-width:640px; margin:0 auto; }
+  .ios-screen.active{ display:block; animation:screenIn .28s cubic-bezier(.22,.61,.36,1); }
+  @keyframes screenIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  @media(prefers-reduced-motion:reduce){ .ios-screen.active{ animation:none; } }
+
+  .ios-tabbar{
+    flex:0 0 auto; display:flex; background:rgba(255,255,255,.86); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border-top:1px solid rgba(0,0,0,.08); padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));
+  }
+  .ios-tab{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px;
+    background:none; border:none; color:#8B87A6; font:600 10px/1.1 'Sora',Arial,sans-serif; cursor:pointer;
+  }
+  .ios-tab svg{ width:23px; height:23px; stroke:#8B87A6; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; transition:stroke .15s ease, transform .15s ease; }
+  .ios-tab.active{ color:#5B54FF; }
+  .ios-tab.active svg{ stroke:#5B54FF; transform:translateY(-1px) scale(1.06); }
+  .ios-tab .dot{ position:absolute; margin-top:-24px; margin-left:14px; width:7px; height:7px; border-radius:50%; background:#E0A94C; border:1.5px solid #fff; }
+
+  /* ---- generic iOS-ish card language ---- */
+  .card{ background:#fff; border-radius:16px; padding:20px 20px; margin-bottom:14px; box-shadow:0 1px 2px rgba(20,16,50,.05); }
+  .card h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:15px; color:#06038D; margin:0 0 4px; }
+  .card .hint{ font-size:12px; color:#7c8aa6; margin-bottom:14px; line-height:1.5; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#5b6b8c; text-transform:uppercase; margin-bottom:5px; }
+  .field input[type=text], .field input[type=email], .field select, .field textarea{
+    width:100%; border:1.5px solid #E4E2F5; border-radius:10px; padding:12px 13px; font:14px/1.4 'Barlow',Arial,sans-serif; color:#171433; background:#F8F7FF; -webkit-appearance:none; appearance:none;
+  }
+  .field input[type=file]{ font-size:12.5px; }
+  .row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .row .field{ flex:1; min-width:150px; }
+  .btn{ font:700 14px/1 'Sora',Arial,sans-serif; padding:14px 20px; border-radius:12px; cursor:pointer; border:none; background:#5B54FF; color:#fff; width:100%; }
+  .btn:active{ transform:scale(.98); }
+  .btn.outline{ background:#F1F0FF; color:#5B54FF; }
+  .msg{ font-size:12.5px; color:#1CAD5A; font-weight:700; margin-top:10px; display:block; }
+  .msg.err{ color:#C0392B; }
+
+  .section-title{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:19px; color:#fff; margin:2px 0 16px; }
+  #screen-location .section-title, #screen-permits .section-title, #screen-chef .section-title, #screen-operate .section-title{ color:#171433; }
 
   /* ---- landing (no token) ---- */
-  .landing{ max-width:560px; margin:0 auto; padding:70px 20px 90px; text-align:center; }
-  .landing h1{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:clamp(26px,5vw,36px); color:#fff; line-height:1.15; margin:0 0 16px; }
+  .landing{ max-width:520px; margin:0 auto; padding:70px 20px 90px; text-align:center; }
+  .landing h1{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:clamp(26px,5vw,34px); color:#fff; line-height:1.15; margin:0 0 16px; }
   .landing p{ font-size:15px; color:#C9C6FF; line-height:1.6; margin:0 0 30px; }
   .landing .actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  .landing .btn{ font:700 14px/1 Arial,sans-serif; padding:13px 22px; border-radius:9px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
-  .landing .btn.primary{ background:#25D366; color:#06070A; }
-  .landing .btn.outline{ background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.35); }
+  .landing .btn2{ font:700 14px/1 Arial,sans-serif; padding:13px 22px; border-radius:9px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+  .landing .btn2.primary{ background:#25D366; color:#06070A; }
+  .landing .btn2.outline{ background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.35); }
   .landing .fine{ margin-top:40px; font-size:12px; color:#7c76a8; }
+  .full-loading, .full-error{ color:#C9C6FF; text-align:center; padding:100px 20px; font-size:14px; }
 
-  /* ---- portal (Web Builder self-service) ---- */
-  .pv-wrap{ max-width:720px; margin:0 auto; padding:26px 16px 80px; }
-  .pv-card{ background:#fff; border-radius:12px; padding:30px 34px; margin-bottom:18px; }
-  .pv-card h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:15px; color:#06038D; margin:0 0 4px; }
-  .pv-card .pv-hint{ font-size:12px; color:#7c8aa6; margin-bottom:16px; }
-  .pv-field{ margin-bottom:14px; }
-  .pv-field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#5b6b8c; text-transform:uppercase; margin-bottom:5px; }
-  .pv-field input[type=text], .pv-field input[type=email], .pv-field textarea{
-    width:100%; border:1.5px solid #D6D3FF; border-radius:8px; padding:10px 12px; font:13px/1.4 Arial,sans-serif; color:#171433; background:#F8F7FF;
+  /* ---- Web Builder (Mi Sitio) specifics ---- */
+  .thumb{ display:inline-flex; align-items:center; gap:8px; margin-top:8px; font-size:11.5px; color:#5b6b8c; }
+  .thumb img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #E4E2F5; }
+  .gallery-preview{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .gallery-preview img{ width:56px; height:56px; object-fit:cover; border-radius:6px; border:1px solid #E4E2F5; }
+  .menu-row{ display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+  .menu-row input{ flex:1; }
+  .menu-row input.menu-price{ flex:0 0 84px; }
+  .menu-row button{ flex:0 0 auto; background:none; border:none; color:#C0392B; font-size:18px; cursor:pointer; line-height:1; padding:4px 8px; }
+  .add-row{ font:700 12.5px 'Sora',Arial,sans-serif; color:#5B54FF; background:none; border:1.5px dashed #C9C6FF; border-radius:10px; padding:9px 14px; cursor:pointer; width:100%; }
+  .publish{ display:flex; align-items:center; gap:10px; background:#F1F0FF; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+  .publish label{ font-size:13px; font-weight:700; color:#06038D; }
+  .live-link{ font-size:12.5px; color:#5B54FF; }
+  @media(max-width:400px){
+    .menu-row{ flex-wrap:wrap; }
+    .menu-row input, .menu-row input.menu-price{ flex:1 1 100%; }
+    .menu-row button{ margin-left:auto; }
   }
-  .pv-field input[type=file]{ font-size:12.5px; }
-  .pv-row{ display:flex; gap:14px; flex-wrap:wrap; }
-  .pv-row .pv-field{ flex:1; min-width:180px; }
-  .pv-thumb{ display:inline-flex; align-items:center; gap:8px; margin-top:8px; font-size:11.5px; color:#5b6b8c; }
-  .pv-thumb img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #D6D3FF; }
-  .pv-gallery-preview{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-  .pv-gallery-preview img{ width:56px; height:56px; object-fit:cover; border-radius:6px; border:1px solid #D6D3FF; }
-  .pv-menu-row{ display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-  .pv-menu-row input{ flex:1; }
-  .pv-menu-row input.pv-menu-price{ flex:0 0 90px; }
-  .pv-menu-row button{ flex:0 0 auto; background:none; border:none; color:#C0392B; font-size:18px; cursor:pointer; line-height:1; padding:4px 8px; }
-  .pv-add-row{ font:700 12.5px Arial,sans-serif; color:#5B54FF; background:none; border:1.5px dashed #C9C6FF; border-radius:8px; padding:8px 14px; cursor:pointer; }
-  .pv-publish{ display:flex; align-items:center; gap:10px; background:#F1F0FF; border-radius:8px; padding:12px 14px; margin-top:6px; }
-  .pv-publish label{ font-size:13px; font-weight:700; color:#06038D; }
-  .pv-save-row{ display:flex; align-items:center; gap:14px; margin-top:8px; flex-wrap:wrap; }
-  .pv-btn{ font:700 13px Arial,sans-serif; padding:11px 20px; border-radius:8px; cursor:pointer; border:none; background:#5B54FF; color:#fff; }
-  .pv-msg{ font-size:12.5px; color:#1CAD5A; font-weight:700; }
-  .pv-msg.err{ color:#C0392B; }
-  .pv-live-link{ font-size:12.5px; color:#5B54FF; }
-  .pv-loading, .pv-error{ color:#C9C6FF; text-align:center; padding:80px 20px; font-size:14px; }
-  @media(max-width:560px){
-    .pv-card{ padding:22px 18px; }
-    .pv-menu-row{ flex-wrap:wrap; }
-    .pv-menu-row input, .pv-menu-row input.pv-menu-price{ flex:1 1 100%; }
-    .pv-menu-row button{ margin-left:auto; }
-  }
+
+  /* ---- Location Intelligence specifics ---- */
+  .li-score-card{ text-align:center; background:linear-gradient(135deg,#5B54FF,#3B36D6); border-radius:12px; padding:18px; margin-bottom:14px; color:#fff; }
+  .li-score-label{ font:700 10px/1 'Sora',Arial,sans-serif; letter-spacing:1.5px; text-transform:uppercase; opacity:.85; }
+  .li-score-num{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:34px; margin:6px 0 2px; }
+  .li-score-sub{ font-size:12.5px; opacity:.9; }
+  .li-metric{ margin-bottom:12px; }
+  .li-metric:last-child{ margin-bottom:0; }
+  .li-metric-head{ display:flex; justify-content:space-between; font-size:12.5px; color:#5b6b8c; margin-bottom:5px; }
+  .li-metric-head b{ color:#171433; }
+  .li-bar{ height:6px; border-radius:4px; background:#EEEDF9; overflow:hidden; }
+  .li-bar span{ display:block; height:100%; background:linear-gradient(90deg,#5B54FF,#8B86FF); border-radius:4px; transition:width .5s ease; }
+  .li-insight{ font-size:13px; color:#3d3a5c; padding:8px 0; border-top:1px solid #EEEDF9; line-height:1.5; }
+  .li-insight:first-child{ border-top:none; }
+
+  /* ---- stub / coming soon screens ---- */
+  .stub{ text-align:center; padding:36px 10px; }
+  .stub .stub-icon{ width:64px; height:64px; border-radius:18px; background:linear-gradient(135deg,#5B54FF,#3B36D6); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; }
+  .stub .stub-icon svg{ width:30px; height:30px; stroke:#fff; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .stub h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:18px; color:#171433; margin:0 0 10px; }
+  .stub p{ font-size:13.5px; color:#5b6b8c; line-height:1.6; max-width:340px; margin:0 auto; }
+  .stub .soon-pill{ display:inline-block; margin-top:16px; font:700 10.5px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#5B54FF; background:#F1F0FF; padding:7px 14px; border-radius:999px; }
 </style>
 </head>
 <body>
 
-<div class="top">
-  <div class="brand">
-    <div class="mark">
-      <svg viewBox="0 0 120 120" width="20" height="20">
-        <polygon points="21.6,25.8 98.3,25.8 106.9,45.0 30.2,45.0" fill="#fff"/>
-        <polygon points="57.9,45.0 79.2,45.0 100.5,94.2 79.2,94.2" fill="#fff"/>
-      </svg>
+<div id="app">
+  <div class="ios-nav">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 120 120" width="18" height="18">
+          <polygon points="21.6,25.8 98.3,25.8 106.9,45.0 30.2,45.0" fill="#fff"/>
+          <polygon points="57.9,45.0 79.2,45.0 100.5,94.2 79.2,94.2" fill="#fff"/>
+        </svg>
+      </div>
+      <div>
+        <div class="word">TrylApp</div>
+        <div class="client-name" id="navClientName"></div>
+      </div>
     </div>
-    <span class="word">TrylApp</span>
+    <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener">Sitio</a>
   </div>
-  <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener">thetryla.com</a>
+
+  <div class="ios-screens" id="screens"><div class="full-loading">Cargando...</div></div>
 </div>
 
-<div id="pvRoot"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="location-intel.js"></script>
 <script>
 (function () {
   var qs = new URLSearchParams(location.search);
   var token = qs.get("portal");
-  var root = document.getElementById("pvRoot");
+  var screensEl = document.getElementById("screens");
 
   if (!token) {
-    root.innerHTML =
+    screensEl.innerHTML =
       '<div class="landing">' +
         '<h1>Tu portal como cliente Tryla</h1>' +
-        '<p>Aqui edita tu propio sitio (fotos, menu, contacto) y proximamente vas a poder ver recomendaciones de ubicacion y tu guia de permisos. Accede con el link privado que te compartio tu asesor de Tryla.</p>' +
+        '<p>Ubicacion, tu sitio, permisos, chef talent y la operacion de tu trailer — todo en un lugar. Accede con el link privado que te compartio tu asesor de Tryla.</p>' +
         '<div class="actions">' +
-          '<a class="btn primary" href="https://wa.me/16452353186?text=Hola%2C%20soy%20cliente%20de%20Tryla%20y%20necesito%20mi%20link%20de%20acceso%20a%20TrylApp" target="_blank">WhatsApp con tu asesor</a>' +
-          '<a class="btn outline" href="tel:+16452353186">Llamar</a>' +
+          '<a class="btn2 primary" href="https://wa.me/16452353186?text=Hola%2C%20soy%20cliente%20de%20Tryla%20y%20necesito%20mi%20link%20de%20acceso%20a%20TrylApp" target="_blank">WhatsApp con tu asesor</a>' +
+          '<a class="btn2 outline" href="tel:+16452353186">Llamar</a>' +
         '</div>' +
         '<div class="fine">&iquest;Ya te compartieron tu link? Abrelo directo, empieza con thetryla.app/?portal=</div>' +
       '</div>';
     return;
   }
 
-  root.innerHTML = '<div class="pv-wrap"><div class="pv-loading">Cargando tu portal...</div></div>';
-  var mount = root.firstChild;
-
   var SUPABASE_URL = "https://dcuescldzrgcppubcoxq.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_Ov7JqL4vOjjfkwDDD2DySg_I7huP9FH";
-
   if (typeof supabase === "undefined") {
-    mount.innerHTML = '<div class="pv-error">No se pudo cargar tu portal. Intenta de nuevo mas tarde.</div>';
+    screensEl.innerHTML = '<div class="full-error">No se pudo cargar tu portal. Intenta de nuevo mas tarde.</div>';
     return;
   }
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -138,34 +202,145 @@
     });
   }
 
+  var TABS = [
+    { id: "location", label: "Ubicación", icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>' },
+    { id: "site", label: "Mi Sitio", icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>' },
+    { id: "permits", label: "Permisos", icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>' },
+    { id: "chef", label: "Chef Talent", icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>' },
+    { id: "operate", label: "Operar", icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>' },
+  ];
+
+  function stubScreen(id, title, body, badge) {
+    var icon = TABS.find(function (t) { return t.id === id; }).icon;
+    return (
+      '<section class="ios-screen" id="screen-' + id + '">' +
+        '<div class="stub">' +
+          '<div class="stub-icon"><svg viewBox="0 0 24 24">' + icon + "</svg></div>" +
+          "<h2>" + title + "</h2>" +
+          "<p>" + body + "</p>" +
+          '<div class="soon-pill">' + (badge || "Próximamente") + "</div>" +
+        "</div>" +
+      "</section>"
+    );
+  }
+
+  screensEl.innerHTML =
+    '<section class="ios-screen active" id="screen-location">' +
+      '<div class="section-title">Ubicación</div>' +
+      '<div class="card">' +
+        '<h2>Analiza un lugar</h2>' +
+        '<div class="hint">Estimado ilustrativo a partir de la dirección y el tipo de cocina — todavía no conectado a datos reales de tráfico o censo.</div>' +
+        '<div class="field"><label>Dirección o zona</label><input type="text" id="liAddress" placeholder="Ej. 1200 Main St, Dallas, TX"></div>' +
+        '<div class="field"><label>Tipo de cocina</label><select id="liCuisine">' +
+          ["Tacos / Mexicana","BBQ","Café / Postres","Pizza","Hamburguesas","Asiática","Mariscos","Vegana / Saludable","Otro / General"]
+            .map(function (c) { return '<option value="' + c + '">' + c + "</option>"; }).join("") +
+        "</select></div>" +
+        '<button type="button" class="btn" id="liAnalyzeBtn">Analizar →</button>' +
+      "</div>" +
+      '<div class="card" id="liResultCard" style="display:none;">' +
+        '<div class="li-score-card"><div class="li-score-label">Opportunity Score</div><div class="li-score-num" id="liScoreNum">—</div><div class="li-score-sub" id="liScoreSub">—</div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>Tráfico peatonal &amp; demanda</span><b id="liMetricTraffic">0</b></div><div class="li-bar"><span id="liBarTraffic" style="width:0%"></span></div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>Espacio vs. competencia</span><b id="liMetricComp">0</b></div><div class="li-bar"><span id="liBarComp" style="width:0%"></span></div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>Ajuste demográfico</span><b id="liMetricDemo">0</b></div><div class="li-bar"><span id="liBarDemo" style="width:0%"></span></div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>Brecha de cocina (gap)</span><b id="liMetricGap">0</b></div><div class="li-bar"><span id="liBarGap" style="width:0%"></span></div></div>' +
+        '<div id="liMap" class="tli-map"></div>' +
+        '<div id="liInsights"></div>' +
+      "</div>" +
+    "</section>" +
+
+    '<section class="ios-screen" id="screen-site">' +
+      '<div class="section-title">Mi Sitio</div>' +
+      '<div id="siteRoot"><div class="full-loading">Cargando tu sitio...</div></div>' +
+    "</section>" +
+
+    stubScreen("permits", "Guía de permisos", "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.") +
+    stubScreen("chef", "Chef Talent", "Conecta con cocineros y talento culinario para tu trailer. Estamos armando la red de chefs disponibles en tu zona.") +
+    stubScreen("operate", "Operar el trailer", "Herramientas del día a día: inventario, turnos, ventas y más, para operar tu trailer una vez que esté en la calle.");
+
+  var tabbar = document.createElement("nav");
+  tabbar.className = "ios-tabbar";
+  tabbar.innerHTML = TABS.map(function (t, i) {
+    return (
+      '<button type="button" class="ios-tab' + (i === 0 ? " active" : "") + '" data-tab="' + t.id + '">' +
+        "<svg viewBox=\"0 0 24 24\">" + t.icon + "</svg>" +
+        "<span>" + t.label + "</span>" +
+      "</button>"
+    );
+  }).join("");
+  document.getElementById("app").appendChild(tabbar);
+
+  tabbar.addEventListener("click", function (e) {
+    var btn = e.target.closest(".ios-tab");
+    if (!btn) return;
+    tabbar.querySelectorAll(".ios-tab").forEach(function (b) { b.classList.toggle("active", b === btn); });
+    document.querySelectorAll(".ios-screen").forEach(function (s) {
+      s.classList.toggle("active", s.id === "screen-" + btn.dataset.tab);
+    });
+  });
+
+  // ---- Location Intelligence wiring ----
+  var TLI = window.TrylaLocationIntel;
+  document.getElementById("liAnalyzeBtn").addEventListener("click", async function () {
+    var address = document.getElementById("liAddress").value.trim();
+    if (!address) { document.getElementById("liAddress").focus(); return; }
+    var cuisine = document.getElementById("liCuisine").value;
+    var r = TLI.scoreFor(address, cuisine);
+    var t = TLI.tier(r.overall10);
+    document.getElementById("liScoreNum").textContent = r.overall10.toFixed(1) + " / 10";
+    document.getElementById("liScoreSub").textContent = t.label;
+    document.getElementById("liMetricTraffic").textContent = r.traffic;
+    document.getElementById("liMetricComp").textContent = r.space;
+    document.getElementById("liMetricDemo").textContent = r.demo;
+    document.getElementById("liMetricGap").textContent = r.gap;
+    document.getElementById("liBarTraffic").style.width = r.traffic + "%";
+    document.getElementById("liBarComp").style.width = r.space + "%";
+    document.getElementById("liBarDemo").style.width = r.demo + "%";
+    document.getElementById("liBarGap").style.width = r.gap + "%";
+    var insightsEl = document.getElementById("liInsights");
+    insightsEl.innerHTML = "";
+    TLI.insightsFor(r, cuisine).forEach(function (text) {
+      var div = document.createElement("div");
+      div.className = "li-insight";
+      div.textContent = text;
+      insightsEl.appendChild(div);
+    });
+    document.getElementById("liResultCard").style.display = "block";
+    var point = await TLI.geocode(address);
+    if (point) {
+      try {
+        await TLI.mountMap(document.getElementById("liMap"), point, r);
+      } catch (mmErr) {
+        console.warn("No se pudo cargar el mapa:", mmErr);
+      }
+    }
+  });
+
+  // ---- Web Builder (Mi Sitio) ----
   function menuRowHtml(item) {
     item = item || {};
     return (
-      '<div class="pv-menu-row">' +
-      '<input type="text" class="pv-menu-name" placeholder="Platillo" value="' + esc(item.name) + '">' +
-      '<input type="text" class="pv-menu-price" placeholder="Precio" value="' + esc(item.price) + '">' +
-      '<input type="text" class="pv-menu-desc" placeholder="Descripcion (opcional)" value="' + esc(item.desc) + '">' +
+      '<div class="menu-row">' +
+      '<input type="text" class="menu-name" placeholder="Platillo" value="' + esc(item.name) + '">' +
+      '<input type="text" class="menu-price" placeholder="Precio" value="' + esc(item.price) + '">' +
+      '<input type="text" class="menu-desc" placeholder="Descripción (opcional)" value="' + esc(item.desc) + '">' +
       '<button type="button" data-rm-row aria-label="Quitar">&times;</button>' +
       "</div>"
     );
   }
-
   function readMenuRows(el) {
     var rows = [];
-    el.querySelectorAll(".pv-menu-row").forEach(function (row) {
-      var name = row.querySelector(".pv-menu-name").value.trim();
-      var price = row.querySelector(".pv-menu-price").value.trim();
-      var desc = row.querySelector(".pv-menu-desc").value.trim();
+    el.querySelectorAll(".menu-row").forEach(function (row) {
+      var name = row.querySelector(".menu-name").value.trim();
+      var price = row.querySelector(".menu-price").value.trim();
+      var desc = row.querySelector(".menu-desc").value.trim();
       if (name || price || desc) rows.push({ name: name, price: price, desc: desc });
     });
     return rows;
   }
-
   function uploadPath(file) {
     var ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
     return token.slice(0, 10) + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
   }
-
   async function uploadImage(file) {
     var path = uploadPath(file);
     var res = await sb.storage.from("site-images").upload(path, file, { upsert: true, cacheControl: "3600", contentType: file.type || undefined });
@@ -173,64 +348,65 @@
     return sb.storage.from("site-images").getPublicUrl(path).data.publicUrl;
   }
 
-  function render(site) {
+  function renderSite(site) {
     site = site || {};
     var gallery = Array.isArray(site.gallery) ? site.gallery : [];
     var menu = Array.isArray(site.menu) ? site.menu : [];
+    var siteRoot = document.getElementById("siteRoot");
 
-    mount.innerHTML =
-      '<div class="pv-card">' +
+    document.getElementById("navClientName").textContent = site.restaurant_name || "";
+
+    siteRoot.innerHTML =
+      '<div class="card">' +
         "<h2>Bienvenido" + (site.restaurant_name ? ", " + esc(site.restaurant_name) : "") + "</h2>" +
-        '<div class="pv-hint">Este es tu sitio. Edita lo que quieras y da clic en Guardar — se actualiza al instante.' +
-        (site.subdomain ? ' Tu sitio: <a class="pv-live-link" href="https://' + esc(site.subdomain) + '.thetryla.com" target="_blank">' + esc(site.subdomain) + ".thetryla.com</a>" : "") +
+        '<div class="hint">Edita lo que quieras y da clic en Guardar — se actualiza al instante.' +
+        (site.subdomain ? ' Tu sitio: <a class="live-link" href="https://' + esc(site.subdomain) + '.thetryla.com" target="_blank">' + esc(site.subdomain) + ".thetryla.com</a>" : "") +
         "</div>" +
-        '<div class="pv-field"><label>Nombre del restaurante</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
-        '<div class="pv-field"><label>Eslogan</label><input type="text" id="pvTagline" value="' + esc(site.tagline) + '"></div>' +
-        '<div class="pv-field"><label>Descripcion</label><textarea id="pvDescription" rows="3">' + esc(site.description) + "</textarea></div>" +
+        '<div class="field"><label>Nombre del restaurante</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
+        '<div class="field"><label>Eslogan</label><input type="text" id="pvTagline" value="' + esc(site.tagline) + '"></div>' +
+        '<div class="field"><label>Descripción</label><textarea id="pvDescription" rows="3">' + esc(site.description) + "</textarea></div>" +
       "</div>" +
 
-      '<div class="pv-card">' +
+      '<div class="card">' +
         "<h2>Fotos</h2>" +
-        '<div class="pv-field"><label>Logo</label><input type="file" id="pvLogoFile" accept="image/*">' +
-          (site.logo_url ? '<div class="pv-thumb"><img src="' + esc(site.logo_url) + '"> actual</div>' : "") +
+        '<div class="field"><label>Logo</label><input type="file" id="pvLogoFile" accept="image/*">' +
+          (site.logo_url ? '<div class="thumb"><img src="' + esc(site.logo_url) + '"> actual</div>' : "") +
         "</div>" +
-        '<div class="pv-field"><label>Foto principal (hero)</label><input type="file" id="pvHeroFile" accept="image/*">' +
-          (site.hero_image_url ? '<div class="pv-thumb"><img src="' + esc(site.hero_image_url) + '"> actual</div>' : "") +
+        '<div class="field"><label>Foto principal (hero)</label><input type="file" id="pvHeroFile" accept="image/*">' +
+          (site.hero_image_url ? '<div class="thumb"><img src="' + esc(site.hero_image_url) + '"> actual</div>' : "") +
         "</div>" +
-        '<div class="pv-field"><label>Galeria (puedes elegir varias)</label><input type="file" id="pvGalleryFile" accept="image/*" multiple>' +
-          (gallery.length ? '<div class="pv-gallery-preview">' + gallery.map(function (u) { return '<img src="' + esc(u) + '">'; }).join("") + "</div>" : "") +
+        '<div class="field"><label>Galería (puedes elegir varias)</label><input type="file" id="pvGalleryFile" accept="image/*" multiple>' +
+          (gallery.length ? '<div class="gallery-preview">' + gallery.map(function (u) { return '<img src="' + esc(u) + '">'; }).join("") + "</div>" : "") +
         "</div>" +
       "</div>" +
 
-      '<div class="pv-card">' +
-        "<h2>Menu</h2>" +
+      '<div class="card">' +
+        "<h2>Menú</h2>" +
         '<div id="pvMenuRows">' + (menu.length ? menu.map(menuRowHtml).join("") : menuRowHtml()) + "</div>" +
-        '<button type="button" class="pv-add-row" id="pvAddMenuRow">+ Agregar platillo</button>' +
+        '<button type="button" class="add-row" id="pvAddMenuRow">+ Agregar platillo</button>' +
       "</div>" +
 
-      '<div class="pv-card">' +
+      '<div class="card">' +
         "<h2>Contacto</h2>" +
-        '<div class="pv-row">' +
-          '<div class="pv-field"><label>Telefono</label><input type="text" id="pvPhone" value="' + esc(site.phone) + '"></div>' +
-          '<div class="pv-field"><label>Correo</label><input type="email" id="pvEmail" value="' + esc(site.email) + '"></div>' +
+        '<div class="row">' +
+          '<div class="field"><label>Teléfono</label><input type="text" id="pvPhone" value="' + esc(site.phone) + '"></div>' +
+          '<div class="field"><label>Correo</label><input type="email" id="pvEmail" value="' + esc(site.email) + '"></div>' +
         "</div>" +
-        '<div class="pv-row">' +
-          '<div class="pv-field"><label>Direccion / ubicacion</label><input type="text" id="pvAddress" value="' + esc(site.address) + '"></div>' +
-          '<div class="pv-field"><label>Horario</label><input type="text" id="pvHours" value="' + esc(site.hours) + '"></div>' +
+        '<div class="row">' +
+          '<div class="field"><label>Dirección / ubicación</label><input type="text" id="pvAddress" value="' + esc(site.address) + '"></div>' +
+          '<div class="field"><label>Horario</label><input type="text" id="pvHours" value="' + esc(site.hours) + '"></div>' +
         "</div>" +
-        '<div class="pv-row">' +
-          '<div class="pv-field"><label>Instagram</label><input type="text" id="pvInstagram" value="' + esc(site.instagram) + '"></div>' +
-          '<div class="pv-field"><label>Facebook</label><input type="text" id="pvFacebook" value="' + esc(site.facebook) + '"></div>' +
-          '<div class="pv-field"><label>TikTok</label><input type="text" id="pvTiktok" value="' + esc(site.tiktok) + '"></div>' +
+        '<div class="row">' +
+          '<div class="field"><label>Instagram</label><input type="text" id="pvInstagram" value="' + esc(site.instagram) + '"></div>' +
+          '<div class="field"><label>Facebook</label><input type="text" id="pvFacebook" value="' + esc(site.facebook) + '"></div>' +
+          '<div class="field"><label>TikTok</label><input type="text" id="pvTiktok" value="' + esc(site.tiktok) + '"></div>' +
         "</div>" +
       "</div>" +
 
-      '<div class="pv-card">' +
-        '<div class="pv-publish"><input type="checkbox" id="pvPublished"' + (site.published ? " checked" : "") + "> <label for=\"pvPublished\">Publicado (visible al publico)</label></div>" +
-        '<div class="pv-save-row">' +
-          '<button type="button" class="pv-btn" id="pvSaveBtn">Guardar cambios</button>' +
-          '<span class="pv-msg" id="pvMsg"></span>' +
-        "</div>" +
+      '<div class="card">' +
+        '<div class="publish"><input type="checkbox" id="pvPublished"' + (site.published ? " checked" : "") + "> <label for=\"pvPublished\">Publicado (visible al público)</label></div>" +
+        '<button type="button" class="btn" id="pvSaveBtn">Guardar cambios</button>' +
+        '<span class="msg" id="pvMsg"></span>' +
       "</div>";
 
     var newLogoUrl = site.logo_url || null;
@@ -241,14 +417,14 @@
       document.getElementById("pvMenuRows").insertAdjacentHTML("beforeend", menuRowHtml());
     });
     document.getElementById("pvMenuRows").addEventListener("click", function (e) {
-      if (e.target.closest("[data-rm-row]")) e.target.closest(".pv-menu-row").remove();
+      if (e.target.closest("[data-rm-row]")) e.target.closest(".menu-row").remove();
     });
 
     document.getElementById("pvSaveBtn").addEventListener("click", async function () {
       var btn = this;
       var msg = document.getElementById("pvMsg");
       btn.disabled = true;
-      msg.className = "pv-msg";
+      msg.className = "msg";
       msg.textContent = "Guardando...";
       try {
         var logoFile = document.getElementById("pvLogoFile").files[0];
@@ -279,9 +455,9 @@
         var res = await sb.rpc("save_site_by_portal_token", { p_token: token, p_site: payload });
         if (res.error) throw res.error;
         msg.textContent = "Guardado.";
-        render(res.data);
+        renderSite(res.data);
       } catch (err) {
-        msg.className = "pv-msg err";
+        msg.className = "msg err";
         msg.textContent = "No se pudo guardar: " + (err.message || err);
       } finally {
         btn.disabled = false;
@@ -292,10 +468,10 @@
   sb.rpc("get_site_by_portal_token", { p_token: token })
     .then(function (res) {
       if (res.error) throw res.error;
-      render(res.data);
+      renderSite(res.data);
     })
     .catch(function () {
-      mount.innerHTML = '<div class="pv-error">Este link de portal ya no es valido. Contacta a tu asesor de Tryla.</div>';
+      document.getElementById("siteRoot").innerHTML = '<div class="full-error">Este link de portal ya no es valido. Contacta a tu asesor de Tryla.</div>';
     });
 })();
 </script>

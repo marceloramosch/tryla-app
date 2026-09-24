@@ -1,22 +1,14 @@
 // ===== TrylApp — Location Intelligence (demo module) =====
-// This is a self-contained, illustrative scoring tool: no external APIs, no real
-// geographic/demographic data. Scores are generated from a deterministic hash of
-// the address + cuisine, so the same input always returns the same result — it
-// behaves consistently in a demo without claiming to be real live data.
+// This is a self-contained, illustrative scoring tool: no external APIs for the
+// score itself, no real geographic/demographic data behind the numbers. Scores
+// are generated from a deterministic hash of the address + cuisine, so the same
+// input always returns the same result. Geocoding (turning the address into a
+// map pin) IS real, via OpenStreetMap's free Nominatim service.
+//
+// Exposes window.TrylaLocationIntel so both the internal CRM (crm.html) and the
+// client-facing TrylApp (index.html) can share the exact same scoring logic and
+// map rendering instead of two copies drifting apart.
 (function () {
-  var HISTORY_KEY = "trylaLocationScores";
-
-  var addressEl = document.getElementById("liAddress");
-  var cuisineEl = document.getElementById("liCuisine");
-  var clientNameEl = document.getElementById("liClientName");
-  var analyzeBtn = document.getElementById("liAnalyzeBtn");
-  var resultPanel = document.getElementById("liResultPanel");
-  var saveBtn = document.getElementById("liSaveBtn");
-  var historyBody = document.getElementById("liHistoryTable");
-  if (!addressEl || !analyzeBtn) return; // this tab isn't on the page
-
-  var lastResult = null;
-
   function hashString(str) {
     var h = 0;
     for (var i = 0; i < str.length; i++) {
@@ -42,10 +34,8 @@
   function scoreFor(address, cuisine) {
     var seed = hashString(address.trim().toLowerCase() + "|" + cuisine);
     var rand = mulberry32(seed);
-    // Each metric pulls from its own slice of the sequence so tweaking one
-    // input shifts every metric, not just one — feels less like a single dial.
     var traffic = Math.round(clamp(38 + rand() * 55 + rand() * 10, 8, 97));
-    var competitorsNearby = Math.round(rand() * 9); // 0-8 "similar concepts nearby"
+    var competitorsNearby = Math.round(rand() * 9);
     var space = Math.round(clamp(100 - competitorsNearby * 9 - rand() * 12, 6, 96));
     var demo = Math.round(clamp(35 + rand() * 58, 10, 96));
     var gap = Math.round(clamp(30 + rand() * 62, 8, 97));
@@ -61,9 +51,9 @@
   }
 
   function tier(overall10) {
-    if (overall10 >= 8) return { label: "Alta oportunidad", cls: "high" };
-    if (overall10 >= 6) return { label: "Oportunidad moderada", cls: "mid" };
-    return { label: "Requiere mas analisis", cls: "low" };
+    if (overall10 >= 8) return { label: "Alta oportunidad", cls: "high", color: "#1CAD5A" };
+    if (overall10 >= 6) return { label: "Oportunidad moderada", cls: "mid", color: "#E0A94C" };
+    return { label: "Requiere mas analisis", cls: "low", color: "#C0392B" };
   }
 
   function insightsFor(r, cuisine) {
@@ -91,8 +81,128 @@
     return list;
   }
 
+  // Real geocoding via OpenStreetMap Nominatim (free, no key). Returns
+  // {lat, lon, label} or null if the address can't be resolved.
+  async function geocode(address) {
+    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address);
+    try {
+      var res = await fetch(url, { headers: { Accept: "application/json" } });
+      var data = await res.json();
+      if (!data || !data[0]) return null;
+      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), label: data[0].display_name };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Leaflet loads via a static <script>/<link> tag in the page's <head> (same
+  // page, before this file) — far more reliable than injecting it at call
+  // time. This just waits for it to be ready, with a short-lived fallback
+  // dynamic load in case the static tags are ever missing from a page.
+  function ensureLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (window.__leafletLoading) return window.__leafletLoading;
+    window.__leafletLoading = new Promise(function (resolve, reject) {
+      var tries = 0;
+      var poll = setInterval(function () {
+        if (window.L) {
+          clearInterval(poll);
+          resolve();
+          return;
+        }
+        tries++;
+        if (tries > 100) {
+          clearInterval(poll);
+          // Static tag never showed up — fall back to a dynamic load.
+          var script = document.createElement("script");
+          script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        }
+      }, 30);
+    });
+    return window.__leafletLoading;
+  }
+
+  function trailerDivIcon(scoreObj) {
+    var t = tier(scoreObj.overall10);
+    var html =
+      '<div class="tli-marker-wrap">' +
+        '<div class="tli-marker-badge" style="background:' + t.color + '">' + scoreObj.overall10.toFixed(1) + '</div>' +
+        '<svg class="tli-marker-trailer" width="46" height="30" viewBox="0 0 92 60" xmlns="http://www.w3.org/2000/svg">' +
+          '<rect x="4" y="10" width="72" height="34" rx="4" fill="#5B54FF"/>' +
+          '<rect x="4" y="10" width="72" height="10" fill="#3B36D6"/>' +
+          '<rect x="12" y="24" width="20" height="14" rx="1.5" fill="#EAF6FF"/>' +
+          '<rect x="36" y="24" width="20" height="14" rx="1.5" fill="#EAF6FF"/>' +
+          '<rect x="76" y="16" width="10" height="20" rx="2" fill="#3B36D6"/>' +
+          '<line x1="0" y1="44" x2="4" y2="44" stroke="#171433" stroke-width="3"/>' +
+          '<circle cx="20" cy="48" r="7" fill="#171433"/><circle cx="20" cy="48" r="3" fill="#8B87A6"/>' +
+          '<circle cx="56" cy="48" r="7" fill="#171433"/><circle cx="56" cy="48" r="3" fill="#8B87A6"/>' +
+        '</svg>' +
+      '</div>';
+    return window.L.divIcon({ html: html, className: "tli-marker", iconSize: [72, 60], iconAnchor: [36, 50] });
+  }
+
+  var mapInstances = new WeakMap();
+
+  // Mounts (or reuses) a Leaflet map in `container`, flies to {lat, lon} and
+  // drops an animated trailer marker badged with the score. Safe to call again
+  // on the same container for a new analysis — it reuses the map instance.
+  async function mountMap(container, point, scoreObj) {
+    await ensureLeaflet();
+    var L = window.L;
+    var map = mapInstances.get(container);
+    if (!map) {
+      map = L.map(container, { zoomControl: true, attributionControl: true }).setView([point.lat, point.lon], 15);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap",
+      }).addTo(map);
+      mapInstances.set(container, map);
+    } else {
+      map.invalidateSize();
+      map.flyTo([point.lat, point.lon], 15, { duration: 0.8 });
+      if (map.__trailerMarker) map.removeLayer(map.__trailerMarker);
+    }
+    var marker = L.marker([point.lat, point.lon], { icon: trailerDivIcon(scoreObj) }).addTo(map);
+    map.__trailerMarker = marker;
+    setTimeout(function () {
+      var el = marker.getElement();
+      if (el) el.classList.add("tli-drop-in");
+    }, 30);
+    return map;
+  }
+
+  window.TrylaLocationIntel = {
+    scoreFor: scoreFor,
+    tier: tier,
+    insightsFor: insightsFor,
+    geocode: geocode,
+    mountMap: mountMap,
+    ensureLeaflet: ensureLeaflet,
+  };
+})();
+
+// ===== CRM-specific auto-wiring (no-ops if this tab isn't on the page) =====
+(function () {
+  var HISTORY_KEY = "trylaLocationScores";
+  var TLI = window.TrylaLocationIntel;
+
+  var addressEl = document.getElementById("liAddress");
+  var cuisineEl = document.getElementById("liCuisine");
+  var clientNameEl = document.getElementById("liClientName");
+  var analyzeBtn = document.getElementById("liAnalyzeBtn");
+  var resultPanel = document.getElementById("liResultPanel");
+  var saveBtn = document.getElementById("liSaveBtn");
+  var historyBody = document.getElementById("liHistoryTable");
+  var mapEl = document.getElementById("liMap");
+  if (!addressEl || !analyzeBtn) return; // this tab isn't on the page
+
+  var lastResult = null;
+
   function render(r, address, cuisine) {
-    var t = tier(r.overall10);
+    var t = TLI.tier(r.overall10);
     document.getElementById("liScoreNum").textContent = r.overall10.toFixed(1) + " / 10";
     document.getElementById("liScoreSub").textContent = t.label;
     document.getElementById("liMetricTraffic").textContent = r.traffic;
@@ -106,7 +216,7 @@
 
     var insightsEl = document.getElementById("liInsights");
     insightsEl.innerHTML = "";
-    insightsFor(r, cuisine).forEach(function (text) {
+    TLI.insightsFor(r, cuisine).forEach(function (text) {
       var div = document.createElement("div");
       div.className = "li-insight";
       div.textContent = text;
@@ -169,17 +279,21 @@
       });
   }
 
-  analyzeBtn.addEventListener("click", function () {
+  analyzeBtn.addEventListener("click", async function () {
     var address = (addressEl.value || "").trim();
     if (!address) {
       addressEl.focus();
       return;
     }
     var cuisine = cuisineEl.value;
-    var r = scoreFor(address, cuisine);
+    var r = TLI.scoreFor(address, cuisine);
     lastResult = { r: r, address: address, cuisine: cuisine };
     render(r, address, cuisine);
     resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (mapEl) {
+      var point = await TLI.geocode(address);
+      if (point) TLI.mountMap(mapEl, point, r);
+    }
   });
 
   addressEl.addEventListener("keydown", function (e) {

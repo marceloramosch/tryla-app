@@ -10,6 +10,8 @@
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon-512.png">
+<link rel="stylesheet" href="location-intel.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   @font-face{font-family:'Unbounded';src:url('fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
   @font-face{font-family:'Sora';src:url('fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
@@ -693,6 +695,7 @@
           </div>
         </div>
       </div>
+      <div id="liMap" class="tli-map"></div>
       <div class="li-insights" id="liInsights"></div>
       <div class="actions" style="margin-top:14px;">
         <button class="primary" id="liSaveBtn" type="button">Guardar an&aacute;lisis</button>
@@ -1027,6 +1030,7 @@
 <script src="data/components.js"></script>
 <script src="data/equipment-i18n.js"></script>
 <script src="tryla-app.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="location-intel.js"></script>
 </body>
 </html>
