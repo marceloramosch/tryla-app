@@ -198,7 +198,7 @@
     }
     try {
       const token = await window.ClientPortal.generate(restaurantName, subdomain);
-      const link = `https://thetryla.com/?portal=${token}`;
+      const link = `https://thetryla.app/?portal=${token}`;
       try {
         await navigator.clipboard.writeText(link);
         alert("Link del portal de cliente copiado al portapapeles:\n" + link);

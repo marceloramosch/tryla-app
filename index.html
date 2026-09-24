@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TrylApp — Tryla CRM &amp; Location Intelligence</title>
-<meta name="description" content="Tryla CRM — quotes, invoices, financing and location intelligence in one tool.">
+<title>TrylApp</title>
+<meta name="description" content="TrylApp — tu portal como cliente Tryla: edita tu sitio, y proximamente location intelligence y guia de permisos.">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
@@ -12,1031 +12,292 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://thetryla.app/">
 <meta property="og:site_name" content="TrylApp">
-<meta property="og:title" content="TrylApp — Tryla CRM">
-<meta property="og:description" content="We don't just sell you a trailer. We help you grow with it.">
+<meta property="og:title" content="TrylApp">
+<meta property="og:description" content="Tu portal como cliente Tryla.">
 <meta property="og:image" content="https://thetryla.app/assets/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="TrylApp — Tryla CRM">
-<meta name="twitter:image" content="https://thetryla.app/assets/og-image.jpg">
 <style>
   @font-face{font-family:'Unbounded';src:url('fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
   @font-face{font-family:'Sora';src:url('fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
   @font-face{font-family:'Barlow';src:url('fonts/barlow-400.woff2') format('woff2');font-weight:400;font-display:swap;}
   @font-face{font-family:'Barlow';src:url('fonts/barlow-600.woff2') format('woff2');font-weight:600;font-display:swap;}
   @font-face{font-family:'Barlow';src:url('fonts/barlow-700.woff2') format('woff2');font-weight:700;font-display:swap;}
-  :root{
-    --blue: #5B54FF;
-    --dark: #06038D;
-    --silver: #D6D3FF;
-    --light: #F1F0FF;
-    /* Tema (claro = primario/por defecto) */
-    --bg: #f7f7fb;
-    --panel: #ffffff;
-    --text: #06038D;
-    --text2: #7c8aa6;
-    --border: #D6D3FF;
-  }
-  :root[data-theme="dark"]{
-    --bg: #0B0C14;
-    --panel: #171927;
-    --text: #F1F0FF;
-    --text2: #9AA0C0;
-    --border: #2E3050;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
   body{
-    font-family: 'Barlow', Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    transition: background .25s ease, color .25s ease;
+    font-family:'Barlow',Arial,sans-serif; background:linear-gradient(165deg,#06070A 0%,#06038D 140%); min-height:100vh; color:#171433;
   }
-  header{
-    background: var(--panel);
-    border-bottom: 3px solid var(--blue);
-    padding: 18px 24px;
-    display:flex;
-    align-items:center;
-    gap:14px;
-    transition: background .25s ease;
-  }
-  header .trailer-icon{ width:48px; height:48px; flex-shrink:0; }
-  header .brand-text h1{
-    font-family: 'Unbounded', Arial, sans-serif;
-    font-weight:800;
-    font-size: 26px;
-    letter-spacing: -.5px;
-    /* Tornasol: mismo shimmer de degradado que el titulo del hero en thetryla.com */
-    background: linear-gradient(90deg, var(--blue) 0%, var(--dark) 45%, var(--blue) 100%);
-    background-size: 200% 100%;
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    animation: trylaShimmer 5s ease-in-out infinite;
-  }
-  :root[data-theme="dark"] header .brand-text h1{
-    background: linear-gradient(90deg, var(--accent-light,#C9C6FF) 0%, #fff 45%, var(--accent-light,#C9C6FF) 100%);
-    background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  @keyframes trylaShimmer{ 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-  @media (prefers-reduced-motion: reduce){ header .brand-text h1{ animation:none; } }
-  header .brand-text p{
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    letter-spacing: 6px;
-    color: var(--blue);
-    font-weight: 700;
-  }
-  header nav{ margin-left:auto; display:flex; align-items:center; gap:10px; }
-  header nav a{
-    color: var(--blue); font-weight:700; font-size:13px; text-decoration:none;
-    border: 2px solid var(--blue); border-radius:6px; padding:6px 12px;
-  }
-  header nav a:hover{ background: var(--blue); color:#fff; }
-  /* ===== Toggle coqueton: tema claro/oscuro ===== */
-  .theme-switch{
-    --w:56px; --h:28px; --pad:3px; --thumb:calc(var(--h) - var(--pad)*2);
-    border:none; padding:0; cursor:pointer; background:transparent; flex-shrink:0;
-  }
-  .theme-switch .ts-track{
-    position:relative; display:block; width:var(--w); height:var(--h); border-radius:999px;
-    background:linear-gradient(135deg,#FFC857,#FF9F5A);
-    box-shadow:inset 0 1px 3px rgba(0,0,0,.15), 0 2px 8px rgba(255,159,90,.35);
-    transition:background .4s ease, box-shadow .4s ease, filter .2s ease, transform .15s ease;
-  }
-  :root[data-theme="dark"] .theme-switch .ts-track{
-    background:linear-gradient(135deg,#3B36D6,#171933);
-    box-shadow:inset 0 1px 3px rgba(0,0,0,.4), 0 2px 10px rgba(91,84,255,.45);
-  }
-  .theme-switch .ts-thumb{
-    position:absolute; top:var(--pad); left:var(--pad); width:var(--thumb); height:var(--thumb);
-    border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.3);
-    transition:transform .45s cubic-bezier(.34,1.56,.64,1);
-  }
-  :root[data-theme="dark"] .theme-switch .ts-thumb{ transform:translateX(calc(var(--w) - var(--h))); }
-  .theme-switch .ts-icon{ position:absolute; top:50%; width:13px; height:13px; transform:translateY(-50%); transition:opacity .3s ease; }
-  .theme-switch .ts-sun{ left:6px; opacity:1; }
-  .theme-switch .ts-moon{ right:6px; opacity:.55; }
-  :root[data-theme="dark"] .theme-switch .ts-sun{ opacity:.45; }
-  :root[data-theme="dark"] .theme-switch .ts-moon{ opacity:1; }
-  .theme-switch:hover .ts-track{ filter:brightness(1.08); }
-  .theme-switch:active .ts-track{ transform:scale(.94); }
+  .top{ display:flex; align-items:center; justify-content:space-between; max-width:720px; margin:0 auto; padding:28px 20px 0; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .mark{ width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#5B54FF,#3B36D6);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .brand .word{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:16px; color:#fff; letter-spacing:-0.2px; }
+  .top a.site-link{ font:700 13px/1 Arial,sans-serif; color:#fff; text-decoration:none; border:1.5px solid rgba(255,255,255,.35); padding:9px 16px; border-radius:8px; }
 
-  /* ===== Toggle coqueton: idioma ES/EN ===== */
-  .visually-hidden{ position:absolute!important; width:1px;height:1px; padding:0;margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-  .lang-switch{
-    --w:76px; --h:30px; --pad:3px; --thumb:calc(var(--h) - var(--pad)*2);
-    border:none; padding:0; cursor:pointer; background:transparent; margin-top:4px;
-  }
-  .lang-switch .ls-track{
-    position:relative; display:block; width:var(--w); height:var(--h); border-radius:999px;
-    background:linear-gradient(135deg,var(--blue),var(--dark));
-    box-shadow:inset 0 1px 3px rgba(0,0,0,.2), 0 2px 8px rgba(91,84,255,.35);
-    transition:filter .2s ease, transform .15s ease;
-  }
-  .lang-switch .ls-label{
-    position:absolute; top:50%; transform:translateY(-50%);
-    font:800 10.5px 'Barlow',Arial,sans-serif; color:rgba(255,255,255,.6); letter-spacing:.5px;
-    transition:color .3s ease;
-  }
-  .lang-switch .ls-es{ left:10px; }
-  .lang-switch .ls-en{ right:9px; }
-  .lang-switch[aria-checked="false"] .ls-es{ color:#fff; }
-  .lang-switch[aria-checked="true"] .ls-en{ color:#fff; }
-  .lang-switch .ls-thumb{
-    position:absolute; top:var(--pad); left:var(--pad);
-    width:calc(var(--w)/2 - var(--pad)); height:var(--thumb);
-    border-radius:999px; background:#fff; color:var(--blue);
-    display:flex; align-items:center; justify-content:center;
-    font:800 9.5px 'Barlow',Arial,sans-serif; letter-spacing:.5px;
-    box-shadow:0 2px 5px rgba(0,0,0,.25);
-    transition:transform .45s cubic-bezier(.34,1.56,.64,1);
-  }
-  .lang-switch[aria-checked="true"] .ls-thumb{ transform:translateX(calc(var(--w)/2 - var(--pad))); }
-  .lang-switch:hover .ls-track{ filter:brightness(1.12); }
-  .lang-switch:active .ls-track{ transform:scale(.95); }
+  /* ---- landing (no token) ---- */
+  .landing{ max-width:560px; margin:0 auto; padding:70px 20px 90px; text-align:center; }
+  .landing h1{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:clamp(26px,5vw,36px); color:#fff; line-height:1.15; margin:0 0 16px; }
+  .landing p{ font-size:15px; color:#C9C6FF; line-height:1.6; margin:0 0 30px; }
+  .landing .actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .landing .btn{ font:700 14px/1 Arial,sans-serif; padding:13px 22px; border-radius:9px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+  .landing .btn.primary{ background:#25D366; color:#06070A; }
+  .landing .btn.outline{ background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.35); }
+  .landing .fine{ margin-top:40px; font-size:12px; color:#7c76a8; }
 
-  main{ max-width: 1300px; margin: 0 auto; padding: 24px; }
-
-  /* ===== Tabs ===== */
-  .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
-  .tab-btn{
-    border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
-    padding: 10px 18px; border-radius:999px; cursor:pointer; font-size:13px;
+  /* ---- portal (Web Builder self-service) ---- */
+  .pv-wrap{ max-width:720px; margin:0 auto; padding:26px 16px 80px; }
+  .pv-card{ background:#fff; border-radius:12px; padding:30px 34px; margin-bottom:18px; }
+  .pv-card h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:15px; color:#06038D; margin:0 0 4px; }
+  .pv-card .pv-hint{ font-size:12px; color:#7c8aa6; margin-bottom:16px; }
+  .pv-field{ margin-bottom:14px; }
+  .pv-field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#5b6b8c; text-transform:uppercase; margin-bottom:5px; }
+  .pv-field input[type=text], .pv-field input[type=email], .pv-field textarea{
+    width:100%; border:1.5px solid #D6D3FF; border-radius:8px; padding:10px 12px; font:13px/1.4 Arial,sans-serif; color:#171433; background:#F8F7FF;
   }
-  .tab-btn.active, .tab-btn:hover{ background:var(--blue); color:#fff; }
-  .tab-panel{ display:none; }
-  .tab-panel.active{ display:block; }
-
-  .layout{ display:grid; grid-template-columns: 1fr 1.3fr; gap:20px; }
-  .layout > *{ min-width:0; } /* evita que un hijo ancho (ej. tabla) fuerce el grid a desbordarse */
-  @media (max-width: 1000px){ .layout{ grid-template-columns: 1fr; } }
-
-  .panel{
-    background:var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
-    margin-bottom: 20px; transition: background .25s ease, border-color .25s ease;
-  }
-  .panel h2{
-    font-size: 14px; letter-spacing:1px; color:var(--blue); margin-bottom: 10px;
-    text-transform: uppercase;
-  }
-  .panel .hint{ font-size:11.5px; color:var(--text2); margin-top:-4px; margin-bottom:10px; }
-
-  .catalog-cat{ margin-bottom: 14px; }
-  .catalog-cat h3{
-    font-size:12px; color:var(--dark); background:var(--light);
-    padding:6px 10px; border-radius:6px; margin-bottom:6px;
-  }
-  .catalog-item{
-    display:flex; align-items:center; gap:8px; padding: 4px 6px; font-size:12.5px;
-    border-bottom: 1px solid var(--border); color:var(--text);
-  }
-  .catalog-item .name{ flex:1; }
-  .catalog-item input.price{
-    width: 90px; padding:4px 6px; border:1px solid var(--border); border-radius:4px;
-    text-align:right; font-size:12.5px; background:var(--panel); color:var(--text);
-  }
-  .catalog-item button{
-    background: var(--blue); color:#fff; border:none; border-radius:4px;
-    width:26px; height:26px; font-size:16px; cursor:pointer; line-height:1;
-  }
-  .catalog-item button:hover{ background: var(--dark); }
-
-  .field{ margin-bottom:10px; }
-  .field label{ display:block; font-size:11px; color:var(--text2); letter-spacing:1px; margin-bottom:3px; text-transform:uppercase; }
-  .field input, .field textarea, .field select{
-    width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:13px;
-    font-family: Arial, sans-serif; background:var(--panel); color:var(--text);
-  }
-  .field-row{ display:flex; gap:10px; }
-  .field-row .field{ flex:1; }
-
-  table.builder{ width:100%; border-collapse:collapse; margin: 10px 0; }
-  table.builder th{
-    background: var(--dark); color:#fff; text-align:left; padding:6px 8px; font-size:11px; letter-spacing:0.5px;
-  }
-  table.builder td{ padding:6px 8px; border-bottom: 1px solid var(--border); font-size:12.5px; color:var(--text); }
-  table.builder td.num, table.builder th.num{ text-align:right; }
-  table.builder th.drag, table.builder td.drag-handle{ width:26px; text-align:center; }
-  table.builder td.drag-handle{ cursor: grab; color:var(--text2); font-size:14px; user-select:none; }
-  table.builder tr.dragging{ opacity:0.4; }
-  table.builder tr.drag-over{ border-top: 2px solid var(--blue); }
-  table.builder input.line-price{
-    width: 90px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; text-align:right;
-    background:var(--panel); color:var(--text);
-  }
-  table.builder input.line-desc{ width:100%; border:1px solid transparent; padding:4px 6px; border-radius:4px; background:var(--panel); color:var(--text); }
-  table.builder input.line-desc:focus{ border-color: var(--border); }
-  table.builder button.remove{
-    background:var(--panel); color:#c0392b; border:1px solid #c0392b; border-radius:4px;
-    width:24px; height:24px; cursor:pointer; line-height:1;
-  }
-
-  .totals{ margin-top: 6px; }
-  .totals .row{ display:flex; justify-content:space-between; padding:4px 0; font-size:13px; }
-  .totals .row.total{ font-weight:800; font-size:16px; border-top:2px solid var(--dark); margin-top:4px; padding-top:8px; }
-
-  .actions{ margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; }
-  .actions button{
-    border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
-    padding: 10px 16px; border-radius:6px; cursor:pointer; font-size:13.5px;
-  }
-  .actions button.primary{
-    background:linear-gradient(90deg,var(--blue),var(--dark) 50%,var(--blue));
-    background-size:200% 100%; color:#fff; border-color:transparent;
-    animation: trylaShimmer 6s ease-in-out infinite;
-  }
-  @media (prefers-reduced-motion: reduce){ .actions button.primary{ animation:none; } }
-  .actions button:hover{ background:var(--dark); color:#fff; border-color:var(--dark); }
-  .actions button.danger{ border-color:#c0392b; color:#c0392b; }
-  .actions button.danger:hover{ background:#c0392b; color:#fff; border-color:#c0392b; }
-
-  .btn-small{
-    border: 1px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
-    padding: 6px 12px; border-radius:6px; cursor:pointer; font-size:12.5px;
-  }
-  .btn-small:hover{ background:var(--blue); color:#fff; }
-
-  /* Envuelve tablas anchas para que hagan scroll horizontal en vez de romper el layout en movil */
-  .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  @media(max-width:780px){ .table-scroll table{ min-width:620px; } }
-
-  /* ===== Location Intelligence (TrylApp) ===== */
-  .li-result-layout{ display:grid; grid-template-columns:220px 1fr; gap:20px; }
-  @media(max-width:700px){ .li-result-layout{ grid-template-columns:1fr; } }
-  .li-score-card{
-    background:linear-gradient(160deg, var(--dark) 0%, #3B36D6 100%); border-radius:12px;
-    padding:20px; color:#fff; display:flex; flex-direction:column; justify-content:center;
-  }
-  .li-score-label{ font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--silver); font-weight:700; }
-  .li-score-num{ font-family:'Sora',Arial,sans-serif; font-size:40px; font-weight:700; margin:6px 0 2px; line-height:1; }
-  .li-score-sub{ font-size:12px; color:rgba(255,255,255,.8); }
-  .li-metrics{ display:flex; flex-direction:column; gap:12px; justify-content:center; }
-  .li-metric-head{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--dark); margin-bottom:4px; }
-  .li-metric-head b{ color:var(--blue); }
-  .li-bar{ height:8px; border-radius:999px; background:var(--light); overflow:hidden; }
-  .li-bar span{ display:block; height:100%; background:linear-gradient(90deg, var(--blue), #8B85FF); border-radius:999px; transition:width .5s cubic-bezier(.2,.7,.2,1); }
-  .li-insights{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
-  .li-insight{ background:var(--light); border-left:3px solid var(--blue); border-radius:6px; padding:8px 12px; font-size:12.5px; color:var(--dark); }
-
-  /* ===== Resumen / dashboard ===== */
-  .dash-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px; }
-  .dash-card{ background:var(--light); border:1px solid var(--silver); border-radius:8px; padding:14px 16px; }
-  .dash-card .n{ font-size:26px; font-weight:800; color:var(--dark); font-variant-numeric:tabular-nums; }
-  .dash-card .l{ font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
-  .dash-card.accent{ background:var(--dark); border-color:var(--dark); }
-  .dash-card.accent .n{ color:#fff; }
-  .dash-card.accent .l{ color:var(--silver); }
-
-  /* ===== CRM / quotes tables ===== */
-  table.crm{ width:100%; border-collapse:collapse; }
-  table.crm th{
-    background: var(--dark); color:#fff; text-align:left; padding:8px 10px; font-size:11px; letter-spacing:0.5px;
-  }
-  table.crm td{ padding:7px 10px; border-bottom:1px solid var(--silver); font-size:12.5px; vertical-align: middle; }
-  table.crm select{ padding:4px 6px; border:1px solid var(--silver); border-radius:4px; font-size:12px; }
-  table.crm .actions-cell{ display:flex; gap:6px; flex-wrap:wrap; }
-  .status-pill{
-    display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;
-  }
-  .status-Lead{ background:#FEF3D6; color:#9a6b00; }
-  .status-Cotizado{ background:#DCEBFF; color:var(--blue); }
-  .status-Aceptado{ background:#DDF4E4; color:#1e7a3c; }
-  .status-Perdido{ background:#FBE1E1; color:#c0392b; }
-  .status-Borrador{ background:#EEF3FC; color:#7c8aa6; }
-  .status-Enviada{ background:#DCEBFF; color:var(--blue); }
-  .status-Rechazada{ background:#FBE1E1; color:#c0392b; }
-
-  #addCustomLine{ margin-top:6px; }
-
-  /* ===== Documento de cotizacion (preview / impresion) ===== */
-  #previewWrap{ display:none; margin-top:20px; }
-  #previewWrap.show{ display:block; }
-  .preview-actions{ max-width:850px; margin:0 auto 10px; text-align:right; }
-  #previewDoc{
-    background:#fff; border:1px solid var(--silver); border-radius:10px;
-    padding: 40px 50px; font-size:13px; color:var(--dark); max-width: 850px; margin: 0 auto;
-  }
-  .doc-header{
-    display:flex; align-items:center; justify-content:center; gap:18px;
-    border-bottom:1px solid var(--silver); padding-bottom:14px; margin-bottom:14px;
-  }
-  .doc-header img{ width:64px; height:64px; }
-  .doc-header h1{
-    font-family: 'Unbounded', Arial, sans-serif; font-weight:800; font-size:40px; letter-spacing:-1px; color:var(--dark);
-  }
-  .doc-title{ text-align:center; font-size:18px; color:var(--blue); font-weight:700; margin-bottom:18px; letter-spacing:1px; }
-  .doc-meta{
-    display:flex; justify-content:space-between; border-top:2px solid var(--dark); border-bottom:1px solid var(--silver);
-    padding:12px 0; margin-bottom:18px;
-  }
-  .doc-meta .label{ font-size:11px; color:#7c8aa6; letter-spacing:1px; }
-  .doc-meta .value{ font-size:13px; font-weight:700; color:var(--dark); }
-  .doc-section{
-    font-size:13px; letter-spacing:1px; color:var(--dark); border-bottom:1px solid var(--silver);
-    padding-bottom:6px; margin:22px 0 10px; text-transform:uppercase; font-weight:700;
-  }
-  table.doc-client{ width:100%; border-collapse:collapse; }
-  table.doc-client td{ background:var(--light); padding:8px 12px; font-size:13px; }
-  table.doc-client td.label{ color:#7c8aa6; font-size:11px; letter-spacing:1px; width:160px; font-weight:700; vertical-align:top; }
-  table.doc-product{ width:100%; border-collapse:collapse; margin-top:6px; }
-  table.doc-product th{ background:var(--dark); color:#fff; text-align:left; padding:8px 12px; font-size:11px; letter-spacing:1px; }
-  table.doc-product th.num, table.doc-product td.num{ text-align:right; }
-  table.doc-product td{ padding:8px 12px; border-bottom:1px solid var(--silver); font-size:13px; }
-  .inc-list{ font-size:10px; color:var(--text2); margin-top:4px; line-height:1.5; }
-  ul.doc-list{ list-style:none; padding-left:4px; }
-  ul.doc-list li{ font-size:12.5px; padding:2px 0 2px 14px; text-indent:-14px; }
-  ul.doc-list li::before{ content:"\2022"; color:var(--blue); font-weight:700; display:inline-block; width:14px; text-indent:0; }
-  table.doc-pricing{ width:100%; margin-top:8px; border-collapse:collapse; }
-  table.doc-pricing td{ padding:6px 12px; font-size:13px; text-align:right; }
-  table.doc-pricing td.label{ text-align:right; color:#5b6b8c; width:70%; }
-  table.doc-pricing tr.total td{ font-weight:800; font-size:15px; color:var(--dark); border-top:2px solid var(--dark); background:var(--light); }
-  .doc-note{ background:var(--light); border-left:4px solid var(--dark); padding:10px 14px; margin:12px 0; font-size:12.5px; }
-  .doc-note b{ display:block; margin-bottom:4px; color:var(--dark); }
-  .doc-signatures{ display:flex; justify-content:space-between; margin-top:60px; }
-  .doc-sig{ width:45%; border-top:1px solid var(--dark); padding-top:6px; font-size:11px; color:#7c8aa6; text-align:center; }
-  .doc-footer{ text-align:center; padding-top:24px; margin-top:30px; border-top:1px solid var(--silver); font-size:11px; color:#5b6b8c; }
-  .doc-footer b{ color:var(--dark); }
-
-  @media print{
-    *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
-    header, .tabs, .layout, .actions, .panel, footer, #novaCloudChip, .preview-actions{ display:none !important; }
-    #previewWrap{ display:block !important; margin:0; }
-    #previewDoc{ border:none; padding:0; max-width:none; }
-    body{ background:#fff; }
-    main{ padding:0; max-width:none; }
-  }
-
-  footer{
-    text-align:center; padding: 24px; font-size:12px; color:#5b6b8c;
-    border-top:1px solid var(--silver); margin-top: 24px;
-  }
-  footer b{ color:var(--dark); }
-
-  @media (max-width: 600px){
-    main{ padding:14px; }
-    header{ padding:10px 14px; flex-wrap:wrap; }
-    header .brand-text h1{ font-size:22px; letter-spacing:2px; }
-    header .brand-text p{ font-size:9px; letter-spacing:2.5px; white-space:nowrap; }
-    /* En movil, "Cotizador" en el nav es redundante con la pestana del mismo nombre justo debajo */
-    header nav a[href="tryla-app.html"]{ display:none; }
-    header nav a{ font-size:12px; padding:5px 10px; }
-    .field-row{ flex-wrap:wrap; }
-    .field-row .field{ min-width:130px; flex:1 1 130px; }
-    /* Evita que Safari en iPhone haga zoom automatico al enfocar un input */
-    .field input, .field textarea, .field select,
-    .catalog-item input.price, table.builder input.line-price, table.builder input.line-desc,
-    table.crm select{ font-size:16px; }
-
-    /* Barra de pestanas: una sola fila con scroll horizontal, como un tab bar nativo */
-    .tabs{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
-      margin-left:-14px; margin-right:-14px; padding:0 14px 6px; gap:6px; }
-    .tabs::-webkit-scrollbar{ display:none; }
-    .tab-btn{ flex-shrink:0; padding:8px 12px; font-size:12px; }
-
-    /* Texto general un poco mas chico en movil, sin bajar de lo legible */
-    .panel h2{ font-size:12.5px; }
-    .panel .hint{ font-size:11px; }
-    .field label{ font-size:10px; }
-    .dash-card .n{ font-size:22px; }
-
-    /* Objetivos tactiles mas grandes (min. ~40px) para dedos en iOS/Android */
-    .catalog-item{ padding:7px 4px; gap:10px; }
-    .catalog-item .name{ font-size:12.5px; }
-    .catalog-item button{ width:34px; height:34px; font-size:18px; flex-shrink:0; }
-    .catalog-item input.price{ width:72px; padding:8px 6px; }
-    table.builder button.remove{ width:32px; height:32px; font-size:14px; }
-    table.builder td, table.builder th{ padding:7px 5px; font-size:12px; }
-    .actions button{ padding:11px 15px; font-size:12.5px; }
-
-    /* Tablas tipo CRM (clientes, cotizaciones, invoices, financiamiento): letra mas chica
-       y botones de accion en cuadricula de 2 columnas, no apilados uno por fila */
-    table.crm th{ font-size:10px; padding:6px 8px; }
-    table.crm td{ font-size:11.5px; padding:6px 8px; }
-    .status-pill{ font-size:10px; padding:2px 6px; }
-    table.crm .actions-cell{ flex-wrap:wrap; gap:4px; }
-    table.crm .actions-cell button, table.crm .actions-cell .btn-small{
-      flex:0 0 auto; width:68px; padding:5px 3px; font-size:10px; text-align:center; white-space:normal; line-height:1.2;
-    }
-    .table-scroll table{ min-width:560px; }
+  .pv-field input[type=file]{ font-size:12.5px; }
+  .pv-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .pv-row .pv-field{ flex:1; min-width:180px; }
+  .pv-thumb{ display:inline-flex; align-items:center; gap:8px; margin-top:8px; font-size:11.5px; color:#5b6b8c; }
+  .pv-thumb img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #D6D3FF; }
+  .pv-gallery-preview{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .pv-gallery-preview img{ width:56px; height:56px; object-fit:cover; border-radius:6px; border:1px solid #D6D3FF; }
+  .pv-menu-row{ display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+  .pv-menu-row input{ flex:1; }
+  .pv-menu-row input.pv-menu-price{ flex:0 0 90px; }
+  .pv-menu-row button{ flex:0 0 auto; background:none; border:none; color:#C0392B; font-size:18px; cursor:pointer; line-height:1; padding:4px 8px; }
+  .pv-add-row{ font:700 12.5px Arial,sans-serif; color:#5B54FF; background:none; border:1.5px dashed #C9C6FF; border-radius:8px; padding:8px 14px; cursor:pointer; }
+  .pv-publish{ display:flex; align-items:center; gap:10px; background:#F1F0FF; border-radius:8px; padding:12px 14px; margin-top:6px; }
+  .pv-publish label{ font-size:13px; font-weight:700; color:#06038D; }
+  .pv-save-row{ display:flex; align-items:center; gap:14px; margin-top:8px; flex-wrap:wrap; }
+  .pv-btn{ font:700 13px Arial,sans-serif; padding:11px 20px; border-radius:8px; cursor:pointer; border:none; background:#5B54FF; color:#fff; }
+  .pv-msg{ font-size:12.5px; color:#1CAD5A; font-weight:700; }
+  .pv-msg.err{ color:#C0392B; }
+  .pv-live-link{ font-size:12.5px; color:#5B54FF; }
+  .pv-loading, .pv-error{ color:#C9C6FF; text-align:center; padding:80px 20px; font-size:14px; }
+  @media(max-width:560px){
+    .pv-card{ padding:22px 18px; }
+    .pv-menu-row{ flex-wrap:wrap; }
+    .pv-menu-row input, .pv-menu-row input.pv-menu-price{ flex:1 1 100%; }
+    .pv-menu-row button{ margin-left:auto; }
   }
 </style>
-<script>
-  // Aplica el tema guardado antes de pintar, para evitar parpadeo. Claro es el primario/por defecto.
-  (function(){
-    try{
-      var saved = localStorage.getItem("trylaTheme");
-      if(saved === "dark") document.documentElement.setAttribute("data-theme","dark");
-    }catch(e){}
-  })();
-</script>
 </head>
 <body>
 
-<header>
-  <div class="trailer-icon" style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#5B54FF,#3B36D6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-    <svg viewBox="0 0 120 120" width="46" height="46">
-      <polygon points="21.6,25.8 98.3,25.8 106.9,45.0 30.2,45.0" fill="#fff"/>
-      <polygon points="57.9,45.0 79.2,45.0 100.5,94.2 79.2,94.2" fill="#fff"/>
-    </svg>
+<div class="top">
+  <div class="brand">
+    <div class="mark">
+      <svg viewBox="0 0 120 120" width="20" height="20">
+        <polygon points="21.6,25.8 98.3,25.8 106.9,45.0 30.2,45.0" fill="#fff"/>
+        <polygon points="57.9,45.0 79.2,45.0 100.5,94.2 79.2,94.2" fill="#fff"/>
+      </svg>
+    </div>
+    <span class="word">TrylApp</span>
   </div>
-  <div class="brand-text">
-    <h1 style="font-family:'Unbounded',Arial,sans-serif;">TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
-    <p>T R Y L&nbsp;A P P &nbsp;—&nbsp; C R M</p>
-  </div>
-  <nav>
-    <a href="https://thetryla.com" target="_blank" rel="noopener">Sitio</a>
-    <a href="tryla-app.html" class="active-link">TrylApp</a>
-    <button id="themeToggle" class="theme-switch" type="button" role="switch" aria-checked="false" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema claro/oscuro">
-      <span class="ts-track">
-        <svg class="ts-icon ts-sun" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-        <svg class="ts-icon ts-moon" viewBox="0 0 24 24" fill="#fff"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
-        <span class="ts-thumb"></span>
-      </span>
-    </button>
-  </nav>
-</header>
+  <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener">thetryla.com</a>
+</div>
 
-<main>
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="quote">Cotizador</button>
-    <button class="tab-btn" data-tab="clients">Clientes (CRM)</button>
-    <button class="tab-btn" data-tab="quotes">Cotizaciones guardadas</button>
-    <button class="tab-btn" data-tab="intel">Location Intelligence</button>
-    <button class="tab-btn" data-tab="finance">Financiamiento</button>
-    <button class="tab-btn" data-tab="invoices">Invoices</button>
-    <button class="tab-btn" data-tab="sites">Sitios Web</button>
-    <button class="tab-btn" data-tab="dashboard">Resumen</button>
-  </div>
-
-  <!-- ===================== TAB: COTIZADOR ===================== -->
-  <div class="tab-panel active" id="tab-quote">
-
-    <div class="panel">
-      <h2>Cotizacion rapida</h2>
-      <div class="hint">Escribe el nombre de un componente (te sugiere del catalogo mientras escribes) y agregalo con su precio en un clic. Si no existe, se agrega como linea nueva.</div>
-      <div class="field-row">
-        <div class="field" style="flex:2;">
-          <label>Componente</label>
-          <input id="quickAddInput" list="catalogList" placeholder="Ej. Freidora doble canasta 60 lb">
-          <datalist id="catalogList"></datalist>
-        </div>
-        <div class="field" style="max-width:130px;">
-          <label>Precio</label>
-          <input id="quickAddPrice" type="number" min="0" step="10" value="0">
-        </div>
-        <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
-          <button id="quickAddBtn" type="button" class="primary" style="width:100%; border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:13px;">+ Agregar</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="layout">
-      <div class="panel">
-        <h2>Catalogo de componentes</h2>
-        <div class="hint">El catalogo se muestra en el idioma seleccionado en "Idioma de la cotizacion". Cambialo a English y los equipos se agregan en ingles.</div>
-        <div id="catalog"></div>
-      </div>
-
-      <div>
-        <div class="panel">
-          <h2>Datos de la cotizacion</h2>
-          <div class="field-row">
-            <div class="field">
-              <label>Cliente (CRM)</label>
-              <select id="fClientSelect">
-                <option value="">-- nuevo cliente --</option>
-              </select>
-            </div>
-            <div class="field"><label>No. de cotizacion</label><input id="fNumero" type="text" placeholder="NFT-2024-003"></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Cliente</label><input id="fCliente" type="text" placeholder="Nombre del cliente"></div>
-            <div class="field"><label>Telefono / Email</label><input id="fContacto" type="text" placeholder="Tel. o correo"></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Entrega (ciudad, estado)</label><input id="fEntrega" type="text" placeholder="Houston, Texas"></div>
-            <div class="field"><label>Fecha</label><input id="fFecha" type="date"></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Garantia</label><input id="fGarantia" type="text" value="1 Año — Tryla"></div>
-          </div>
-          <div class="field-row">
-            <div class="field" style="max-width:220px;">
-              <label>Idioma de la cotizacion</label>
-              <button type="button" id="langToggle" class="lang-switch" role="switch" aria-checked="false" aria-label="Cambiar idioma de la cotizacion">
-                <span class="ls-track">
-                  <span class="ls-label ls-es">ES</span>
-                  <span class="ls-label ls-en">EN</span>
-                  <span class="ls-thumb" id="langThumb">ES</span>
-                </span>
-              </button>
-              <select id="fIdioma" class="visually-hidden" aria-hidden="true" tabindex="-1">
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-          </div>
-
-          <h2 style="margin-top:14px;">Componentes de la cotizacion</h2>
-          <div class="hint">Arrastra el icono &#x2807; para reordenar los componentes.</div>
-          <div class="table-scroll">
-            <table class="builder">
-              <thead>
-                <tr><th class="drag"></th><th>Descripcion</th><th class="num">Precio</th><th></th></tr>
-              </thead>
-              <tbody id="lineItems"></tbody>
-            </table>
-          </div>
-          <button id="addCustomLine" type="button" class="btn-small">+ Agregar linea personalizada</button>
-
-          <div class="totals">
-            <div class="row total"><span>Total</span><span id="tSubtotal">$0.00</span></div>
-          </div>
-          <div class="hint" style="margin-top:8px;">El financiamiento y los pagos/invoice de esta cotizacion se manejan en las pestañas <b>Financiamiento</b> e <b>Invoices</b> (despues de guardarla).</div>
-
-          <h2 style="margin-top:14px;">Notas / especificaciones adicionales (sin precio)</h2>
-          <div class="field-row">
-            <div class="field" style="flex:1;">
-              <label>Cargar specs de un tamano como lineas con precio</label>
-              <select id="fSizePreset">
-                <option value="">-- seleccionar tamano --</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>Una linea por nota/especificacion (se muestran sin precio en la cotizacion)</label>
-            <textarea id="fSpecs" rows="5" placeholder="Garantia de 1 año&#10;Entrega estimada en 8-10 semanas&#10;..."></textarea>
-          </div>
-
-          <div class="actions">
-            <button class="primary" id="btnPreview" type="button">Generar cotizacion</button>
-            <button id="btnPrint" type="button">Imprimir / Guardar PDF</button>
-            <button id="btnSave" type="button">Guardar cotizacion</button>
-            <button id="btnReset" type="button">Limpiar todo</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: CLIENTES (CRM) ===================== -->
-  <div class="tab-panel" id="tab-clients">
-    <div class="panel">
-      <h2>Nuevo cliente</h2>
-      <div class="field-row">
-        <div class="field"><label>Nombre</label><input id="cNombre" type="text" placeholder="Nombre del cliente"></div>
-        <div class="field"><label>Telefono / Email</label><input id="cContacto" type="text" placeholder="Tel. o correo"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Negocio</label><input id="cNegocio" type="text" placeholder="Ej. Tacos, Pizza, Mariscos..."></div>
-        <div class="field"><label>Ciudad / Estado</label><input id="cCiudad" type="text" placeholder="Houston, Texas"></div>
-        <div class="field">
-          <label>Estatus</label>
-          <select id="cEstatus">
-            <option>Lead</option>
-            <option>Cotizado</option>
-            <option>Aceptado</option>
-            <option>Perdido</option>
-          </select>
-        </div>
-      </div>
-      <div class="field"><label>Notas</label><textarea id="cNotas" rows="2" placeholder="Notas sobre el cliente, tamano de interes, etc."></textarea></div>
-      <div class="actions">
-        <button class="primary" id="btnAddClient" type="button">+ Agregar cliente</button>
-        <button id="btnCancelEditClient" type="button" style="display:none;">Cancelar edicion</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Clientes</h2>
-      <div class="field" style="max-width:320px;">
-        <input id="clientsSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad, contacto...">
-      </div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Nombre</th><th>Contacto</th><th>Negocio</th><th>Ciudad</th><th>Estatus</th><th>Notas</th><th>Cotizaciones</th><th></th></tr>
-          </thead>
-          <tbody id="clientsTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: COTIZACIONES GUARDADAS ===================== -->
-  <div class="tab-panel" id="tab-quotes">
-    <div class="panel">
-      <h2>Cotizaciones guardadas</h2>
-      <div class="field" style="max-width:320px;">
-        <input id="quotesSearch" type="text" placeholder="Buscar por cliente o numero...">
-      </div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>No.</th><th>Cliente</th><th>Fecha</th><th>Subtotal</th><th>Saldo</th><th>Estatus</th><th></th></tr>
-          </thead>
-          <tbody id="quotesTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: LOCATION INTELLIGENCE (TrylApp) ===================== -->
-  <div class="tab-panel" id="tab-intel">
-    <div class="panel">
-      <h2>Analizar una ubicaci&oacute;n</h2>
-      <div class="hint">Esta es una demo funcional: el score se calcula con una f&oacute;rmula ilustrativa a partir de la direcci&oacute;n y el tipo de cocina &mdash; todav&iacute;a no est&aacute; conectada a datos reales (censo, tr&aacute;fico, competencia). Cuando quieran pasar a producci&oacute;n, este mismo panel se conecta a APIs reales sin cambiar el resto de TrylApp.</div>
-      <div class="field-row" style="align-items:flex-end;">
-        <div class="field" style="flex:2;">
-          <label>Direcci&oacute;n o zona a evaluar</label>
-          <input id="liAddress" type="text" placeholder="Ej. 1200 Main St, Dallas, TX">
-        </div>
-        <div class="field" style="max-width:200px;">
-          <label>Tipo de cocina</label>
-          <select id="liCuisine">
-            <option value="Tacos / Mexicana">Tacos / Mexicana</option>
-            <option value="BBQ">BBQ</option>
-            <option value="Caf&eacute; / Postres">Caf&eacute; / Postres</option>
-            <option value="Pizza">Pizza</option>
-            <option value="Hamburguesas">Hamburguesas</option>
-            <option value="Asi&aacute;tica">Asi&aacute;tica</option>
-            <option value="Mariscos">Mariscos</option>
-            <option value="Vegana / Saludable">Vegana / Saludable</option>
-            <option value="Otro / General">Otro / General</option>
-          </select>
-        </div>
-        <div class="field" style="max-width:170px;">
-          <label>Cliente / lead (opcional)</label>
-          <input id="liClientName" type="text" placeholder="Nombre del cliente">
-        </div>
-        <div class="field" style="max-width:150px;">
-          <label>&nbsp;</label>
-          <button id="liAnalyzeBtn" type="button" class="primary" style="width:100%; border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:13px;">Analizar &rarr;</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel" id="liResultPanel" style="display:none;">
-      <div class="li-result-layout">
-        <div class="li-score-card">
-          <div class="li-score-label">Opportunity Score</div>
-          <div class="li-score-num" id="liScoreNum">&mdash;</div>
-          <div class="li-score-sub" id="liScoreSub">&mdash;</div>
-        </div>
-        <div class="li-metrics">
-          <div class="li-metric">
-            <div class="li-metric-head"><span>Tr&aacute;fico peatonal &amp; demanda</span><b id="liMetricTraffic">0</b></div>
-            <div class="li-bar"><span id="liBarTraffic" style="width:0%"></span></div>
-          </div>
-          <div class="li-metric">
-            <div class="li-metric-head"><span>Espacio vs. competencia</span><b id="liMetricComp">0</b></div>
-            <div class="li-bar"><span id="liBarComp" style="width:0%"></span></div>
-          </div>
-          <div class="li-metric">
-            <div class="li-metric-head"><span>Ajuste demogr&aacute;fico</span><b id="liMetricDemo">0</b></div>
-            <div class="li-bar"><span id="liBarDemo" style="width:0%"></span></div>
-          </div>
-          <div class="li-metric">
-            <div class="li-metric-head"><span>Brecha de cocina (gap)</span><b id="liMetricGap">0</b></div>
-            <div class="li-bar"><span id="liBarGap" style="width:0%"></span></div>
-          </div>
-        </div>
-      </div>
-      <div class="li-insights" id="liInsights"></div>
-      <div class="actions" style="margin-top:14px;">
-        <button class="primary" id="liSaveBtn" type="button">Guardar an&aacute;lisis</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>An&aacute;lisis guardados</h2>
-      <div class="hint">Historial local de ubicaciones evaluadas para leads y clientes.</div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Fecha</th><th>Cliente</th><th>Direcci&oacute;n</th><th>Cocina</th><th>Score</th><th></th></tr>
-          </thead>
-          <tbody id="liHistoryTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: FINANCIAMIENTO ===================== -->
-  <div class="tab-panel" id="tab-finance">
-    <div class="panel">
-      <h2>Crear / editar plan de financiamiento</h2>
-      <div class="hint">Financiamiento propio de Nova (no un tercero). Elige una cotizacion guardada y define su plan. Metodo add-on: el interes total se calcula sobre el capital y se reparte en partes iguales entre los meses del plazo.</div>
-      <div class="field">
-        <label>Cotizacion</label>
-        <select id="finQuoteSelect"><option value="">-- selecciona una cotizacion guardada --</option></select>
-      </div>
-      <div id="finControls" style="display:none;">
-        <div class="field-row" style="align-items:flex-end;">
-          <div class="field" style="max-width:160px;">
-            <label>Capital a financiar (USD)</label>
-            <input id="finPrincipal" type="number" min="0" step="50" value="0">
-          </div>
-          <div class="field" style="max-width:120px;">
-            <label>Tasa add-on (%)</label>
-            <input id="finTasa" type="number" min="0" step="0.5" value="0">
-          </div>
-          <div class="field" style="max-width:120px;">
-            <label>Plazo (meses)</label>
-            <input id="finPlazo" type="number" min="1" step="1" value="12">
-          </div>
-          <div class="field" style="max-width:150px;">
-            <label>&nbsp;</label>
-            <button id="finUseSaldoBtn" type="button" class="btn-small" style="width:100%;">&#8635; Usar saldo restante</button>
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; margin:2px 0 10px;">
-          <input id="finIncluirPdf" type="checkbox" style="width:auto;">
-          <label style="text-transform:none; font-size:12.5px; margin:0; letter-spacing:0; color:var(--dark); font-weight:normal;" for="finIncluirPdf">Incluir esta tabla de amortizacion (Exhibit C) en el PDF de la cotizacion</label>
-        </div>
-
-        <div id="finSummary" class="totals" style="display:none;">
-          <div class="row"><span>Pago mensual</span><span id="finPagoMensual">$0.00</span></div>
-          <div class="row"><span>Interes total</span><span id="finTotalIntereses">$0.00</span></div>
-          <div class="row total"><span>Total a pagar (financiado)</span><span id="finTotalPagar">$0.00</span></div>
-        </div>
-
-        <div id="finTableWrap" style="display:none; max-height:280px; overflow:auto; margin-top:6px; border:1px solid var(--silver); border-radius:8px;">
-          <table class="builder" id="finTable" style="margin:0;">
-            <thead><tr><th>Mes</th><th class="num">Pago</th><th class="num">Capital</th><th class="num">Interes</th><th class="num">Saldo restante</th></tr></thead>
-            <tbody id="finTableBody"></tbody>
-          </table>
-        </div>
-
-        <div class="actions" style="margin-top:10px;">
-          <button class="primary" id="finSaveBtn" type="button">Guardar plan</button>
-          <button id="finExhibitBtn" type="button">Vista previa Exhibit C</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Planes de financiamiento activos</h2>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Cliente</th><th>Cotizacion</th><th>Capital</th><th>Tasa / Plazo</th><th>Pago mensual</th><th>Total a pagar</th><th></th></tr>
-          </thead>
-          <tbody id="financeTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: INVOICES ===================== -->
-  <div class="tab-panel" id="tab-invoices">
-    <div class="panel">
-      <h2>Convertir cotizacion a invoice</h2>
-      <div class="hint">Una cotizacion NO se convierte en invoice automaticamente. Elige una cotizacion guardada (solo se muestran las que aun no tienen invoice) y conviertela, o registra directamente su primer pago para convertirla al instante.</div>
-      <div class="field-row" style="align-items:flex-end;">
-        <div class="field" style="flex:1;">
-          <label>Cotizacion (sin invoice todavia)</label>
-          <select id="invQuoteSelect"><option value="">-- selecciona una cotizacion --</option></select>
-        </div>
-        <div class="field" style="max-width:180px;">
-          <label>&nbsp;</label>
-          <button id="invConvertBtn" type="button" class="btn-small" style="width:100%;">Convertir a invoice</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel" id="invActivePanel" style="display:none;">
-      <h2>Pagos de la invoice</h2>
-      <div class="hint" id="invActiveLabel"></div>
-      <div class="field-row" style="align-items:flex-end;">
-        <div class="field" style="max-width:150px;">
-          <label>Fecha del pago</label>
-          <input id="payFecha" type="date">
-        </div>
-        <div class="field" style="max-width:130px;">
-          <label>Monto (USD)</label>
-          <input id="payMonto" type="number" min="0" step="50" value="0">
-        </div>
-        <div class="field" style="flex:1;">
-          <label>Concepto / metodo (opcional)</label>
-          <input id="payConcepto" type="text" placeholder="Ej. Abono en efectivo, transferencia...">
-        </div>
-        <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
-          <button id="payAddBtn" type="button" class="btn-small" style="width:100%;">+ Registrar pago</button>
-        </div>
-        <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
-          <button id="payCancelEditBtn" type="button" style="width:100%; display:none;">Cancelar edicion</button>
-        </div>
-      </div>
-
-      <div id="payTableWrap" class="table-scroll" style="display:none; margin-top:6px; border:1px solid var(--silver); border-radius:8px;">
-        <table class="builder" id="payTable" style="margin:0;">
-          <thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Monto</th><th></th></tr></thead>
-          <tbody id="payTableBody"></tbody>
-        </table>
-      </div>
-
-      <div class="totals" style="margin-top:8px;">
-        <div class="row"><span>Total de la venta</span><span id="payTotalVenta">$0.00</span></div>
-        <div class="row"><span>Total pagado (deposito + abonos)</span><span id="payTotalPagado">$0.00</span></div>
-        <div class="row total"><span>Saldo restante</span><span id="paySaldo">$0.00</span></div>
-      </div>
-
-      <div class="actions" style="margin-top:10px;">
-        <button class="primary" id="payInvoiceBtn" type="button">Generar invoice / estado de cuenta</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Invoices / saldos por cliente</h2>
-      <div class="hint">Solo cotizaciones ya convertidas a invoice.</div>
-      <div class="field" style="max-width:320px;">
-        <input id="invoicesSearch" type="text" placeholder="Buscar por cliente o numero...">
-      </div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Cliente</th><th>Cotizacion</th><th>Total venta</th><th>Pagado</th><th>Saldo</th><th></th></tr>
-          </thead>
-          <tbody id="invoicesTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: SITIOS WEB ===================== -->
-  <div class="tab-panel" id="tab-sites">
-    <div class="panel">
-      <h2 id="sitesFormTitle">Nuevo sitio web</h2>
-      <div class="hint">Cada restaurante obtiene su propio sitio en <code>subdominio.thetryla.com</code>, con sus fotos, menu y datos de contacto. Viene con el kit de fotos del trailer si aplica.</div>
-
-      <div class="field-row">
-        <div class="field"><label>Nombre del restaurante</label><input id="sName" type="text" placeholder="Tacos El Sol"></div>
-        <div class="field"><label>Subdominio</label><input id="sSubdomain" type="text" placeholder="tacos-el-sol"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Eslogan</label><input id="sTagline" type="text" placeholder="Los mejores tacos de la ciudad"></div>
-        <div class="field">
-          <label>Plantilla</label>
-          <select id="sTemplate">
-            <option value="kit-classic">Kit Classic (con fotos del trailer)</option>
-          </select>
-        </div>
-      </div>
-      <div class="field"><label>Descripcion</label><textarea id="sDescription" rows="2" placeholder="Cuentales de que se trata el restaurante..."></textarea></div>
-
-      <div class="field-row">
-        <div class="field">
-          <label>Logo</label>
-          <input id="sLogoFile" type="file" accept="image/*">
-          <div id="sLogoPreviewWrap" class="hint" style="display:none;">Logo actual: <a id="sLogoPreview" href="#" target="_blank">ver</a></div>
-        </div>
-        <div class="field">
-          <label>Foto principal (hero)</label>
-          <input id="sHeroFile" type="file" accept="image/*">
-          <div id="sHeroPreviewWrap" class="hint" style="display:none;">Foto actual: <a id="sHeroPreview" href="#" target="_blank">ver</a></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Galeria de fotos (puedes seleccionar varias)</label>
-        <input id="sGalleryFile" type="file" accept="image/*" multiple>
-        <div id="sGalleryPreview" class="hint"></div>
-      </div>
-
-      <h2 style="margin-top:18px;">Menu</h2>
-      <div id="sMenuRows"></div>
-      <div class="actions"><button id="btnAddMenuRow" type="button">+ Agregar platillo</button></div>
-
-      <h2 style="margin-top:18px;">Contacto</h2>
-      <div class="field-row">
-        <div class="field"><label>Telefono</label><input id="sPhone" type="text" placeholder="+1 (555) 123-4567"></div>
-        <div class="field"><label>Correo</label><input id="sEmail" type="email" placeholder="hola@restaurante.com"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Direccion / ubicacion</label><input id="sAddress" type="text" placeholder="Donde encuentran el trailer"></div>
-        <div class="field"><label>Horario</label><input id="sHours" type="text" placeholder="Lun-Sab 11am-8pm"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Instagram</label><input id="sInstagram" type="text" placeholder="@usuario"></div>
-        <div class="field"><label>Facebook</label><input id="sFacebook" type="text" placeholder="usuario o pagina"></div>
-        <div class="field"><label>TikTok</label><input id="sTiktok" type="text" placeholder="@usuario"></div>
-      </div>
-
-      <div class="field-row">
-        <div class="field" style="max-width:240px;">
-          <label><input id="sPublished" type="checkbox"> Publicado (visible al publico)</label>
-        </div>
-        <div class="field" style="max-width:240px;">
-          <label><input id="sKitIncluded" type="checkbox" checked> Incluye kit del trailer</label>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="primary" id="btnSaveSite" type="button">Guardar sitio</button>
-        <button id="btnCancelEditSite" type="button" style="display:none;">Cancelar edicion</button>
-      </div>
-      <div id="sitesFormMsg" class="hint"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Sitios</h2>
-      <div class="field" style="max-width:320px;">
-        <input id="sitesSearch" type="text" placeholder="Buscar por nombre o subdominio...">
-      </div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Restaurante</th><th>Subdominio</th><th>Plantilla</th><th>Estatus</th><th>Actualizado</th><th></th></tr>
-          </thead>
-          <tbody id="sitesTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== TAB: RESUMEN ===================== -->
-  <div class="tab-panel" id="tab-dashboard">
-    <div class="panel">
-      <h2>Pipeline y ventas</h2>
-      <div class="dash-grid">
-        <div class="dash-card">
-          <div class="n" id="dashPipeline">$0</div>
-          <div class="l">Pipeline (cotizaciones sin invoice)</div>
-        </div>
-        <div class="dash-card">
-          <div class="n" id="dashFacturado">$0</div>
-          <div class="l">Total facturado</div>
-        </div>
-        <div class="dash-card">
-          <div class="n" id="dashCobrado">$0</div>
-          <div class="l">Total cobrado</div>
-        </div>
-        <div class="dash-card accent">
-          <div class="n" id="dashPendiente">$0</div>
-          <div class="l">Saldo pendiente total</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Clientes por estatus</h2>
-      <div class="dash-grid" id="dashClientStatus"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Mayores saldos pendientes</h2>
-      <div class="hint">Los 5 invoices con mas saldo por cobrar.</div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Cliente</th><th>Cotizacion</th><th>Total venta</th><th>Pagado</th><th>Saldo</th></tr>
-          </thead>
-          <tbody id="dashTopBalances"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Actividad reciente</h2>
-      <div class="hint">Ultimas acciones registradas (quien y cuando).</div>
-      <div class="table-scroll">
-        <table class="crm">
-          <thead>
-            <tr><th>Fecha/hora</th><th>Quien</th><th>Accion</th></tr>
-          </thead>
-          <tbody id="activityTable"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Documento compartido (cotizacion / Exhibit C / invoice) -->
-  <div id="previewWrap">
-    <div class="preview-actions">
-      <button id="btnPrintDoc" type="button" class="btn-small">Imprimir / Guardar PDF</button>
-    </div>
-    <div id="previewDoc"></div>
-  </div>
-</main>
-
-<footer>
-  <b>Tryla</b> &middot; 1111 Ellenwood St, Dallas, TX 75217 &middot; Marcelo Ramos Schiaffino &middot; +1 (645) 235-3186 &middot; marcelo.ramos@thetryla.com
-</footer>
+<div id="pvRoot"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
-<script src="cloud-store.js"></script>
-<script src="sites-store.js"></script>
-<script src="shared-quotes-store.js"></script>
-<script src="client-portal-store.js"></script>
-<script src="sites-builder.js"></script>
-<script src="data/trailers.js"></script>
-<script src="data/components.js"></script>
-<script src="data/equipment-i18n.js"></script>
-<script src="tryla-app.js"></script>
-<script src="location-intel.js"></script>
+<script>
+(function () {
+  var qs = new URLSearchParams(location.search);
+  var token = qs.get("portal");
+  var root = document.getElementById("pvRoot");
+
+  if (!token) {
+    root.innerHTML =
+      '<div class="landing">' +
+        '<h1>Tu portal como cliente Tryla</h1>' +
+        '<p>Aqui edita tu propio sitio (fotos, menu, contacto) y proximamente vas a poder ver recomendaciones de ubicacion y tu guia de permisos. Accede con el link privado que te compartio tu asesor de Tryla.</p>' +
+        '<div class="actions">' +
+          '<a class="btn primary" href="https://wa.me/16452353186?text=Hola%2C%20soy%20cliente%20de%20Tryla%20y%20necesito%20mi%20link%20de%20acceso%20a%20TrylApp" target="_blank">WhatsApp con tu asesor</a>' +
+          '<a class="btn outline" href="tel:+16452353186">Llamar</a>' +
+        '</div>' +
+        '<div class="fine">&iquest;Ya te compartieron tu link? Abrelo directo, empieza con thetryla.app/?portal=</div>' +
+      '</div>';
+    return;
+  }
+
+  root.innerHTML = '<div class="pv-wrap"><div class="pv-loading">Cargando tu portal...</div></div>';
+  var mount = root.firstChild;
+
+  var SUPABASE_URL = "https://dcuescldzrgcppubcoxq.supabase.co";
+  var SUPABASE_ANON_KEY = "sb_publishable_Ov7JqL4vOjjfkwDDD2DySg_I7huP9FH";
+
+  if (typeof supabase === "undefined") {
+    mount.innerHTML = '<div class="pv-error">No se pudo cargar tu portal. Intenta de nuevo mas tarde.</div>';
+    return;
+  }
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function esc(s) {
+    return (s == null ? "" : String(s)).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function menuRowHtml(item) {
+    item = item || {};
+    return (
+      '<div class="pv-menu-row">' +
+      '<input type="text" class="pv-menu-name" placeholder="Platillo" value="' + esc(item.name) + '">' +
+      '<input type="text" class="pv-menu-price" placeholder="Precio" value="' + esc(item.price) + '">' +
+      '<input type="text" class="pv-menu-desc" placeholder="Descripcion (opcional)" value="' + esc(item.desc) + '">' +
+      '<button type="button" data-rm-row aria-label="Quitar">&times;</button>' +
+      "</div>"
+    );
+  }
+
+  function readMenuRows(el) {
+    var rows = [];
+    el.querySelectorAll(".pv-menu-row").forEach(function (row) {
+      var name = row.querySelector(".pv-menu-name").value.trim();
+      var price = row.querySelector(".pv-menu-price").value.trim();
+      var desc = row.querySelector(".pv-menu-desc").value.trim();
+      if (name || price || desc) rows.push({ name: name, price: price, desc: desc });
+    });
+    return rows;
+  }
+
+  function uploadPath(file) {
+    var ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    return token.slice(0, 10) + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+  }
+
+  async function uploadImage(file) {
+    var path = uploadPath(file);
+    var res = await sb.storage.from("site-images").upload(path, file, { upsert: true, cacheControl: "3600", contentType: file.type || undefined });
+    if (res.error) throw res.error;
+    return sb.storage.from("site-images").getPublicUrl(path).data.publicUrl;
+  }
+
+  function render(site) {
+    site = site || {};
+    var gallery = Array.isArray(site.gallery) ? site.gallery : [];
+    var menu = Array.isArray(site.menu) ? site.menu : [];
+
+    mount.innerHTML =
+      '<div class="pv-card">' +
+        "<h2>Bienvenido" + (site.restaurant_name ? ", " + esc(site.restaurant_name) : "") + "</h2>" +
+        '<div class="pv-hint">Este es tu sitio. Edita lo que quieras y da clic en Guardar — se actualiza al instante.' +
+        (site.subdomain ? ' Tu sitio: <a class="pv-live-link" href="https://' + esc(site.subdomain) + '.thetryla.com" target="_blank">' + esc(site.subdomain) + ".thetryla.com</a>" : "") +
+        "</div>" +
+        '<div class="pv-field"><label>Nombre del restaurante</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
+        '<div class="pv-field"><label>Eslogan</label><input type="text" id="pvTagline" value="' + esc(site.tagline) + '"></div>' +
+        '<div class="pv-field"><label>Descripcion</label><textarea id="pvDescription" rows="3">' + esc(site.description) + "</textarea></div>" +
+      "</div>" +
+
+      '<div class="pv-card">' +
+        "<h2>Fotos</h2>" +
+        '<div class="pv-field"><label>Logo</label><input type="file" id="pvLogoFile" accept="image/*">' +
+          (site.logo_url ? '<div class="pv-thumb"><img src="' + esc(site.logo_url) + '"> actual</div>' : "") +
+        "</div>" +
+        '<div class="pv-field"><label>Foto principal (hero)</label><input type="file" id="pvHeroFile" accept="image/*">' +
+          (site.hero_image_url ? '<div class="pv-thumb"><img src="' + esc(site.hero_image_url) + '"> actual</div>' : "") +
+        "</div>" +
+        '<div class="pv-field"><label>Galeria (puedes elegir varias)</label><input type="file" id="pvGalleryFile" accept="image/*" multiple>' +
+          (gallery.length ? '<div class="pv-gallery-preview">' + gallery.map(function (u) { return '<img src="' + esc(u) + '">'; }).join("") + "</div>" : "") +
+        "</div>" +
+      "</div>" +
+
+      '<div class="pv-card">' +
+        "<h2>Menu</h2>" +
+        '<div id="pvMenuRows">' + (menu.length ? menu.map(menuRowHtml).join("") : menuRowHtml()) + "</div>" +
+        '<button type="button" class="pv-add-row" id="pvAddMenuRow">+ Agregar platillo</button>' +
+      "</div>" +
+
+      '<div class="pv-card">' +
+        "<h2>Contacto</h2>" +
+        '<div class="pv-row">' +
+          '<div class="pv-field"><label>Telefono</label><input type="text" id="pvPhone" value="' + esc(site.phone) + '"></div>' +
+          '<div class="pv-field"><label>Correo</label><input type="email" id="pvEmail" value="' + esc(site.email) + '"></div>' +
+        "</div>" +
+        '<div class="pv-row">' +
+          '<div class="pv-field"><label>Direccion / ubicacion</label><input type="text" id="pvAddress" value="' + esc(site.address) + '"></div>' +
+          '<div class="pv-field"><label>Horario</label><input type="text" id="pvHours" value="' + esc(site.hours) + '"></div>' +
+        "</div>" +
+        '<div class="pv-row">' +
+          '<div class="pv-field"><label>Instagram</label><input type="text" id="pvInstagram" value="' + esc(site.instagram) + '"></div>' +
+          '<div class="pv-field"><label>Facebook</label><input type="text" id="pvFacebook" value="' + esc(site.facebook) + '"></div>' +
+          '<div class="pv-field"><label>TikTok</label><input type="text" id="pvTiktok" value="' + esc(site.tiktok) + '"></div>' +
+        "</div>" +
+      "</div>" +
+
+      '<div class="pv-card">' +
+        '<div class="pv-publish"><input type="checkbox" id="pvPublished"' + (site.published ? " checked" : "") + "> <label for=\"pvPublished\">Publicado (visible al publico)</label></div>" +
+        '<div class="pv-save-row">' +
+          '<button type="button" class="pv-btn" id="pvSaveBtn">Guardar cambios</button>' +
+          '<span class="pv-msg" id="pvMsg"></span>' +
+        "</div>" +
+      "</div>";
+
+    var newLogoUrl = site.logo_url || null;
+    var newHeroUrl = site.hero_image_url || null;
+    var newGallery = gallery.slice();
+
+    document.getElementById("pvAddMenuRow").addEventListener("click", function () {
+      document.getElementById("pvMenuRows").insertAdjacentHTML("beforeend", menuRowHtml());
+    });
+    document.getElementById("pvMenuRows").addEventListener("click", function (e) {
+      if (e.target.closest("[data-rm-row]")) e.target.closest(".pv-menu-row").remove();
+    });
+
+    document.getElementById("pvSaveBtn").addEventListener("click", async function () {
+      var btn = this;
+      var msg = document.getElementById("pvMsg");
+      btn.disabled = true;
+      msg.className = "pv-msg";
+      msg.textContent = "Guardando...";
+      try {
+        var logoFile = document.getElementById("pvLogoFile").files[0];
+        var heroFile = document.getElementById("pvHeroFile").files[0];
+        var galleryFiles = document.getElementById("pvGalleryFile").files;
+        if (logoFile) newLogoUrl = await uploadImage(logoFile);
+        if (heroFile) newHeroUrl = await uploadImage(heroFile);
+        if (galleryFiles && galleryFiles.length) {
+          for (var i = 0; i < galleryFiles.length; i++) newGallery.push(await uploadImage(galleryFiles[i]));
+        }
+        var payload = {
+          restaurant_name: document.getElementById("pvName").value.trim(),
+          tagline: document.getElementById("pvTagline").value.trim(),
+          description: document.getElementById("pvDescription").value.trim(),
+          logo_url: newLogoUrl,
+          hero_image_url: newHeroUrl,
+          gallery: newGallery,
+          menu: readMenuRows(document.getElementById("pvMenuRows")),
+          phone: document.getElementById("pvPhone").value.trim(),
+          email: document.getElementById("pvEmail").value.trim(),
+          address: document.getElementById("pvAddress").value.trim(),
+          hours: document.getElementById("pvHours").value.trim(),
+          instagram: document.getElementById("pvInstagram").value.trim(),
+          facebook: document.getElementById("pvFacebook").value.trim(),
+          tiktok: document.getElementById("pvTiktok").value.trim(),
+          published: document.getElementById("pvPublished").checked,
+        };
+        var res = await sb.rpc("save_site_by_portal_token", { p_token: token, p_site: payload });
+        if (res.error) throw res.error;
+        msg.textContent = "Guardado.";
+        render(res.data);
+      } catch (err) {
+        msg.className = "pv-msg err";
+        msg.textContent = "No se pudo guardar: " + (err.message || err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+
+  sb.rpc("get_site_by_portal_token", { p_token: token })
+    .then(function (res) {
+      if (res.error) throw res.error;
+      render(res.data);
+    })
+    .catch(function () {
+      mount.innerHTML = '<div class="pv-error">Este link de portal ya no es valido. Contacta a tu asesor de Tryla.</div>';
+    });
+})();
+</script>
 </body>
 </html>
