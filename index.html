@@ -268,7 +268,8 @@
       </div>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
-      <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener">Sitio</a>
+      <button type="button" class="site-link" id="navLangToggle" style="background:none; cursor:pointer;">EN</button>
+      <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener" id="navSiteLink">Sitio</a>
       <button type="button" class="site-link" id="navSignOut" style="display:none; background:none; cursor:pointer;">Salir</button>
     </div>
   </div>
@@ -294,6 +295,7 @@
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   var siteApi = null;
   var currentUserId = null;
+  var ordersChannel = null;
 
   document.getElementById("navSignOut").addEventListener("click", function () {
     if (siteApi && siteApi.signOut) siteApi.signOut();
@@ -305,26 +307,203 @@
     });
   }
 
-  var FEATURES = [
-    { icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>', title: "Location Intelligence", body: "Analiza cualquier direccion antes de estacionar tu trailer ahi — trafico, competencia y ajuste demografico." },
-    { icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>', title: "Web Builder", body: "Arma el sitio de tu restaurante — menu, fotos y contacto — sin saber programar." },
-    { icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>', title: "Checklist", body: "Los permisos exactos que necesitas segun tu condado y estado, antes de operar.", soon: true },
-    { icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>', title: "Chef Talent", body: "Conecta con cocineros y talento culinario disponible en tu zona.", soon: true },
-    { icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>', title: "Operator", body: "Recibe pedidos, conecta tu Stripe y usa Uber Eats o DoorDash junto con tu trailer." },
-  ];
+  // ---- Idioma (ES / EN) ----
+  var I18N = {
+    es: {
+      nav_site: "Sitio", nav_signout: "Salir",
+      landing_title: "Tu portal como cliente Tryla",
+      landing_sub: "Ubicacion, tu sitio, permisos, chef talent y la operacion de tu trailer — todo en un lugar.",
+      landing_whatsapp: "WhatsApp con tu asesor", landing_call: "Llamar",
+      landing_fine: "¿Ya te compartieron tu link? Abrelo directo, empieza con thetryla.app/?portal=",
+      features_tag: "Tu portal incluye",
+      feat_location_title: "Location Intelligence",
+      feat_location_body: "Analiza cualquier direccion antes de estacionar tu trailer ahi — trafico, competencia y ajuste demografico.",
+      feat_site_title: "Web Builder",
+      feat_site_body: "Arma el sitio de tu restaurante — menu, fotos y contacto — sin saber programar.",
+      feat_permits_title: "Checklist",
+      feat_permits_body: "Los permisos exactos que necesitas segun tu condado y estado, antes de operar.",
+      feat_chef_title: "Chef Talent",
+      feat_chef_body: "Conecta con cocineros y talento culinario disponible en tu zona.",
+      feat_operate_title: "Operator",
+      feat_operate_body: "Recibe pedidos, conecta tu Stripe y usa Uber Eats o DoorDash junto con tu trailer.",
+      feat_soon: "Proximamente",
+      auth_title_signin: "Entra a tu portal", auth_title_signup: "Crea tu cuenta",
+      auth_sub: "Ubicacion, tu sitio, permisos, chef talent y la operacion de tu trailer — todo en un lugar.",
+      auth_email: "Correo", auth_password: "Contraseña",
+      auth_btn_signin: "Entrar", auth_btn_signup: "Crear cuenta",
+      auth_loading_signin: "Entrando...", auth_loading_signup: "Creando...",
+      auth_toggle_to_signup: "¿Aún no tienes cuenta? ", auth_toggle_to_signup_link: "Créala aquí",
+      auth_toggle_to_signin: "¿Ya tienes cuenta? ", auth_toggle_to_signin_link: "Entra aquí",
+      auth_divider: "o continúa con",
+      auth_google: "Continuar con Google", auth_facebook: "Continuar con Facebook", auth_apple: "Continuar con Apple",
+      auth_fine_pre: "¿Prefieres hablar con alguien? ", auth_fine_link: "WhatsApp con tu asesor",
+      auth_err_missing: "Falta correo o contraseña.", auth_err_generic: "No se pudo continuar.",
+      auth_err_invalid_link: "Este link de portal ya no es válido. Inicia sesión o crea tu cuenta.",
+      auth_err_session: "Ocurrió un error. Intenta de nuevo.",
+      auth_check_email_title: "Revisa tu correo",
+      auth_check_email_body1: "Te mandamos un link para confirmar tu cuenta (", auth_check_email_body2: "). Ábrelo y regresa aquí.",
+      onboarding_title: "Crea tu restaurante",
+      onboarding_sub: "Dos datos y arrancamos — puedes cambiar todo despues desde Web Builder.",
+      onboarding_name: "Nombre del restaurante", onboarding_subdomain: "Subdominio (tu-sitio.thetryla.com)",
+      onboarding_create: "Crear", onboarding_creating: "Creando...",
+      onboarding_missing: "Faltan datos.", onboarding_dup: "Ese subdominio ya está en uso, prueba otro.",
+      tab_location: "Location Intelligence", tab_site: "Web Builder", tab_permits: "Checklist", tab_chef: "Chef Talent", tab_operate: "Operator",
+      li_card_title: "Analiza un lugar",
+      li_hint: "Estimado ilustrativo a partir de la dirección y el tipo de cocina — todavía no conectado a datos reales de tráfico o censo.",
+      li_address: "Dirección o zona", li_address_ph: "Ej. 1200 Main St, Dallas, TX",
+      li_cuisine: "Tipo de cocina", li_analyze: "Analizar →",
+      li_score_label: "Opportunity Score",
+      li_traffic: "Tráfico peatonal & demanda", li_space: "Espacio vs. competencia",
+      li_demo: "Ajuste demográfico", li_gap: "Brecha de cocina (gap)",
+      cuisines: ["Tacos / Mexicana", "BBQ", "Café / Postres", "Pizza", "Hamburguesas", "Asiática", "Mariscos", "Vegana / Saludable", "Otro / General"],
+      permits_body: "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.",
+      chef_body: "Conecta con cocineros y talento culinario para tu trailer. Estamos armando la red de chefs disponibles en tu zona.",
+      soon: "Próximamente",
+      site_welcome: "Bienvenido", site_hint: "Edita lo que quieras y da clic en Guardar — se actualiza al instante.", site_your_site: " Tu sitio: ",
+      site_name: "Nombre del restaurante", site_tagline: "Eslogan", site_description: "Descripción",
+      site_photos: "Fotos", site_logo: "Logo", site_hero: "Foto principal (hero)", site_gallery: "Galería (puedes elegir varias)", site_current: " actual",
+      site_menu: "Menú", site_add_dish: "+ Agregar platillo", site_dish_ph: "Platillo", site_price_ph: "Precio", site_desc_ph: "Descripción (opcional)", site_remove: "Quitar",
+      site_contact: "Contacto", site_phone: "Teléfono", site_email: "Correo", site_address: "Dirección / ubicación", site_hours: "Horario",
+      site_instagram: "Instagram", site_facebook: "Facebook", site_tiktok: "TikTok",
+      site_published: "Publicado (visible al público)", site_save: "Guardar cambios", site_saving: "Guardando...", site_saved: "Guardado.", site_save_error: "No se pudo guardar: ",
+      site_loading: "Cargando tu sitio...", loading: "Cargando...",
+      op_billing: "Cobros", op_stripe_title: "Cobra con tarjeta", op_stripe_body: "El dinero llega directo a tu cuenta — Tryla no lo retiene.",
+      op_connected: "✓ Conectado", op_connect: "Conectar", op_connecting: "Conectando...",
+      op_platforms_title: "Plataformas de delivery",
+      op_platforms_hint: "Da de alta tu trailer en cada una y usa su app oficial de pedidos junto con Tryla, en el mismo iPad o teléfono.",
+      op_ubereats_note: "Recibe pedidos en la app oficial Uber Eats Orders, en el mismo iPad o teléfono.",
+      op_doordash_note: "Da de alta tu trailer y recibe pedidos en la app oficial de DoorDash.",
+      op_grubhub_note: "Conecta tu trailer con Grubhub for Restaurants.",
+      op_orders_title: "Pedidos", op_orders_empty: "Sin pedidos por ahora. En cuanto entre uno, aparece aquí al instante.",
+      op_pickup: "🛍️ Recoger", op_delivery: "🛵 Entrega — ", op_note: "Nota: ", op_cancel: "Cancelar",
+      op_next_nuevo: "Empezar a preparar →", op_next_preparando: "Marcar listo →", op_next_listo: "Marcar entregado →",
+      status_nuevo: "Nuevo", status_preparando: "Preparando", status_listo: "Listo", status_completado: "Completado", status_cancelado: "Cancelado",
+      op_stripe_error: "No se pudo iniciar la conexión con Stripe: ", op_order_error: "No se pudo actualizar el pedido: ",
+      op_need_site: "Primero guarda tu sitio en Web Builder para activar Operator.",
+      err_load_portal: "No se pudo cargar tu portal. Intenta de nuevo mas tarde.",
+    },
+    en: {
+      nav_site: "Site", nav_signout: "Sign out",
+      landing_title: "Your Tryla client portal",
+      landing_sub: "Location, your site, permits, chef talent and running your trailer — all in one place.",
+      landing_whatsapp: "WhatsApp your advisor", landing_call: "Call",
+      landing_fine: "Already got your link? Open it directly at thetryla.app/?portal=",
+      features_tag: "Your portal includes",
+      feat_location_title: "Location Intelligence",
+      feat_location_body: "Analyze any address before parking your trailer there — traffic, competition and demographic fit.",
+      feat_site_title: "Web Builder",
+      feat_site_body: "Build your restaurant's site — menu, photos and contact info — no coding needed.",
+      feat_permits_title: "Checklist",
+      feat_permits_body: "The exact permits you need for your county and state, before you operate.",
+      feat_chef_title: "Chef Talent",
+      feat_chef_body: "Connect with cooks and culinary talent available in your area.",
+      feat_operate_title: "Operator",
+      feat_operate_body: "Take orders, connect Stripe, and use Uber Eats or DoorDash alongside your trailer.",
+      feat_soon: "Coming soon",
+      auth_title_signin: "Sign in to your portal", auth_title_signup: "Create your account",
+      auth_sub: "Location, your site, permits, chef talent and running your trailer — all in one place.",
+      auth_email: "Email", auth_password: "Password",
+      auth_btn_signin: "Sign in", auth_btn_signup: "Create account",
+      auth_loading_signin: "Signing in...", auth_loading_signup: "Creating...",
+      auth_toggle_to_signup: "Don't have an account yet? ", auth_toggle_to_signup_link: "Create one here",
+      auth_toggle_to_signin: "Already have an account? ", auth_toggle_to_signin_link: "Sign in here",
+      auth_divider: "or continue with",
+      auth_google: "Continue with Google", auth_facebook: "Continue with Facebook", auth_apple: "Continue with Apple",
+      auth_fine_pre: "Prefer to talk to someone? ", auth_fine_link: "WhatsApp your advisor",
+      auth_err_missing: "Missing email or password.", auth_err_generic: "Something went wrong.",
+      auth_err_invalid_link: "This portal link is no longer valid. Sign in or create an account.",
+      auth_err_session: "Something went wrong. Try again.",
+      auth_check_email_title: "Check your email",
+      auth_check_email_body1: "We sent a confirmation link to (", auth_check_email_body2: "). Open it and come back here.",
+      onboarding_title: "Create your restaurant",
+      onboarding_sub: "Two fields and you're set — you can change everything later from Web Builder.",
+      onboarding_name: "Restaurant name", onboarding_subdomain: "Subdomain (your-site.thetryla.com)",
+      onboarding_create: "Create", onboarding_creating: "Creating...",
+      onboarding_missing: "Missing fields.", onboarding_dup: "That subdomain is already taken, try another.",
+      tab_location: "Location Intelligence", tab_site: "Web Builder", tab_permits: "Checklist", tab_chef: "Chef Talent", tab_operate: "Operator",
+      li_card_title: "Analyze a spot",
+      li_hint: "Illustrative estimate from the address and cuisine type — not yet connected to real traffic or census data.",
+      li_address: "Address or area", li_address_ph: "E.g. 1200 Main St, Dallas, TX",
+      li_cuisine: "Cuisine type", li_analyze: "Analyze →",
+      li_score_label: "Opportunity Score",
+      li_traffic: "Foot traffic & demand", li_space: "Space vs. competition",
+      li_demo: "Demographic fit", li_gap: "Cuisine gap",
+      cuisines: ["Tacos / Mexican", "BBQ", "Coffee / Desserts", "Pizza", "Burgers", "Asian", "Seafood", "Vegan / Healthy", "Other / General"],
+      permits_body: "Personalized permits and requirements for your county and state — so you know exactly what you need before operating.",
+      chef_body: "Connect with cooks and culinary talent for your trailer. We're building the network of chefs available in your area.",
+      soon: "Coming soon",
+      site_welcome: "Welcome", site_hint: "Edit whatever you want and click Save — it updates instantly.", site_your_site: " Your site: ",
+      site_name: "Restaurant name", site_tagline: "Tagline", site_description: "Description",
+      site_photos: "Photos", site_logo: "Logo", site_hero: "Main photo (hero)", site_gallery: "Gallery (pick several)", site_current: " current",
+      site_menu: "Menu", site_add_dish: "+ Add dish", site_dish_ph: "Dish", site_price_ph: "Price", site_desc_ph: "Description (optional)", site_remove: "Remove",
+      site_contact: "Contact", site_phone: "Phone", site_email: "Email", site_address: "Address / location", site_hours: "Hours",
+      site_instagram: "Instagram", site_facebook: "Facebook", site_tiktok: "TikTok",
+      site_published: "Published (visible to the public)", site_save: "Save changes", site_saving: "Saving...", site_saved: "Saved.", site_save_error: "Couldn't save: ",
+      site_loading: "Loading your site...", loading: "Loading...",
+      op_billing: "Payments", op_stripe_title: "Charge cards", op_stripe_body: "The money goes straight to your account — Tryla never holds it.",
+      op_connected: "✓ Connected", op_connect: "Connect", op_connecting: "Connecting...",
+      op_platforms_title: "Delivery platforms",
+      op_platforms_hint: "Sign up your trailer with each one and use their official ordering app alongside Tryla, on the same iPad or phone.",
+      op_ubereats_note: "Get orders on the official Uber Eats Orders app, on the same iPad or phone.",
+      op_doordash_note: "Sign up your trailer and get orders on the official DoorDash app.",
+      op_grubhub_note: "Connect your trailer with Grubhub for Restaurants.",
+      op_orders_title: "Orders", op_orders_empty: "No orders yet. As soon as one comes in, it shows up here instantly.",
+      op_pickup: "🛍️ Pickup", op_delivery: "🛵 Delivery — ", op_note: "Note: ", op_cancel: "Cancel",
+      op_next_nuevo: "Start preparing →", op_next_preparando: "Mark ready →", op_next_listo: "Mark delivered →",
+      status_nuevo: "New", status_preparando: "Preparing", status_listo: "Ready", status_completado: "Completed", status_cancelado: "Cancelled",
+      op_stripe_error: "Couldn't start the Stripe connection: ", op_order_error: "Couldn't update the order: ",
+      op_need_site: "Save your site in Web Builder first to turn on Operator.",
+      err_load_portal: "Couldn't load your portal. Try again later.",
+    },
+  };
+  var LANG_KEY = "tryla_lang";
+  var lang = (function () {
+    try { return localStorage.getItem(LANG_KEY) === "en" ? "en" : "es"; } catch (e) { return "es"; }
+  })();
+  var currentRerender = null;
+  function t(key) {
+    var dict = I18N[lang] || I18N.es;
+    return key in dict ? dict[key] : I18N.es[key];
+  }
+  function updateLangToggle() {
+    document.getElementById("navLangToggle").textContent = lang === "es" ? "EN" : "ES";
+    document.getElementById("navSignOut").textContent = t("nav_signout");
+    document.getElementById("navSiteLink").textContent = t("nav_site");
+    document.documentElement.lang = lang;
+  }
+  function setLang(l) {
+    lang = l;
+    try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+    updateLangToggle();
+    if (currentRerender) currentRerender();
+  }
+  document.getElementById("navLangToggle").addEventListener("click", function () {
+    setLang(lang === "es" ? "en" : "es");
+  });
+  updateLangToggle();
+
+  function getFeatures() {
+    return [
+      { icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>', title: t("feat_location_title"), body: t("feat_location_body") },
+      { icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>', title: t("feat_site_title"), body: t("feat_site_body") },
+      { icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>', title: t("feat_permits_title"), body: t("feat_permits_body"), soon: true },
+      { icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>', title: t("feat_chef_title"), body: t("feat_chef_body"), soon: true },
+      { icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>', title: t("feat_operate_title"), body: t("feat_operate_body") },
+    ];
+  }
 
   function featureGridHtml() {
     return (
       '<div class="landing-features">' +
-        '<div class="landing-tag">Tu portal incluye</div>' +
+        '<div class="landing-tag">' + t("features_tag") + '</div>' +
         '<div class="feat-grid">' +
-          FEATURES.map(function (f) {
+          getFeatures().map(function (f) {
             return (
               '<div class="feat-card">' +
                 '<div class="feat-icon"><svg viewBox="0 0 24 24">' + f.icon + '</svg></div>' +
                 '<h3>' + f.title + '</h3>' +
                 '<p>' + f.body + '</p>' +
-                (f.soon ? '<span class="feat-soon">Proximamente</span>' : '') +
+                (f.soon ? '<span class="feat-soon">' + t("feat_soon") + '</span>' : '') +
               '</div>'
             );
           }).join('') +
@@ -335,6 +514,7 @@
 
   // ---- Login / registro ----
   function renderAuthScreen(mode, errorMsg) {
+    currentRerender = function () { renderAuthScreen(mode, errorMsg); };
     document.getElementById("app").classList.add("landing-mode");
     document.getElementById("navSignOut").style.display = "none";
     mode = mode || "signin";
@@ -342,24 +522,33 @@
       '<div class="landing">' +
         '<div class="auth-wrap">' +
           '<div class="auth-card">' +
-            '<h1>' + (mode === "signup" ? "Crea tu cuenta" : "Entra a tu portal") + '</h1>' +
-            '<p class="auth-sub">Ubicacion, tu sitio, permisos, chef talent y la operacion de tu trailer — todo en un lugar.</p>' +
-            '<div class="auth-field"><label>Correo</label><input type="email" id="authEmail" autocomplete="username"></div>' +
-            '<div class="auth-field"><label>Contraseña</label><input type="password" id="authPassword" autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"></div>' +
-            '<button type="button" class="auth-submit" id="authSubmitBtn">' + (mode === "signup" ? "Crear cuenta" : "Entrar") + '</button>' +
+            '<h1>' + (mode === "signup" ? t("auth_title_signup") : t("auth_title_signin")) + '</h1>' +
+            '<p class="auth-sub">' + t("auth_sub") + '</p>' +
+            '<div class="auth-field"><label>' + t("auth_email") + '</label><input type="email" id="authEmail" autocomplete="username"></div>' +
+            '<div class="auth-field"><label>' + t("auth_password") + '</label><input type="password" id="authPassword" autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"></div>' +
+            '<button type="button" class="auth-submit" id="authSubmitBtn">' + (mode === "signup" ? t("auth_btn_signup") : t("auth_btn_signin")) + '</button>' +
             '<div class="auth-err" id="authErr">' + (errorMsg ? esc(errorMsg) : "") + '</div>' +
             '<div class="auth-toggle">' +
               (mode === "signup"
-                ? '¿Ya tienes cuenta? <button type="button" id="authToggleBtn">Entra aquí</button>'
-                : '¿Aún no tienes cuenta? <button type="button" id="authToggleBtn">Créala aquí</button>') +
+                ? t("auth_toggle_to_signin") + '<button type="button" id="authToggleBtn">' + t("auth_toggle_to_signin_link") + '</button>'
+                : t("auth_toggle_to_signup") + '<button type="button" id="authToggleBtn">' + t("auth_toggle_to_signup_link") + '</button>') +
             '</div>' +
-            '<div class="auth-divider">o continúa con</div>' +
+            '<div class="auth-divider">' + t("auth_divider") + '</div>' +
             '<div class="auth-oauth">' +
-              '<button type="button" class="auth-oauth-btn google" data-oauth="google">Continuar con Google</button>' +
-              '<button type="button" class="auth-oauth-btn facebook" data-oauth="facebook">Continuar con Facebook</button>' +
-              '<button type="button" class="auth-oauth-btn apple" data-oauth="apple">Continuar con Apple</button>' +
+              '<button type="button" class="auth-oauth-btn google" data-oauth="google">' +
+                '<svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>' +
+                '<span>' + t("auth_google") + '</span>' +
+              '</button>' +
+              '<button type="button" class="auth-oauth-btn facebook" data-oauth="facebook">' +
+                '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path fill="#fff" d="M18 9a9 9 0 1 0-10.406 8.89v-6.289H5.309V9h2.285V7.017c0-2.256 1.343-3.502 3.4-3.502.985 0 2.014.176 2.014.176v2.215h-1.135c-1.117 0-1.465.693-1.465 1.403V9h2.494l-.399 2.601h-2.095v6.289A9.002 9.002 0 0 0 18 9z"/></svg>' +
+                '<span>' + t("auth_facebook") + '</span>' +
+              '</button>' +
+              '<button type="button" class="auth-oauth-btn apple" data-oauth="apple">' +
+                '<svg width="15" height="18" viewBox="0 0 15 18" fill="none"><path fill="#fff" d="M12.24 9.54c-.02-2.02 1.65-2.99 1.73-3.04-.94-1.38-2.4-1.57-2.92-1.59-1.24-.13-2.43.73-3.06.73-.64 0-1.6-.72-2.64-.7-1.36.02-2.61.79-3.31 2-1.41 2.44-.36 6.06.99 8.04.67 0.97 1.46 2.05 2.5 2.01 1.01-.04 1.39-.65 2.61-.65 1.22 0 1.56.65 2.62.63 1.08-.02 1.77-.98 2.42-1.95.77-1.11 1.09-2.2 1.1-2.25-.02-.01-2.11-.81-2.13-3.21z"/><path fill="#fff" d="M10.29 3.5c.55-.66.91-1.58.81-2.5-.79.03-1.74.53-2.3 1.19-.51.58-.95 1.51-.83 2.4.87.07 1.77-.44 2.32-1.09z"/></svg>' +
+                '<span>' + t("auth_apple") + '</span>' +
+              '</button>' +
             '</div>' +
-            '<div class="auth-fine">¿Prefieres hablar con alguien? <a href="https://wa.me/16452353186" target="_blank" style="color:#C9C6FF;">WhatsApp con tu asesor</a></div>' +
+            '<div class="auth-fine">' + t("auth_fine_pre") + '<a href="https://wa.me/16452353186" target="_blank" style="color:#C9C6FF;">' + t("auth_fine_link") + '</a></div>' +
           '</div>' +
         '</div>' +
         featureGridHtml() +
@@ -381,9 +570,9 @@
     var email = document.getElementById("authEmail").value.trim();
     var password = document.getElementById("authPassword").value;
     err.textContent = "";
-    if (!email || !password) { err.textContent = "Falta correo o contraseña."; return; }
+    if (!email || !password) { err.textContent = t("auth_err_missing"); return; }
     btn.disabled = true;
-    btn.textContent = mode === "signup" ? "Creando..." : "Entrando...";
+    btn.textContent = mode === "signup" ? t("auth_loading_signup") : t("auth_loading_signin");
     try {
       var res = mode === "signup"
         ? await sb.auth.signUp({ email: email, password: password })
@@ -391,14 +580,14 @@
       if (res.error) throw res.error;
       if (mode === "signup" && res.data && res.data.user && !res.data.session) {
         document.querySelector(".auth-card").innerHTML =
-          '<h1>Revisa tu correo</h1><p class="auth-sub">Te mandamos un link para confirmar tu cuenta (' + esc(email) + '). Ábrelo y regresa aquí.</p>';
+          '<h1>' + t("auth_check_email_title") + '</h1><p class="auth-sub">' + t("auth_check_email_body1") + esc(email) + t("auth_check_email_body2") + '</p>';
         return;
       }
       boot();
     } catch (e) {
       btn.disabled = false;
-      btn.textContent = mode === "signup" ? "Crear cuenta" : "Entrar";
-      err.textContent = e.message || "No se pudo continuar.";
+      btn.textContent = mode === "signup" ? t("auth_btn_signup") : t("auth_btn_signin");
+      err.textContent = e.message || t("auth_err_generic");
     }
   }
 
@@ -408,15 +597,16 @@
 
   // ---- Primer sitio (cuenta nueva sin sitio todavia) ----
   function renderOnboarding() {
+    currentRerender = renderOnboarding;
     document.getElementById("app").classList.add("landing-mode");
     document.getElementById("navSignOut").style.display = "";
     screensEl.innerHTML =
       '<div class="landing"><div class="auth-wrap"><div class="auth-card">' +
-        '<h1>Crea tu restaurante</h1>' +
-        '<p class="auth-sub">Dos datos y arrancamos — puedes cambiar todo despues desde Web Builder.</p>' +
-        '<div class="auth-field"><label>Nombre del restaurante</label><input type="text" id="obName"></div>' +
-        '<div class="auth-field"><label>Subdominio (tu-sitio.thetryla.com)</label><input type="text" id="obSubdomain" placeholder="tacos-el-sol"></div>' +
-        '<button type="button" class="auth-submit" id="obSubmitBtn">Crear</button>' +
+        '<h1>' + t("onboarding_title") + '</h1>' +
+        '<p class="auth-sub">' + t("onboarding_sub") + '</p>' +
+        '<div class="auth-field"><label>' + t("onboarding_name") + '</label><input type="text" id="obName"></div>' +
+        '<div class="auth-field"><label>' + t("onboarding_subdomain") + '</label><input type="text" id="obSubdomain" placeholder="tacos-el-sol"></div>' +
+        '<button type="button" class="auth-submit" id="obSubmitBtn">' + t("onboarding_create") + '</button>' +
         '<div class="auth-err" id="obErr"></div>' +
       '</div></div></div>';
 
@@ -426,9 +616,9 @@
       var name = document.getElementById("obName").value.trim();
       var subdomain = document.getElementById("obSubdomain").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
       err.textContent = "";
-      if (!name || !subdomain) { err.textContent = "Faltan datos."; return; }
+      if (!name || !subdomain) { err.textContent = t("onboarding_missing"); return; }
       btn.disabled = true;
-      btn.textContent = "Creando...";
+      btn.textContent = t("onboarding_creating");
       try {
         var site = await siteApi.createSite({
           subdomain: subdomain,
@@ -439,82 +629,90 @@
         buildAppShell(site);
       } catch (e) {
         btn.disabled = false;
-        btn.textContent = "Crear";
-        err.textContent = /duplicate key|unique/i.test(e.message || "") ? "Ese subdominio ya está en uso, prueba otro." : (e.message || "No se pudo crear.");
+        btn.textContent = t("onboarding_create");
+        err.textContent = /duplicate key|unique/i.test(e.message || "") ? t("onboarding_dup") : (e.message || t("auth_err_generic"));
       }
     });
   }
 
-  var TABS = [
-    { id: "location", label: "Location Intelligence", icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>' },
-    { id: "site", label: "Web Builder", icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>' },
-    { id: "permits", label: "Checklist", icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>' },
-    { id: "chef", label: "Chef Talent", icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>' },
-    { id: "operate", label: "Operator", icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>' },
-  ];
+  function getTabs() {
+    return [
+      { id: "location", label: t("tab_location"), icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>' },
+      { id: "site", label: t("tab_site"), icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>' },
+      { id: "permits", label: t("tab_permits"), icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>' },
+      { id: "chef", label: t("tab_chef"), icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>' },
+      { id: "operate", label: t("tab_operate"), icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>' },
+    ];
+  }
 
-  function stubScreen(id, title, body, badge) {
-    var icon = TABS.find(function (t) { return t.id === id; }).icon;
+  function stubScreen(id, activeTab, title, body, badge) {
+    var icon = getTabs().find(function (tb) { return tb.id === id; }).icon;
     return (
-      '<section class="ios-screen" id="screen-' + id + '">' +
+      '<section class="ios-screen' + (activeTab === id ? " active" : "") + '" id="screen-' + id + '">' +
         '<div class="stub">' +
           '<div class="stub-icon"><svg viewBox="0 0 24 24">' + icon + "</svg></div>" +
           "<h2>" + title + "</h2>" +
           "<p>" + body + "</p>" +
-          '<div class="soon-pill">' + (badge || "Próximamente") + "</div>" +
+          '<div class="soon-pill">' + (badge || t("soon")) + "</div>" +
         "</div>" +
       "</section>"
     );
   }
 
   function buildAppShell(site) {
+    currentRerender = function () { buildAppShell(site); };
     document.getElementById("app").classList.remove("landing-mode");
     document.getElementById("navSignOut").style.display = siteApi.signOut ? "" : "none";
 
+    var prevActiveScreen = document.querySelector(".ios-screen.active");
+    var activeTab = prevActiveScreen ? prevActiveScreen.id.replace("screen-", "") : "location";
+    var TABS = getTabs();
+
     screensEl.innerHTML =
-    '<section class="ios-screen active" id="screen-location">' +
-      '<div class="section-title">Location Intelligence</div>' +
+    '<section class="ios-screen' + (activeTab === "location" ? " active" : "") + '" id="screen-location">' +
+      '<div class="section-title">' + t("tab_location") + '</div>' +
       '<div class="card">' +
-        '<h2>Analiza un lugar</h2>' +
-        '<div class="hint">Estimado ilustrativo a partir de la dirección y el tipo de cocina — todavía no conectado a datos reales de tráfico o censo.</div>' +
-        '<div class="field"><label>Dirección o zona</label><input type="text" id="liAddress" placeholder="Ej. 1200 Main St, Dallas, TX"></div>' +
-        '<div class="field"><label>Tipo de cocina</label><select id="liCuisine">' +
-          ["Tacos / Mexicana","BBQ","Café / Postres","Pizza","Hamburguesas","Asiática","Mariscos","Vegana / Saludable","Otro / General"]
-            .map(function (c) { return '<option value="' + c + '">' + c + "</option>"; }).join("") +
+        '<h2>' + t("li_card_title") + '</h2>' +
+        '<div class="hint">' + t("li_hint") + '</div>' +
+        '<div class="field"><label>' + t("li_address") + '</label><input type="text" id="liAddress" placeholder="' + t("li_address_ph") + '"></div>' +
+        '<div class="field"><label>' + t("li_cuisine") + '</label><select id="liCuisine">' +
+          t("cuisines").map(function (c) { return '<option value="' + c + '">' + c + "</option>"; }).join("") +
         "</select></div>" +
-        '<button type="button" class="btn" id="liAnalyzeBtn">Analizar →</button>' +
+        '<button type="button" class="btn" id="liAnalyzeBtn">' + t("li_analyze") + '</button>' +
       "</div>" +
       '<div class="card" id="liResultCard" style="display:none;">' +
-        '<div class="li-score-card"><div class="li-score-label">Opportunity Score</div><div class="li-score-num" id="liScoreNum">—</div><div class="li-score-sub" id="liScoreSub">—</div></div>' +
-        '<div class="li-metric"><div class="li-metric-head"><span>Tráfico peatonal &amp; demanda</span><b id="liMetricTraffic">0</b></div><div class="li-bar"><span id="liBarTraffic" style="width:0%"></span></div></div>' +
-        '<div class="li-metric"><div class="li-metric-head"><span>Espacio vs. competencia</span><b id="liMetricComp">0</b></div><div class="li-bar"><span id="liBarComp" style="width:0%"></span></div></div>' +
-        '<div class="li-metric"><div class="li-metric-head"><span>Ajuste demográfico</span><b id="liMetricDemo">0</b></div><div class="li-bar"><span id="liBarDemo" style="width:0%"></span></div></div>' +
-        '<div class="li-metric"><div class="li-metric-head"><span>Brecha de cocina (gap)</span><b id="liMetricGap">0</b></div><div class="li-bar"><span id="liBarGap" style="width:0%"></span></div></div>' +
+        '<div class="li-score-card"><div class="li-score-label">' + t("li_score_label") + '</div><div class="li-score-num" id="liScoreNum">—</div><div class="li-score-sub" id="liScoreSub">—</div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_traffic") + '</span><b id="liMetricTraffic">0</b></div><div class="li-bar"><span id="liBarTraffic" style="width:0%"></span></div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_space") + '</span><b id="liMetricComp">0</b></div><div class="li-bar"><span id="liBarComp" style="width:0%"></span></div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_demo") + '</span><b id="liMetricDemo">0</b></div><div class="li-bar"><span id="liBarDemo" style="width:0%"></span></div></div>' +
+        '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_gap") + '</span><b id="liMetricGap">0</b></div><div class="li-bar"><span id="liBarGap" style="width:0%"></span></div></div>' +
         '<div id="liMap" class="tli-map"></div>' +
         '<div id="liInsights"></div>' +
       "</div>" +
     "</section>" +
 
-    '<section class="ios-screen" id="screen-site">' +
-      '<div class="section-title">Web Builder</div>' +
-      '<div id="siteRoot"><div class="full-loading">Cargando tu sitio...</div></div>' +
+    '<section class="ios-screen' + (activeTab === "site" ? " active" : "") + '" id="screen-site">' +
+      '<div class="section-title">' + t("tab_site") + '</div>' +
+      '<div id="siteRoot"><div class="full-loading">' + t("site_loading") + '</div></div>' +
     "</section>" +
 
-    stubScreen("permits", "Checklist", "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.") +
-    stubScreen("chef", "Chef Talent", "Conecta con cocineros y talento culinario para tu trailer. Estamos armando la red de chefs disponibles en tu zona.") +
+    stubScreen("permits", activeTab, t("tab_permits"), t("permits_body")) +
+    stubScreen("chef", activeTab, t("tab_chef"), t("chef_body")) +
 
-    '<section class="ios-screen" id="screen-operate">' +
-      '<div class="section-title">Operator</div>' +
-      '<div id="operateRoot"><div class="full-loading">Cargando...</div></div>' +
+    '<section class="ios-screen' + (activeTab === "operate" ? " active" : "") + '" id="screen-operate">' +
+      '<div class="section-title">' + t("tab_operate") + '</div>' +
+      '<div id="operateRoot"><div class="full-loading">' + t("loading") + '</div></div>' +
     "</section>";
 
+  var oldTabbar = document.querySelector(".ios-tabbar");
+  if (oldTabbar) oldTabbar.remove();
   var tabbar = document.createElement("nav");
   tabbar.className = "ios-tabbar";
-  tabbar.innerHTML = TABS.map(function (t, i) {
+  tabbar.innerHTML = TABS.map(function (tb) {
     return (
-      '<button type="button" class="ios-tab' + (i === 0 ? " active" : "") + '" data-tab="' + t.id + '">' +
-        "<svg viewBox=\"0 0 24 24\">" + t.icon + "</svg>" +
-        "<span>" + t.label + "</span>" +
+      '<button type="button" class="ios-tab' + (tb.id === activeTab ? " active" : "") + '" data-tab="' + tb.id + '">' +
+        "<svg viewBox=\"0 0 24 24\">" + tb.icon + "</svg>" +
+        "<span>" + tb.label + "</span>" +
       "</button>"
     );
   }).join("");
@@ -536,9 +734,9 @@
     if (!address) { document.getElementById("liAddress").focus(); return; }
     var cuisine = document.getElementById("liCuisine").value;
     var r = TLI.scoreFor(address, cuisine);
-    var t = TLI.tier(r.overall10);
+    var tier = TLI.tier(r.overall10);
     document.getElementById("liScoreNum").textContent = r.overall10.toFixed(1) + " / 10";
-    document.getElementById("liScoreSub").textContent = t.label;
+    document.getElementById("liScoreSub").textContent = tier.label;
     document.getElementById("liMetricTraffic").textContent = r.traffic;
     document.getElementById("liMetricComp").textContent = r.space;
     document.getElementById("liMetricDemo").textContent = r.demo;
@@ -575,10 +773,10 @@
     item = item || {};
     return (
       '<div class="menu-row">' +
-      '<input type="text" class="menu-name" placeholder="Platillo" value="' + esc(item.name) + '">' +
-      '<input type="text" class="menu-price" placeholder="Precio" value="' + esc(item.price) + '">' +
-      '<input type="text" class="menu-desc" placeholder="Descripción (opcional)" value="' + esc(item.desc) + '">' +
-      '<button type="button" data-rm-row aria-label="Quitar">&times;</button>' +
+      '<input type="text" class="menu-name" placeholder="' + t("site_dish_ph") + '" value="' + esc(item.name) + '">' +
+      '<input type="text" class="menu-price" placeholder="' + t("site_price_ph") + '" value="' + esc(item.price) + '">' +
+      '<input type="text" class="menu-desc" placeholder="' + t("site_desc_ph") + '" value="' + esc(item.desc) + '">' +
+      '<button type="button" data-rm-row aria-label="' + t("site_remove") + '">&times;</button>' +
       "</div>"
     );
   }
@@ -614,54 +812,54 @@
 
     siteRoot.innerHTML =
       '<div class="card">' +
-        "<h2>Bienvenido" + (site.restaurant_name ? ", " + esc(site.restaurant_name) : "") + "</h2>" +
-        '<div class="hint">Edita lo que quieras y da clic en Guardar — se actualiza al instante.' +
-        (site.subdomain ? ' Tu sitio: <a class="live-link" href="https://' + esc(site.subdomain) + '.thetryla.com" target="_blank">' + esc(site.subdomain) + ".thetryla.com</a>" : "") +
+        "<h2>" + t("site_welcome") + (site.restaurant_name ? ", " + esc(site.restaurant_name) : "") + "</h2>" +
+        '<div class="hint">' + t("site_hint") +
+        (site.subdomain ? t("site_your_site") + '<a class="live-link" href="https://' + esc(site.subdomain) + '.thetryla.com" target="_blank">' + esc(site.subdomain) + ".thetryla.com</a>" : "") +
         "</div>" +
-        '<div class="field"><label>Nombre del restaurante</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
-        '<div class="field"><label>Eslogan</label><input type="text" id="pvTagline" value="' + esc(site.tagline) + '"></div>' +
-        '<div class="field"><label>Descripción</label><textarea id="pvDescription" rows="3">' + esc(site.description) + "</textarea></div>" +
+        '<div class="field"><label>' + t("site_name") + '</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
+        '<div class="field"><label>' + t("site_tagline") + '</label><input type="text" id="pvTagline" value="' + esc(site.tagline) + '"></div>' +
+        '<div class="field"><label>' + t("site_description") + '</label><textarea id="pvDescription" rows="3">' + esc(site.description) + "</textarea></div>" +
       "</div>" +
 
       '<div class="card">' +
-        "<h2>Fotos</h2>" +
-        '<div class="field"><label>Logo</label><input type="file" id="pvLogoFile" accept="image/*">' +
-          (site.logo_url ? '<div class="thumb"><img src="' + esc(site.logo_url) + '"> actual</div>' : "") +
+        "<h2>" + t("site_photos") + "</h2>" +
+        '<div class="field"><label>' + t("site_logo") + '</label><input type="file" id="pvLogoFile" accept="image/*">' +
+          (site.logo_url ? '<div class="thumb"><img src="' + esc(site.logo_url) + '">' + t("site_current") + '</div>' : "") +
         "</div>" +
-        '<div class="field"><label>Foto principal (hero)</label><input type="file" id="pvHeroFile" accept="image/*">' +
-          (site.hero_image_url ? '<div class="thumb"><img src="' + esc(site.hero_image_url) + '"> actual</div>' : "") +
+        '<div class="field"><label>' + t("site_hero") + '</label><input type="file" id="pvHeroFile" accept="image/*">' +
+          (site.hero_image_url ? '<div class="thumb"><img src="' + esc(site.hero_image_url) + '">' + t("site_current") + '</div>' : "") +
         "</div>" +
-        '<div class="field"><label>Galería (puedes elegir varias)</label><input type="file" id="pvGalleryFile" accept="image/*" multiple>' +
+        '<div class="field"><label>' + t("site_gallery") + '</label><input type="file" id="pvGalleryFile" accept="image/*" multiple>' +
           (gallery.length ? '<div class="gallery-preview">' + gallery.map(function (u) { return '<img src="' + esc(u) + '">'; }).join("") + "</div>" : "") +
         "</div>" +
       "</div>" +
 
       '<div class="card">' +
-        "<h2>Menú</h2>" +
+        "<h2>" + t("site_menu") + "</h2>" +
         '<div id="pvMenuRows">' + (menu.length ? menu.map(menuRowHtml).join("") : menuRowHtml()) + "</div>" +
-        '<button type="button" class="add-row" id="pvAddMenuRow">+ Agregar platillo</button>' +
+        '<button type="button" class="add-row" id="pvAddMenuRow">' + t("site_add_dish") + '</button>' +
       "</div>" +
 
       '<div class="card">' +
-        "<h2>Contacto</h2>" +
+        "<h2>" + t("site_contact") + "</h2>" +
         '<div class="row">' +
-          '<div class="field"><label>Teléfono</label><input type="text" id="pvPhone" value="' + esc(site.phone) + '"></div>' +
-          '<div class="field"><label>Correo</label><input type="email" id="pvEmail" value="' + esc(site.email) + '"></div>' +
+          '<div class="field"><label>' + t("site_phone") + '</label><input type="text" id="pvPhone" value="' + esc(site.phone) + '"></div>' +
+          '<div class="field"><label>' + t("site_email") + '</label><input type="email" id="pvEmail" value="' + esc(site.email) + '"></div>' +
         "</div>" +
         '<div class="row">' +
-          '<div class="field"><label>Dirección / ubicación</label><input type="text" id="pvAddress" value="' + esc(site.address) + '"></div>' +
-          '<div class="field"><label>Horario</label><input type="text" id="pvHours" value="' + esc(site.hours) + '"></div>' +
+          '<div class="field"><label>' + t("site_address") + '</label><input type="text" id="pvAddress" value="' + esc(site.address) + '"></div>' +
+          '<div class="field"><label>' + t("site_hours") + '</label><input type="text" id="pvHours" value="' + esc(site.hours) + '"></div>' +
         "</div>" +
         '<div class="row">' +
-          '<div class="field"><label>Instagram</label><input type="text" id="pvInstagram" value="' + esc(site.instagram) + '"></div>' +
-          '<div class="field"><label>Facebook</label><input type="text" id="pvFacebook" value="' + esc(site.facebook) + '"></div>' +
-          '<div class="field"><label>TikTok</label><input type="text" id="pvTiktok" value="' + esc(site.tiktok) + '"></div>' +
+          '<div class="field"><label>' + t("site_instagram") + '</label><input type="text" id="pvInstagram" value="' + esc(site.instagram) + '"></div>' +
+          '<div class="field"><label>' + t("site_facebook") + '</label><input type="text" id="pvFacebook" value="' + esc(site.facebook) + '"></div>' +
+          '<div class="field"><label>' + t("site_tiktok") + '</label><input type="text" id="pvTiktok" value="' + esc(site.tiktok) + '"></div>' +
         "</div>" +
       "</div>" +
 
       '<div class="card">' +
-        '<div class="publish"><input type="checkbox" id="pvPublished"' + (site.published ? " checked" : "") + "> <label for=\"pvPublished\">Publicado (visible al público)</label></div>" +
-        '<button type="button" class="btn" id="pvSaveBtn">Guardar cambios</button>' +
+        '<div class="publish"><input type="checkbox" id="pvPublished"' + (site.published ? " checked" : "") + "> <label for=\"pvPublished\">" + t("site_published") + "</label></div>" +
+        '<button type="button" class="btn" id="pvSaveBtn">' + t("site_save") + '</button>' +
         '<span class="msg" id="pvMsg"></span>' +
       "</div>";
 
@@ -681,7 +879,7 @@
       var msg = document.getElementById("pvMsg");
       btn.disabled = true;
       msg.className = "msg";
-      msg.textContent = "Guardando...";
+      msg.textContent = t("site_saving");
       try {
         var logoFile = document.getElementById("pvLogoFile").files[0];
         var heroFile = document.getElementById("pvHeroFile").files[0];
@@ -709,11 +907,11 @@
           published: document.getElementById("pvPublished").checked,
         };
         var saved = await siteApi.saveSite(payload, site.id);
-        msg.textContent = "Guardado.";
+        msg.textContent = t("site_saved");
         renderSite(saved);
       } catch (err) {
         msg.className = "msg err";
-        msg.textContent = "No se pudo guardar: " + (err.message || err);
+        msg.textContent = t("site_save_error") + (err.message || err);
       } finally {
         btn.disabled = false;
       }
@@ -722,35 +920,35 @@
 
   // ---- Operator: cobros con Stripe, plataformas de delivery, pedidos ----
   var DELIVERY_PLATFORMS = [
-    { name: "Uber Eats", color: "#06C167", url: "https://merchants.ubereats.com/us/en/get-started/", note: "Recibe pedidos en la app oficial Uber Eats Orders, en el mismo iPad o teléfono." },
-    { name: "DoorDash", color: "#EB1700", url: "https://get.doordash.com/en-us/merchant-signup", note: "Da de alta tu trailer y recibe pedidos en la app oficial de DoorDash." },
-    { name: "Grubhub", color: "#F63440", url: "https://get.grubhub.com/", note: "Conecta tu trailer con Grubhub for Restaurants." },
+    { name: "Uber Eats", color: "#06C167", url: "https://merchants.ubereats.com/us/en/get-started/", noteKey: "op_ubereats_note" },
+    { name: "DoorDash", color: "#EB1700", url: "https://get.doordash.com/en-us/merchant-signup", noteKey: "op_doordash_note" },
+    { name: "Grubhub", color: "#F63440", url: "https://get.grubhub.com/", noteKey: "op_grubhub_note" },
   ];
 
   function initOperator(site) {
     var subdomain = site && site.subdomain;
     var root = document.getElementById("operateRoot");
     if (!subdomain) {
-      root.innerHTML = '<div class="full-error">Primero guarda tu sitio en Web Builder para activar Operator.</div>';
+      root.innerHTML = '<div class="full-error">' + t("op_need_site") + "</div>";
       return;
     }
 
     var paymentsEnabled = false;
     var currentOrders = [];
     var NEXT_STATUS = { nuevo: "preparando", preparando: "listo", listo: "completado" };
-    var NEXT_LABEL = { nuevo: "Empezar a preparar →", preparando: "Marcar listo →", listo: "Marcar entregado →" };
-    var STATUS_LABEL = { nuevo: "Nuevo", preparando: "Preparando", listo: "Listo", completado: "Completado", cancelado: "Cancelado" };
+    var NEXT_LABEL = { nuevo: t("op_next_nuevo"), preparando: t("op_next_preparando"), listo: t("op_next_listo") };
+    var STATUS_LABEL = { nuevo: t("status_nuevo"), preparando: t("status_preparando"), listo: t("status_listo"), completado: t("status_completado"), cancelado: t("status_cancelado") };
 
     function paymentsCardHtml() {
       return (
         '<div class="card">' +
-          "<h2>Cobros</h2>" +
+          "<h2>" + t("op_billing") + "</h2>" +
           '<div class="op-card-row">' +
             '<div class="op-badge" style="background:#635BFF;">STRIPE</div>' +
-            '<div class="op-row-body"><h3>Cobra con tarjeta</h3><p>El dinero llega directo a tu cuenta — Tryla no lo retiene.</p></div>' +
+            '<div class="op-row-body"><h3>' + t("op_stripe_title") + "</h3><p>" + t("op_stripe_body") + "</p></div>" +
             (paymentsEnabled
-              ? '<span class="op-connected">✓ Conectado</span>'
-              : '<button type="button" class="op-connect-btn primary" id="opConnectStripe">Conectar</button>') +
+              ? '<span class="op-connected">' + t("op_connected") + "</span>"
+              : '<button type="button" class="op-connect-btn primary" id="opConnectStripe">' + t("op_connect") + "</button>") +
           "</div>" +
         "</div>"
       );
@@ -759,14 +957,14 @@
     function platformsCardHtml() {
       return (
         '<div class="card">' +
-          "<h2>Plataformas de delivery</h2>" +
-          '<div class="hint" style="margin-bottom:2px;">Da de alta tu trailer en cada una y usa su app oficial de pedidos junto con Tryla, en el mismo iPad o teléfono.</div>' +
+          "<h2>" + t("op_platforms_title") + "</h2>" +
+          '<div class="hint" style="margin-bottom:2px;">' + t("op_platforms_hint") + "</div>" +
           DELIVERY_PLATFORMS.map(function (p) {
             return (
               '<div class="op-card-row">' +
                 '<div class="op-badge" style="background:' + p.color + ';">' + esc(p.name.replace(" ", "\n")) + "</div>" +
-                '<div class="op-row-body"><h3>' + esc(p.name) + "</h3><p>" + esc(p.note) + "</p></div>" +
-                '<a class="op-connect-btn ghost" href="' + p.url + '" target="_blank" rel="noopener">Conectar</a>' +
+                '<div class="op-row-body"><h3>' + esc(p.name) + "</h3><p>" + esc(t(p.noteKey)) + "</p></div>" +
+                '<a class="op-connect-btn ghost" href="' + p.url + '" target="_blank" rel="noopener">' + t("op_connect") + "</a>" +
               "</div>"
             );
           }).join("") +
@@ -776,11 +974,11 @@
 
     function ordersInnerHtml() {
       if (!currentOrders.length) {
-        return '<div class="hint" style="margin:0;">Sin pedidos por ahora. En cuanto entre uno, aparece aquí al instante.</div>';
+        return '<div class="hint" style="margin:0;">' + t("op_orders_empty") + "</div>";
       }
       return '<div class="op-orders">' + currentOrders.map(function (o) {
         var items = (o.items || []).map(function (it) { return it.qty + "x " + esc(it.name); }).join(", ");
-        var time = new Date(o.created_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+        var time = new Date(o.created_at).toLocaleTimeString(lang === "en" ? "en-US" : "es-MX", { hour: "2-digit", minute: "2-digit" });
         var next = NEXT_STATUS[o.status];
         return (
           '<div class="op-order status-' + o.status + '" data-order-id="' + o.id + '">' +
@@ -788,11 +986,11 @@
               '<div><div class="op-order-name">' + esc(o.customer_name) + '</div><div class="op-order-time">' + esc(o.customer_phone) + " · " + time + "</div></div>" +
               '<span class="op-status-label">' + STATUS_LABEL[o.status] + "</span>" +
             "</div>" +
-            '<div class="op-fulfill-pill">' + (o.fulfillment === "delivery" ? "🛵 Entrega — " + esc(o.delivery_address || "") : "🛍️ Recoger") + "</div>" +
-            '<div class="op-order-items">' + items + (o.notes ? "<br><em>Nota: " + esc(o.notes) + "</em>" : "") + "</div>" +
+            '<div class="op-fulfill-pill">' + (o.fulfillment === "delivery" ? t("op_delivery") + esc(o.delivery_address || "") : t("op_pickup")) + "</div>" +
+            '<div class="op-order-items">' + items + (o.notes ? "<br><em>" + t("op_note") + esc(o.notes) + "</em>" : "") + "</div>" +
             '<div class="op-order-total">$' + Number(o.total).toFixed(2) + "</div>" +
             (next
-              ? '<div class="op-order-actions"><button type="button" class="op-btn-next" data-next="' + next + '">' + NEXT_LABEL[o.status] + '</button><button type="button" class="op-btn-cancel" data-cancel>Cancelar</button></div>'
+              ? '<div class="op-order-actions"><button type="button" class="op-btn-next" data-next="' + next + '">' + NEXT_LABEL[o.status] + '</button><button type="button" class="op-btn-cancel" data-cancel>' + t("op_cancel") + "</button></div>"
               : "") +
           "</div>"
         );
@@ -803,7 +1001,7 @@
       root.innerHTML =
         paymentsCardHtml() +
         platformsCardHtml() +
-        '<div class="card"><h2>Pedidos</h2>' + ordersInnerHtml() + "</div>";
+        '<div class="card"><h2>' + t("op_orders_title") + "</h2>" + ordersInnerHtml() + "</div>";
 
       var stripeBtn = document.getElementById("opConnectStripe");
       if (stripeBtn) stripeBtn.addEventListener("click", connectStripe);
@@ -820,7 +1018,7 @@
     async function connectStripe() {
       var btn = document.getElementById("opConnectStripe");
       btn.disabled = true;
-      btn.textContent = "Conectando...";
+      btn.textContent = t("op_connecting");
       try {
         var res = await siteApi.connectStripe();
         if (res.error) throw res.error;
@@ -828,8 +1026,8 @@
         location.href = res.data.url;
       } catch (e) {
         btn.disabled = false;
-        btn.textContent = "Conectar";
-        alert("No se pudo iniciar la conexión con Stripe: " + (e.message || e));
+        btn.textContent = t("op_connect");
+        alert(t("op_stripe_error") + (e.message || e));
       }
     }
 
@@ -839,7 +1037,7 @@
         await loadOrders();
         fullRender();
       } catch (e) {
-        alert("No se pudo actualizar el pedido: " + (e.message || e));
+        alert(t("op_order_error") + (e.message || e));
       }
     }
 
@@ -853,7 +1051,11 @@
     Promise.all([loadPaymentStatus(), loadOrders()]).then(fullRender);
 
     try {
-      sb.channel("orders-" + subdomain)
+      if (ordersChannel) {
+        sb.removeChannel(ordersChannel);
+        ordersChannel = null;
+      }
+      ordersChannel = sb.channel("orders-" + subdomain)
         .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: "subdomain=eq." + subdomain }, function () {
           loadOrders().then(fullRender);
         })
@@ -902,7 +1104,7 @@
       siteApi.getSite()
         .then(function (site) { buildAppShell(site); })
         .catch(function () {
-          renderAuthScreen("signin", "Este link de portal ya no es válido. Inicia sesión o crea tu cuenta.");
+          renderAuthScreen("signin", t("auth_err_invalid_link"));
         });
       return;
     }
@@ -919,7 +1121,7 @@
         buildAppShell(site);
       }).catch(function (e) {
         console.warn("[TrylApp] error cargando tu cuenta:", e);
-        renderAuthScreen("signin", "Ocurrió un error. Intenta de nuevo.");
+        renderAuthScreen("signin", t("auth_err_session"));
       });
     });
   }
