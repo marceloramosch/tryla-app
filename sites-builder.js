@@ -161,7 +161,7 @@
           <td>${s.updated_at ? new Date(s.updated_at).toLocaleDateString() : ""}</td>
           <td>
             <button type="button" data-edit="${escapeHtml(s.id)}">Editar</button>
-            <button type="button" data-portal="${escapeHtml(s.subdomain)}" data-name="${escapeHtml(s.restaurant_name)}">Portal cliente</button>
+            <button type="button" data-portal="${escapeHtml(s.subdomain)}" data-name="${escapeHtml(s.restaurant_name)}">${s.owner_email ? "Correo: " + escapeHtml(s.owner_email) : "Asignar a cliente"}</button>
             <button type="button" data-del="${escapeHtml(s.id)}">Borrar</button>
           </td>
         </tr>`).join("")
@@ -174,7 +174,7 @@
       });
     });
     tbody.querySelectorAll("[data-portal]").forEach((btn) => {
-      btn.addEventListener("click", () => sharePortalLink(btn.dataset.portal, btn.dataset.name));
+      btn.addEventListener("click", () => assignClientEmail(btn.dataset.portal, btn.dataset.name));
     });
     tbody.querySelectorAll("[data-del]").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -190,23 +190,19 @@
     });
   }
 
-  // ===== Portal del cliente: link privado para que edite su propio sitio =====
-  async function sharePortalLink(subdomain, restaurantName) {
-    if (!window.ClientPortal || !window.ClientPortal.ready) {
-      alert("El portal de cliente requiere estar conectado a la nube (Supabase).");
-      return;
-    }
+  // ===== Portal del cliente: TrylApp ahora usa login propio (correo o
+  // Google/Facebook/Apple), no un link privado. Aqui solo dejamos su
+  // correo listo en el sitio para que, en cuanto se registre o entre con
+  // ese correo, claim_my_site() se lo asigne solo. =====
+  async function assignClientEmail(subdomain, restaurantName) {
+    const email = prompt(`Correo del cliente para "${restaurantName}" (con ese correo va a entrar a thetryla.app y este sitio se le asigna solo):`);
+    if (!email) return;
     try {
-      const token = await window.ClientPortal.generate(restaurantName, subdomain);
-      const link = `https://thetryla.app/?portal=${token}`;
-      try {
-        await navigator.clipboard.writeText(link);
-        alert("Link del portal de cliente copiado al portapapeles:\n" + link);
-      } catch (e) {
-        prompt("Copia este link para darle acceso al cliente:", link);
-      }
+      await window.TrylaSites.setOwnerEmail(subdomain, email.trim());
+      alert(`Listo. Cuando ${email.trim()} entre a thetryla.app (registro o Google/Facebook/Apple con ese correo), este sitio queda asignado a su cuenta.`);
+      await refresh();
     } catch (e) {
-      alert("No se pudo generar el portal de cliente: " + (e.message || e));
+      alert("No se pudo asignar el correo: " + (e.message || e));
     }
   }
 

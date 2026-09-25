@@ -152,6 +152,34 @@
   .feat-card p{ font-size:12.5px; color:#9AA0AF; line-height:1.55; margin:0; }
   .feat-card .feat-soon{ display:inline-block; margin-top:10px; font:700 9.5px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#C9C6FF; background:rgba(201,198,255,.12); padding:5px 10px; border-radius:999px; }
 
+  /* ---- login / registro ---- */
+  .auth-wrap{ max-width:380px; margin:0 auto; padding:64px 20px 60px; }
+  .auth-card{ background:#101218; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:30px 26px; }
+  .auth-card h1{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:21px; color:#fff; margin:0 0 6px; text-align:center; }
+  .auth-card .auth-sub{ font-size:13px; color:#9AA0AF; text-align:center; margin:0 0 24px; line-height:1.5; }
+  .auth-field{ margin-bottom:12px; }
+  .auth-field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#9AA0AF; text-transform:uppercase; margin-bottom:6px; }
+  .auth-field input{
+    width:100%; border:1.5px solid rgba(255,255,255,.12); border-radius:10px; padding:12px 13px;
+    font:14px/1.4 'Barlow',Arial,sans-serif; color:#fff; background:#1c1f2a;
+  }
+  .auth-submit{ font:700 14px/1 'Sora',Arial,sans-serif; padding:14px; border-radius:11px; cursor:pointer; border:none; background:#5B54FF; color:#fff; width:100%; margin-top:6px; }
+  .auth-submit:disabled{ opacity:.6; }
+  .auth-err{ color:#FF8A8A; font-size:12.5px; margin-top:12px; text-align:center; min-height:16px; }
+  .auth-toggle{ text-align:center; margin-top:18px; font-size:12.5px; color:#9AA0AF; }
+  .auth-toggle button{ background:none; border:none; color:#C9C6FF; font:700 12.5px 'Sora',Arial,sans-serif; cursor:pointer; padding:0; }
+  .auth-divider{ display:flex; align-items:center; gap:12px; margin:22px 0 16px; color:#7c76a8; font-size:11.5px; }
+  .auth-divider::before, .auth-divider::after{ content:""; flex:1; height:1px; background:rgba(255,255,255,.1); }
+  .auth-oauth{ display:flex; flex-direction:column; gap:9px; }
+  .auth-oauth-btn{
+    display:flex; align-items:center; justify-content:center; gap:9px; width:100%; padding:12px;
+    border-radius:10px; font:700 13.5px 'Sora',Arial,sans-serif; cursor:pointer; border:1.5px solid transparent;
+  }
+  .auth-oauth-btn.google{ background:#fff; color:#1F1F1F; border-color:rgba(0,0,0,.1); }
+  .auth-oauth-btn.facebook{ background:#1877F2; color:#fff; }
+  .auth-oauth-btn.apple{ background:#000; color:#fff; }
+  .auth-fine{ text-align:center; margin-top:28px; font-size:11.5px; color:#7c76a8; line-height:1.6; }
+
   /* ---- Web Builder (Mi Sitio) specifics ---- */
   .thumb{ display:inline-flex; align-items:center; gap:8px; margin-top:8px; font-size:11.5px; color:#5b6b8c; }
   .thumb img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid #E4E2F5; }
@@ -239,7 +267,10 @@
         <div class="client-name" id="navClientName"></div>
       </div>
     </div>
-    <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener">Sitio</a>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <a class="site-link" href="https://thetryla.com" target="_blank" rel="noopener">Sitio</a>
+      <button type="button" class="site-link" id="navSignOut" style="display:none; background:none; cursor:pointer;">Salir</button>
+    </div>
   </div>
 
   <div class="ios-screens" id="screens"><div class="full-loading">Cargando...</div></div>
@@ -254,45 +285,6 @@
   var token = qs.get("portal");
   var screensEl = document.getElementById("screens");
 
-  if (!token) {
-    document.getElementById("app").classList.add("landing-mode");
-    var FEATURES = [
-      { icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>', title: "Location Intelligence", body: "Analiza cualquier direccion antes de estacionar tu trailer ahi — trafico, competencia y ajuste demografico." },
-      { icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>', title: "Web Builder", body: "Arma el sitio de tu restaurante — menu, fotos y contacto — sin saber programar." },
-      { icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>', title: "Checklist", body: "Los permisos exactos que necesitas segun tu condado y estado, antes de operar.", soon: true },
-      { icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>', title: "Chef Talent", body: "Conecta con cocineros y talento culinario disponible en tu zona.", soon: true },
-      { icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>', title: "Operator", body: "Recibe pedidos, conecta tu Stripe y usa Uber Eats o DoorDash junto con tu trailer." },
-    ];
-    screensEl.innerHTML =
-      '<div class="landing">' +
-        '<div class="landing-hero">' +
-          '<h1>Tu portal como cliente Tryla</h1>' +
-          '<p>Ubicacion, tu sitio, permisos, chef talent y la operacion de tu trailer — todo en un lugar. Accede con el link privado que te compartio tu asesor de Tryla.</p>' +
-          '<div class="actions">' +
-            '<a class="btn2 primary" href="https://wa.me/16452353186?text=Hola%2C%20soy%20cliente%20de%20Tryla%20y%20necesito%20mi%20link%20de%20acceso%20a%20Tryla" target="_blank">WhatsApp con tu asesor</a>' +
-            '<a class="btn2 outline" href="tel:+16452353186">Llamar</a>' +
-          '</div>' +
-        '</div>' +
-        '<div class="landing-features">' +
-          '<div class="landing-tag">Tu portal incluye</div>' +
-          '<div class="feat-grid">' +
-            FEATURES.map(function (f) {
-              return (
-                '<div class="feat-card">' +
-                  '<div class="feat-icon"><svg viewBox="0 0 24 24">' + f.icon + '</svg></div>' +
-                  '<h3>' + f.title + '</h3>' +
-                  '<p>' + f.body + '</p>' +
-                  (f.soon ? '<span class="feat-soon">Proximamente</span>' : '') +
-                '</div>'
-              );
-            }).join('') +
-          '</div>' +
-        '</div>' +
-        '<div class="fine">&iquest;Ya te compartieron tu link? Abrelo directo, empieza con thetryla.app/?portal=</div>' +
-      '</div>';
-    return;
-  }
-
   var SUPABASE_URL = "https://dcuescldzrgcppubcoxq.supabase.co";
   var SUPABASE_ANON_KEY = "sb_publishable_Ov7JqL4vOjjfkwDDD2DySg_I7huP9FH";
   if (typeof supabase === "undefined") {
@@ -300,10 +292,156 @@
     return;
   }
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var siteApi = null;
+  var currentUserId = null;
+
+  document.getElementById("navSignOut").addEventListener("click", function () {
+    if (siteApi && siteApi.signOut) siteApi.signOut();
+  });
 
   function esc(s) {
     return (s == null ? "" : String(s)).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  var FEATURES = [
+    { icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>', title: "Location Intelligence", body: "Analiza cualquier direccion antes de estacionar tu trailer ahi — trafico, competencia y ajuste demografico." },
+    { icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>', title: "Web Builder", body: "Arma el sitio de tu restaurante — menu, fotos y contacto — sin saber programar." },
+    { icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>', title: "Checklist", body: "Los permisos exactos que necesitas segun tu condado y estado, antes de operar.", soon: true },
+    { icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>', title: "Chef Talent", body: "Conecta con cocineros y talento culinario disponible en tu zona.", soon: true },
+    { icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>', title: "Operator", body: "Recibe pedidos, conecta tu Stripe y usa Uber Eats o DoorDash junto con tu trailer." },
+  ];
+
+  function featureGridHtml() {
+    return (
+      '<div class="landing-features">' +
+        '<div class="landing-tag">Tu portal incluye</div>' +
+        '<div class="feat-grid">' +
+          FEATURES.map(function (f) {
+            return (
+              '<div class="feat-card">' +
+                '<div class="feat-icon"><svg viewBox="0 0 24 24">' + f.icon + '</svg></div>' +
+                '<h3>' + f.title + '</h3>' +
+                '<p>' + f.body + '</p>' +
+                (f.soon ? '<span class="feat-soon">Proximamente</span>' : '') +
+              '</div>'
+            );
+          }).join('') +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  // ---- Login / registro ----
+  function renderAuthScreen(mode, errorMsg) {
+    document.getElementById("app").classList.add("landing-mode");
+    document.getElementById("navSignOut").style.display = "none";
+    mode = mode || "signin";
+    screensEl.innerHTML =
+      '<div class="landing">' +
+        '<div class="auth-wrap">' +
+          '<div class="auth-card">' +
+            '<h1>' + (mode === "signup" ? "Crea tu cuenta" : "Entra a tu portal") + '</h1>' +
+            '<p class="auth-sub">Ubicacion, tu sitio, permisos, chef talent y la operacion de tu trailer — todo en un lugar.</p>' +
+            '<div class="auth-field"><label>Correo</label><input type="email" id="authEmail" autocomplete="username"></div>' +
+            '<div class="auth-field"><label>Contraseña</label><input type="password" id="authPassword" autocomplete="' + (mode === "signup" ? "new-password" : "current-password") + '"></div>' +
+            '<button type="button" class="auth-submit" id="authSubmitBtn">' + (mode === "signup" ? "Crear cuenta" : "Entrar") + '</button>' +
+            '<div class="auth-err" id="authErr">' + (errorMsg ? esc(errorMsg) : "") + '</div>' +
+            '<div class="auth-toggle">' +
+              (mode === "signup"
+                ? '¿Ya tienes cuenta? <button type="button" id="authToggleBtn">Entra aquí</button>'
+                : '¿Aún no tienes cuenta? <button type="button" id="authToggleBtn">Créala aquí</button>') +
+            '</div>' +
+            '<div class="auth-divider">o continúa con</div>' +
+            '<div class="auth-oauth">' +
+              '<button type="button" class="auth-oauth-btn google" data-oauth="google">Continuar con Google</button>' +
+              '<button type="button" class="auth-oauth-btn facebook" data-oauth="facebook">Continuar con Facebook</button>' +
+              '<button type="button" class="auth-oauth-btn apple" data-oauth="apple">Continuar con Apple</button>' +
+            '</div>' +
+            '<div class="auth-fine">¿Prefieres hablar con alguien? <a href="https://wa.me/16452353186" target="_blank" style="color:#C9C6FF;">WhatsApp con tu asesor</a></div>' +
+          '</div>' +
+        '</div>' +
+        featureGridHtml() +
+      '</div>';
+
+    document.getElementById("authToggleBtn").addEventListener("click", function () {
+      renderAuthScreen(mode === "signup" ? "signin" : "signup");
+    });
+    document.getElementById("authSubmitBtn").addEventListener("click", function () { submitAuth(mode); });
+    document.getElementById("authPassword").addEventListener("keydown", function (e) { if (e.key === "Enter") submitAuth(mode); });
+    screensEl.querySelectorAll("[data-oauth]").forEach(function (b) {
+      b.addEventListener("click", function () { oauthSignIn(b.dataset.oauth); });
+    });
+  }
+
+  async function submitAuth(mode) {
+    var btn = document.getElementById("authSubmitBtn");
+    var err = document.getElementById("authErr");
+    var email = document.getElementById("authEmail").value.trim();
+    var password = document.getElementById("authPassword").value;
+    err.textContent = "";
+    if (!email || !password) { err.textContent = "Falta correo o contraseña."; return; }
+    btn.disabled = true;
+    btn.textContent = mode === "signup" ? "Creando..." : "Entrando...";
+    try {
+      var res = mode === "signup"
+        ? await sb.auth.signUp({ email: email, password: password })
+        : await sb.auth.signInWithPassword({ email: email, password: password });
+      if (res.error) throw res.error;
+      if (mode === "signup" && res.data && res.data.user && !res.data.session) {
+        document.querySelector(".auth-card").innerHTML =
+          '<h1>Revisa tu correo</h1><p class="auth-sub">Te mandamos un link para confirmar tu cuenta (' + esc(email) + '). Ábrelo y regresa aquí.</p>';
+        return;
+      }
+      boot();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = mode === "signup" ? "Crear cuenta" : "Entrar";
+      err.textContent = e.message || "No se pudo continuar.";
+    }
+  }
+
+  function oauthSignIn(provider) {
+    sb.auth.signInWithOAuth({ provider: provider, options: { redirectTo: location.origin + location.pathname } });
+  }
+
+  // ---- Primer sitio (cuenta nueva sin sitio todavia) ----
+  function renderOnboarding() {
+    document.getElementById("app").classList.add("landing-mode");
+    document.getElementById("navSignOut").style.display = "";
+    screensEl.innerHTML =
+      '<div class="landing"><div class="auth-wrap"><div class="auth-card">' +
+        '<h1>Crea tu restaurante</h1>' +
+        '<p class="auth-sub">Dos datos y arrancamos — puedes cambiar todo despues desde Web Builder.</p>' +
+        '<div class="auth-field"><label>Nombre del restaurante</label><input type="text" id="obName"></div>' +
+        '<div class="auth-field"><label>Subdominio (tu-sitio.thetryla.com)</label><input type="text" id="obSubdomain" placeholder="tacos-el-sol"></div>' +
+        '<button type="button" class="auth-submit" id="obSubmitBtn">Crear</button>' +
+        '<div class="auth-err" id="obErr"></div>' +
+      '</div></div></div>';
+
+    document.getElementById("obSubmitBtn").addEventListener("click", async function () {
+      var btn = this;
+      var err = document.getElementById("obErr");
+      var name = document.getElementById("obName").value.trim();
+      var subdomain = document.getElementById("obSubdomain").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+      err.textContent = "";
+      if (!name || !subdomain) { err.textContent = "Faltan datos."; return; }
+      btn.disabled = true;
+      btn.textContent = "Creando...";
+      try {
+        var site = await siteApi.createSite({
+          subdomain: subdomain,
+          restaurant_name: name,
+          owner_user_id: currentUserId,
+          published: false,
+        });
+        buildAppShell(site);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Crear";
+        err.textContent = /duplicate key|unique/i.test(e.message || "") ? "Ese subdominio ya está en uso, prueba otro." : (e.message || "No se pudo crear.");
+      }
     });
   }
 
@@ -329,7 +467,11 @@
     );
   }
 
-  screensEl.innerHTML =
+  function buildAppShell(site) {
+    document.getElementById("app").classList.remove("landing-mode");
+    document.getElementById("navSignOut").style.display = siteApi.signOut ? "" : "none";
+
+    screensEl.innerHTML =
     '<section class="ios-screen active" id="screen-location">' +
       '<div class="section-title">Location Intelligence</div>' +
       '<div class="card">' +
@@ -424,6 +566,10 @@
     }
   });
 
+    renderSite(site);
+    initOperator(site);
+  }
+
   // ---- Web Builder (Mi Sitio) ----
   function menuRowHtml(item) {
     item = item || {};
@@ -446,12 +592,13 @@
     });
     return rows;
   }
-  function uploadPath(file) {
+  function uploadPath(file, site) {
     var ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-    return token.slice(0, 10) + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+    var prefix = (site && site.subdomain ? site.subdomain : "sin-asignar").replace(/[^a-z0-9-]/gi, "-");
+    return prefix + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
   }
-  async function uploadImage(file) {
-    var path = uploadPath(file);
+  async function uploadImage(file, site) {
+    var path = uploadPath(file, site);
     var res = await sb.storage.from("site-images").upload(path, file, { upsert: true, cacheControl: "3600", contentType: file.type || undefined });
     if (res.error) throw res.error;
     return sb.storage.from("site-images").getPublicUrl(path).data.publicUrl;
@@ -539,10 +686,10 @@
         var logoFile = document.getElementById("pvLogoFile").files[0];
         var heroFile = document.getElementById("pvHeroFile").files[0];
         var galleryFiles = document.getElementById("pvGalleryFile").files;
-        if (logoFile) newLogoUrl = await uploadImage(logoFile);
-        if (heroFile) newHeroUrl = await uploadImage(heroFile);
+        if (logoFile) newLogoUrl = await uploadImage(logoFile, site);
+        if (heroFile) newHeroUrl = await uploadImage(heroFile, site);
         if (galleryFiles && galleryFiles.length) {
-          for (var i = 0; i < galleryFiles.length; i++) newGallery.push(await uploadImage(galleryFiles[i]));
+          for (var i = 0; i < galleryFiles.length; i++) newGallery.push(await uploadImage(galleryFiles[i], site));
         }
         var payload = {
           restaurant_name: document.getElementById("pvName").value.trim(),
@@ -561,10 +708,9 @@
           tiktok: document.getElementById("pvTiktok").value.trim(),
           published: document.getElementById("pvPublished").checked,
         };
-        var res = await sb.rpc("save_site_by_portal_token", { p_token: token, p_site: payload });
-        if (res.error) throw res.error;
+        var saved = await siteApi.saveSite(payload, site.id);
         msg.textContent = "Guardado.";
-        renderSite(res.data);
+        renderSite(saved);
       } catch (err) {
         msg.className = "msg err";
         msg.textContent = "No se pudo guardar: " + (err.message || err);
@@ -676,9 +822,7 @@
       btn.disabled = true;
       btn.textContent = "Conectando...";
       try {
-        var res = await sb.functions.invoke("stripe-connect-onboarding", {
-          body: { portal_token: token, return_url: location.href, refresh_url: location.href },
-        });
+        var res = await siteApi.connectStripe();
         if (res.error) throw res.error;
         if (res.data && res.data.error) throw new Error(res.data.error);
         location.href = res.data.url;
@@ -691,8 +835,7 @@
 
     async function advanceOrder(orderId, status) {
       try {
-        var res = await sb.rpc("update_order_status_by_portal_token", { p_token: token, p_order_id: orderId, p_status: status });
-        if (res.error) throw res.error;
+        await siteApi.updateOrderStatus(orderId, status);
         await loadOrders();
         fullRender();
       } catch (e) {
@@ -701,12 +844,10 @@
     }
 
     async function loadOrders() {
-      var res = await sb.rpc("get_orders_by_portal_token", { p_token: token });
-      currentOrders = res.error ? [] : (res.data || []);
+      currentOrders = await siteApi.getOrders(subdomain);
     }
     async function loadPaymentStatus() {
-      var res = await sb.rpc("get_payment_status", { p_subdomain: subdomain });
-      paymentsEnabled = !!res.data;
+      paymentsEnabled = await siteApi.getPaymentStatus(subdomain);
     }
 
     Promise.all([loadPaymentStatus(), loadOrders()]).then(fullRender);
@@ -722,15 +863,72 @@
     }
   }
 
-  sb.rpc("get_site_by_portal_token", { p_token: token })
-    .then(function (res) {
-      if (res.error) throw res.error;
-      renderSite(res.data);
-      initOperator(res.data);
-    })
-    .catch(function () {
-      document.getElementById("siteRoot").innerHTML = '<div class="full-error">Este link de portal ya no es valido. Contacta a tu asesor de Tryla.</div>';
+  // ---- Adaptadores: de donde sale "cual es mi sitio" ----
+  function unwrapRpc(res) {
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  function makeTokenSiteAPI(tok) {
+    return {
+      getSite: function () { return sb.rpc("get_site_by_portal_token", { p_token: tok }).then(unwrapRpc); },
+      createSite: function () { throw new Error("no disponible con link de portal"); },
+      saveSite: function (payload) { return sb.rpc("save_site_by_portal_token", { p_token: tok, p_site: payload }).then(unwrapRpc); },
+      getOrders: function () { return sb.rpc("get_orders_by_portal_token", { p_token: tok }).then(function (r) { return r.error ? [] : (r.data || []); }); },
+      updateOrderStatus: function (id, status) { return sb.rpc("update_order_status_by_portal_token", { p_token: tok, p_order_id: id, p_status: status }).then(unwrapRpc); },
+      getPaymentStatus: function (subdomain) { return sb.rpc("get_payment_status", { p_subdomain: subdomain }).then(function (r) { return !!r.data; }); },
+      connectStripe: function () { return sb.functions.invoke("stripe-connect-onboarding", { body: { portal_token: tok, return_url: location.href, refresh_url: location.href } }); },
+      signOut: null,
+    };
+  }
+
+  function makeAuthSiteAPI() {
+    return {
+      getSite: function () { return sb.from("tryla_sites").select("*").maybeSingle().then(unwrapRpc); },
+      createSite: function (payload) { return sb.from("tryla_sites").insert(payload).select().single().then(unwrapRpc); },
+      saveSite: function (payload, siteId) { return sb.from("tryla_sites").update(payload).eq("id", siteId).select().single().then(unwrapRpc); },
+      getOrders: function (subdomain) { return sb.from("orders").select("*").eq("subdomain", subdomain).order("created_at", { ascending: false }).then(function (r) { return r.error ? [] : (r.data || []); }); },
+      updateOrderStatus: function (id, status) { return sb.from("orders").update({ status: status, updated_at: new Date().toISOString() }).eq("id", id).select().single().then(unwrapRpc); },
+      getPaymentStatus: function (subdomain) { return sb.from("client_payments").select("charges_enabled").eq("subdomain", subdomain).maybeSingle().then(function (r) { return !!(r.data && r.data.charges_enabled); }); },
+      connectStripe: function () { return sb.functions.invoke("stripe-connect-onboarding", { body: { return_url: location.href, refresh_url: location.href } }); },
+      signOut: function () { return sb.auth.signOut(); },
+    };
+  }
+
+  // ---- Arranque: link de portal heredado, o sesion ----
+  function boot() {
+    if (token) {
+      siteApi = makeTokenSiteAPI(token);
+      siteApi.getSite()
+        .then(function (site) { buildAppShell(site); })
+        .catch(function () {
+          renderAuthScreen("signin", "Este link de portal ya no es válido. Inicia sesión o crea tu cuenta.");
+        });
+      return;
+    }
+
+    sb.auth.getSession().then(function (res) {
+      var session = res.data && res.data.session;
+      if (!session) { renderAuthScreen("signin"); return; }
+      currentUserId = session.user.id;
+      siteApi = makeAuthSiteAPI();
+      sb.rpc("claim_my_site").catch(function () {}).then(function () {
+        return siteApi.getSite();
+      }).then(function (site) {
+        if (!site) { renderOnboarding(); return; }
+        buildAppShell(site);
+      }).catch(function (e) {
+        console.warn("[TrylApp] error cargando tu cuenta:", e);
+        renderAuthScreen("signin", "Ocurrió un error. Intenta de nuevo.");
+      });
     });
+  }
+
+  sb.auth.onAuthStateChange(function (event) {
+    if (event === "SIGNED_OUT") location.reload();
+  });
+
+  boot();
 })();
 </script>
 </body>

@@ -18,6 +18,9 @@
     save: async function () {
       throw new Error("Supabase no esta configurado.");
     },
+    setOwnerEmail: async function () {
+      throw new Error("Supabase no esta configurado.");
+    },
     remove: async function () {
       throw new Error("Supabase no esta configurado.");
     },
@@ -63,6 +66,20 @@
     const { data, error } = await sb
       .from("tryla_sites")
       .upsert(row, { onConflict: "subdomain" })
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  };
+
+  // Deja listo el correo de un cliente para que, cuando entre a TrylApp
+  // con ese correo (registro o Google/Facebook/Apple), claim_my_site()
+  // le asigne este sitio automaticamente. No toca los demas campos.
+  window.TrylaSites.setOwnerEmail = async function (subdomain, email) {
+    const { data, error } = await sb
+      .from("tryla_sites")
+      .update({ owner_email: email, updated_at: new Date().toISOString() })
+      .eq("subdomain", subdomain)
       .select()
       .maybeSingle();
     if (error) throw error;
