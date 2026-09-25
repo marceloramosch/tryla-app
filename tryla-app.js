@@ -1586,7 +1586,7 @@
     const t = I18N[(q && q.idioma) || "es"] || I18N.es;
     previewDoc.innerHTML = `
       <div class="doc-header">
-        <img src="assets/tryla_logo.png" alt="Tryla">
+        <img src="../assets/tryla_logo.png" alt="Tryla">
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
       </div>
       <div style="text-align:center; font-size:11px; letter-spacing:1.5px; color:#5b6b8c; margin:-4px 0 10px;">
@@ -1669,7 +1669,7 @@
 
     previewDoc.innerHTML = `
       <div class="doc-header">
-        <img src="assets/tryla_logo.png" alt="Tryla">
+        <img src="../assets/tryla_logo.png" alt="Tryla">
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
       </div>
       <div class="doc-title">${t.invoiceDocTitle}</div>
@@ -1789,7 +1789,7 @@
 
     previewDoc.innerHTML = `
       <div class="doc-header">
-        <img src="assets/tryla_logo.png" alt="Tryla">
+        <img src="../assets/tryla_logo.png" alt="Tryla">
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
       </div>
       <div class="doc-title">${t.title}</div>
@@ -1876,7 +1876,7 @@
     loadQuote(id);
     buildPreview();
     const html = previewDoc.innerHTML.replace(
-      'src="assets/tryla_logo.png"',
+      'src="../assets/tryla_logo.png"',
       'src="https://thetryla.app/assets/tryla_logo.png"'
     );
     try {

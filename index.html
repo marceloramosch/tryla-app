@@ -141,6 +141,35 @@
   .stub h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:18px; color:#171433; margin:0 0 10px; }
   .stub p{ font-size:13.5px; color:#5b6b8c; line-height:1.6; max-width:340px; margin:0 auto; }
   .stub .soon-pill{ display:inline-block; margin-top:16px; font:700 10.5px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#5B54FF; background:#F1F0FF; padding:7px 14px; border-radius:999px; }
+
+  /* ---- Operator: cobros, plataformas de delivery, pedidos ---- */
+  .op-card-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F0EFFA; }
+  .op-card-row:last-child{ border-bottom:none; }
+  .op-badge{ width:46px; height:46px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; font:800 8.5px/1.15 'Sora',Arial,sans-serif; text-align:center; letter-spacing:-.1px; white-space:pre-line; }
+  .op-row-body{ flex:1; min-width:0; }
+  .op-row-body h3{ font:700 14px/1.3 'Sora',Arial,sans-serif; color:#171433; margin:0 0 2px; }
+  .op-row-body p{ font-size:11.5px; color:#7c8aa6; margin:0; line-height:1.4; }
+  .op-connect-btn{ font:700 12.5px/1 'Sora',Arial,sans-serif; padding:10px 14px; border-radius:9px; white-space:nowrap; text-decoration:none; flex-shrink:0; border:none; cursor:pointer; }
+  .op-connect-btn.primary{ background:#5B54FF; color:#fff; }
+  .op-connect-btn.ghost{ background:#F1F0FF; color:#5B54FF; }
+  .op-connected{ display:flex; align-items:center; gap:6px; font:700 12.5px 'Sora',Arial,sans-serif; color:#1CAD5A; flex-shrink:0; }
+
+  .op-orders{ display:flex; flex-direction:column; gap:12px; }
+  .op-order{ background:#fff; border-radius:14px; padding:16px; box-shadow:0 1px 2px rgba(20,16,50,.05); border-left:4px solid #5B54FF; }
+  .op-order.status-listo{ border-left-color:#1CAD5A; }
+  .op-order.status-completado{ border-left-color:#C9C6D9; opacity:.65; }
+  .op-order.status-cancelado{ border-left-color:#C0392B; opacity:.55; }
+  .op-order-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+  .op-order-name{ font:700 14.5px 'Sora',Arial,sans-serif; color:#171433; }
+  .op-order-time{ font-size:11px; color:#9aa3bf; margin-top:1px; }
+  .op-status-label{ font:700 10.5px 'Sora',Arial,sans-serif; color:#8B87A6; text-transform:uppercase; letter-spacing:.5px; flex-shrink:0; }
+  .op-fulfill-pill{ display:inline-block; font:700 10.5px/1 'Sora',Arial,sans-serif; padding:5px 10px; border-radius:999px; background:#F1F0FF; color:#5B54FF; margin-bottom:9px; }
+  .op-order-items{ font-size:12.5px; color:#5b6b8c; line-height:1.6; margin-bottom:8px; }
+  .op-order-total{ font:800 16px/1 'Unbounded',Arial,sans-serif; color:#171433; margin-bottom:12px; }
+  .op-order-actions{ display:flex; gap:8px; }
+  .op-btn-next{ flex:1; font:700 13px/1 'Sora',Arial,sans-serif; padding:13px; border-radius:10px; border:none; background:#5B54FF; color:#fff; cursor:pointer; }
+  .op-btn-cancel{ flex:0 0 auto; font:700 13px/1 'Sora',Arial,sans-serif; padding:13px 16px; border-radius:10px; border:none; background:#FBEAEA; color:#C0392B; cursor:pointer; }
+  .op-btn-next:active, .op-btn-cancel:active{ transform:scale(.98); }
 </style>
 </head>
 <body>
@@ -203,11 +232,11 @@
   }
 
   var TABS = [
-    { id: "location", label: "Ubicación", icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>' },
-    { id: "site", label: "Mi Sitio", icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>' },
-    { id: "permits", label: "Permisos", icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>' },
+    { id: "location", label: "Location Intelligence", icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>' },
+    { id: "site", label: "Web Builder", icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>' },
+    { id: "permits", label: "Checklist", icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>' },
     { id: "chef", label: "Chef Talent", icon: '<path d="M7 21h10v-6.2c2-.6 3.5-2.5 3.5-4.7A4.6 4.6 0 0 0 16 5.7 4 4 0 0 0 8 5.7 4.6 4.6 0 0 0 3.5 10.1c0 2.2 1.5 4.1 3.5 4.7Z"/><path d="M7 17h10"/>' },
-    { id: "operate", label: "Operar", icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>' },
+    { id: "operate", label: "Operator", icon: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v6M6.5 15.5 10 13M17.5 15.5 14 13"/>' },
   ];
 
   function stubScreen(id, title, body, badge) {
@@ -226,7 +255,7 @@
 
   screensEl.innerHTML =
     '<section class="ios-screen active" id="screen-location">' +
-      '<div class="section-title">Ubicación</div>' +
+      '<div class="section-title">Location Intelligence</div>' +
       '<div class="card">' +
         '<h2>Analiza un lugar</h2>' +
         '<div class="hint">Estimado ilustrativo a partir de la dirección y el tipo de cocina — todavía no conectado a datos reales de tráfico o censo.</div>' +
@@ -249,13 +278,17 @@
     "</section>" +
 
     '<section class="ios-screen" id="screen-site">' +
-      '<div class="section-title">Mi Sitio</div>' +
+      '<div class="section-title">Web Builder</div>' +
       '<div id="siteRoot"><div class="full-loading">Cargando tu sitio...</div></div>' +
     "</section>" +
 
-    stubScreen("permits", "Guía de permisos", "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.") +
+    stubScreen("permits", "Checklist", "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.") +
     stubScreen("chef", "Chef Talent", "Conecta con cocineros y talento culinario para tu trailer. Estamos armando la red de chefs disponibles en tu zona.") +
-    stubScreen("operate", "Operar el trailer", "Herramientas del día a día: inventario, turnos, ventas y más, para operar tu trailer una vez que esté en la calle.");
+
+    '<section class="ios-screen" id="screen-operate">' +
+      '<div class="section-title">Operator</div>' +
+      '<div id="operateRoot"><div class="full-loading">Cargando...</div></div>' +
+    "</section>";
 
   var tabbar = document.createElement("nav");
   tabbar.className = "ios-tabbar";
@@ -465,10 +498,159 @@
     });
   }
 
+  // ---- Operator: cobros con Stripe, plataformas de delivery, pedidos ----
+  var DELIVERY_PLATFORMS = [
+    { name: "Uber Eats", color: "#06C167", url: "https://merchants.ubereats.com/us/en/get-started/", note: "Recibe pedidos en la app oficial Uber Eats Orders, en el mismo iPad o teléfono." },
+    { name: "DoorDash", color: "#EB1700", url: "https://get.doordash.com/en-us/merchant-signup", note: "Da de alta tu trailer y recibe pedidos en la app oficial de DoorDash." },
+    { name: "Grubhub", color: "#F63440", url: "https://get.grubhub.com/", note: "Conecta tu trailer con Grubhub for Restaurants." },
+  ];
+
+  function initOperator(site) {
+    var subdomain = site && site.subdomain;
+    var root = document.getElementById("operateRoot");
+    if (!subdomain) {
+      root.innerHTML = '<div class="full-error">Primero guarda tu sitio en Web Builder para activar Operator.</div>';
+      return;
+    }
+
+    var paymentsEnabled = false;
+    var currentOrders = [];
+    var NEXT_STATUS = { nuevo: "preparando", preparando: "listo", listo: "completado" };
+    var NEXT_LABEL = { nuevo: "Empezar a preparar →", preparando: "Marcar listo →", listo: "Marcar entregado →" };
+    var STATUS_LABEL = { nuevo: "Nuevo", preparando: "Preparando", listo: "Listo", completado: "Completado", cancelado: "Cancelado" };
+
+    function paymentsCardHtml() {
+      return (
+        '<div class="card">' +
+          "<h2>Cobros</h2>" +
+          '<div class="op-card-row">' +
+            '<div class="op-badge" style="background:#635BFF;">STRIPE</div>' +
+            '<div class="op-row-body"><h3>Cobra con tarjeta</h3><p>El dinero llega directo a tu cuenta — Tryla no lo retiene.</p></div>' +
+            (paymentsEnabled
+              ? '<span class="op-connected">✓ Conectado</span>'
+              : '<button type="button" class="op-connect-btn primary" id="opConnectStripe">Conectar</button>') +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    function platformsCardHtml() {
+      return (
+        '<div class="card">' +
+          "<h2>Plataformas de delivery</h2>" +
+          '<div class="hint" style="margin-bottom:2px;">Da de alta tu trailer en cada una y usa su app oficial de pedidos junto con TrylApp, en el mismo iPad o teléfono.</div>' +
+          DELIVERY_PLATFORMS.map(function (p) {
+            return (
+              '<div class="op-card-row">' +
+                '<div class="op-badge" style="background:' + p.color + ';">' + esc(p.name.replace(" ", "\n")) + "</div>" +
+                '<div class="op-row-body"><h3>' + esc(p.name) + "</h3><p>" + esc(p.note) + "</p></div>" +
+                '<a class="op-connect-btn ghost" href="' + p.url + '" target="_blank" rel="noopener">Conectar</a>' +
+              "</div>"
+            );
+          }).join("") +
+        "</div>"
+      );
+    }
+
+    function ordersInnerHtml() {
+      if (!currentOrders.length) {
+        return '<div class="hint" style="margin:0;">Sin pedidos por ahora. En cuanto entre uno, aparece aquí al instante.</div>';
+      }
+      return '<div class="op-orders">' + currentOrders.map(function (o) {
+        var items = (o.items || []).map(function (it) { return it.qty + "x " + esc(it.name); }).join(", ");
+        var time = new Date(o.created_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+        var next = NEXT_STATUS[o.status];
+        return (
+          '<div class="op-order status-' + o.status + '" data-order-id="' + o.id + '">' +
+            '<div class="op-order-head">' +
+              '<div><div class="op-order-name">' + esc(o.customer_name) + '</div><div class="op-order-time">' + esc(o.customer_phone) + " · " + time + "</div></div>" +
+              '<span class="op-status-label">' + STATUS_LABEL[o.status] + "</span>" +
+            "</div>" +
+            '<div class="op-fulfill-pill">' + (o.fulfillment === "delivery" ? "🛵 Entrega — " + esc(o.delivery_address || "") : "🛍️ Recoger") + "</div>" +
+            '<div class="op-order-items">' + items + (o.notes ? "<br><em>Nota: " + esc(o.notes) + "</em>" : "") + "</div>" +
+            '<div class="op-order-total">$' + Number(o.total).toFixed(2) + "</div>" +
+            (next
+              ? '<div class="op-order-actions"><button type="button" class="op-btn-next" data-next="' + next + '">' + NEXT_LABEL[o.status] + '</button><button type="button" class="op-btn-cancel" data-cancel>Cancelar</button></div>'
+              : "") +
+          "</div>"
+        );
+      }).join("") + "</div>";
+    }
+
+    function fullRender() {
+      root.innerHTML =
+        paymentsCardHtml() +
+        platformsCardHtml() +
+        '<div class="card"><h2>Pedidos</h2>' + ordersInnerHtml() + "</div>";
+
+      var stripeBtn = document.getElementById("opConnectStripe");
+      if (stripeBtn) stripeBtn.addEventListener("click", connectStripe);
+
+      root.querySelectorAll(".op-order").forEach(function (card) {
+        var id = card.dataset.orderId;
+        var nextBtn = card.querySelector("[data-next]");
+        var cancelBtn = card.querySelector("[data-cancel]");
+        if (nextBtn) nextBtn.addEventListener("click", function () { advanceOrder(id, nextBtn.dataset.next); });
+        if (cancelBtn) cancelBtn.addEventListener("click", function () { advanceOrder(id, "cancelado"); });
+      });
+    }
+
+    async function connectStripe() {
+      var btn = document.getElementById("opConnectStripe");
+      btn.disabled = true;
+      btn.textContent = "Conectando...";
+      try {
+        var res = await sb.functions.invoke("stripe-connect-onboarding", {
+          body: { portal_token: token, return_url: location.href, refresh_url: location.href },
+        });
+        if (res.error) throw res.error;
+        if (res.data && res.data.error) throw new Error(res.data.error);
+        location.href = res.data.url;
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Conectar";
+        alert("No se pudo iniciar la conexión con Stripe: " + (e.message || e));
+      }
+    }
+
+    async function advanceOrder(orderId, status) {
+      try {
+        var res = await sb.rpc("update_order_status_by_portal_token", { p_token: token, p_order_id: orderId, p_status: status });
+        if (res.error) throw res.error;
+        await loadOrders();
+        fullRender();
+      } catch (e) {
+        alert("No se pudo actualizar el pedido: " + (e.message || e));
+      }
+    }
+
+    async function loadOrders() {
+      var res = await sb.rpc("get_orders_by_portal_token", { p_token: token });
+      currentOrders = res.error ? [] : (res.data || []);
+    }
+    async function loadPaymentStatus() {
+      var res = await sb.rpc("get_payment_status", { p_subdomain: subdomain });
+      paymentsEnabled = !!res.data;
+    }
+
+    Promise.all([loadPaymentStatus(), loadOrders()]).then(fullRender);
+
+    try {
+      sb.channel("orders-" + subdomain)
+        .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: "subdomain=eq." + subdomain }, function () {
+          loadOrders().then(fullRender);
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn("[Operator] Realtime no disponible:", e);
+    }
+  }
+
   sb.rpc("get_site_by_portal_token", { p_token: token })
     .then(function (res) {
       if (res.error) throw res.error;
       renderSite(res.data);
+      initOperator(res.data);
     })
     .catch(function () {
       document.getElementById("siteRoot").innerHTML = '<div class="full-error">Este link de portal ya no es valido. Contacta a tu asesor de Tryla.</div>';

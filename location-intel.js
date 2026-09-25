@@ -5,7 +5,7 @@
 // input always returns the same result. Geocoding (turning the address into a
 // map pin) IS real, via OpenStreetMap's free Nominatim service.
 //
-// Exposes window.TrylaLocationIntel so both the internal CRM (crm.html) and the
+// Exposes window.TrylaLocationIntel so both the internal CRM (crm/index.html) and the
 // client-facing TrylApp (index.html) can share the exact same scoring logic and
 // map rendering instead of two copies drifting apart.
 (function () {

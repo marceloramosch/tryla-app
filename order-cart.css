@@ -1,0 +1,83 @@
+/* Carrito + checkout del sitio publico de un restaurante (sites/index.html).
+   Reusa las variables de color/tipografia ya definidas ahi (--ink, --panel,
+   --border, --accent, --accent-dim, --accent-light, --white, --gray). */
+
+.tcart-item-actions{ margin-top:12px; display:flex; align-items:center; }
+.tcart-add-btn{
+  background:var(--accent); color:#fff; border:none; border-radius:8px;
+  padding:9px 16px; font:700 13px 'Sora',Arial,sans-serif; cursor:pointer;
+}
+.tcart-add-btn:active{ transform:scale(.97); }
+.tcart-stepper{ display:flex; align-items:center; gap:12px; background:#1c1f2a; border:1px solid var(--border); border-radius:8px; padding:6px 8px; }
+.tcart-stepper button{ width:26px; height:26px; border-radius:6px; border:none; background:var(--accent); color:#fff; font-size:16px; font-weight:700; line-height:1; cursor:pointer; }
+.tcart-stepper button.dec{ background:#2b2f3d; }
+.tcart-stepper span{ min-width:16px; text-align:center; font-weight:700; font-size:14px; }
+
+.tcart-fab{
+  position:fixed; right:18px; bottom:18px; z-index:60;
+  background:linear-gradient(135deg,var(--accent),var(--accent-dim)); color:#fff;
+  border:none; border-radius:999px; padding:14px 22px; display:none; align-items:center; gap:10px;
+  font:800 14px 'Sora',Arial,sans-serif; box-shadow:0 10px 30px rgba(91,84,255,.45);
+  cursor:pointer;
+}
+.tcart-fab.show{ display:inline-flex; }
+.tcart-fab .tcart-count{
+  background:rgba(255,255,255,.25); border-radius:999px; min-width:22px; height:22px;
+  display:flex; align-items:center; justify-content:center; font-size:12px; padding:0 6px;
+}
+
+.tcart-overlay{ position:fixed; inset:0; background:rgba(3,4,8,.65); z-index:70; display:none; }
+.tcart-overlay.open{ display:block; }
+.tcart-sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:71; background:var(--panel);
+  border-top:1px solid var(--border); border-radius:20px 20px 0 0;
+  max-height:88vh; overflow-y:auto; padding:20px 20px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(100%); transition:transform .32s cubic-bezier(.22,.61,.36,1);
+}
+.tcart-overlay.open .tcart-sheet{ transform:translateY(0); }
+.tcart-sheet h3{ font-family:'Sora',Barlow,Arial,sans-serif; font-size:19px; margin:0 0 4px; }
+.tcart-close{ position:absolute; top:16px; right:16px; background:none; border:none; color:var(--gray); font-size:22px; cursor:pointer; line-height:1; }
+.tcart-sub{ color:var(--gray); font-size:13px; margin-bottom:16px; }
+
+.tcart-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+.tcart-row .tcart-row-name{ font-weight:600; font-size:14px; }
+.tcart-row .tcart-row-price{ color:var(--accent-light); font-size:12px; }
+.tcart-empty{ color:var(--gray); font-size:14px; padding:18px 0; text-align:center; }
+
+.tcart-total{ display:flex; justify-content:space-between; font-weight:800; font-size:17px; margin:16px 0; }
+
+.tcart-field{ margin-bottom:12px; }
+.tcart-field label{ display:block; font-size:12px; color:var(--gray); margin-bottom:6px; font-weight:600; }
+.tcart-field input, .tcart-field textarea{
+  width:100%; background:#1c1f2a; border:1px solid var(--border); border-radius:8px;
+  padding:11px 12px; color:#fff; font:400 14px 'Barlow',Arial,sans-serif;
+}
+.tcart-field textarea{ min-height:60px; resize:vertical; }
+.tcart-fulfill{ display:flex; gap:10px; margin-bottom:12px; }
+.tcart-fulfill button{
+  flex:1; padding:11px; border-radius:8px; border:1.5px solid var(--border); background:#1c1f2a;
+  color:var(--gray); font:700 13px 'Sora',Arial,sans-serif; cursor:pointer;
+}
+.tcart-fulfill button.active{ border-color:var(--accent); color:#fff; background:rgba(91,84,255,.18); }
+
+.tcart-pay-btn{
+  width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px;
+  padding:15px; font:800 15px 'Sora',Arial,sans-serif; cursor:pointer; margin-top:6px;
+}
+.tcart-pay-btn:disabled{ opacity:.55; cursor:default; }
+.tcart-error{ color:#FF8A8A; font-size:13px; margin-top:10px; display:none; }
+.tcart-error.show{ display:block; }
+.tcart-secure{ display:flex; align-items:center; gap:6px; justify-content:center; color:var(--gray); font-size:11px; margin-top:12px; }
+
+/* Confirmacion de pedido (?order=<id>) */
+#tcartConfirm{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(165deg,#06070A 0%,#06038D 100%); }
+.tcart-confirm-card{ max-width:420px; width:100%; background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:28px 24px; text-align:center; }
+.tcart-confirm-icon{ width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg,var(--accent),var(--accent-dim)); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.tcart-confirm-status{ font-family:'Unbounded',Arial,sans-serif; font-size:18px; margin-bottom:6px; }
+.tcart-confirm-sub{ color:var(--gray); font-size:13px; margin-bottom:20px; }
+.tcart-confirm-items{ text-align:left; border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:14px 0; margin-bottom:14px; }
+.tcart-confirm-row{ display:flex; justify-content:space-between; font-size:13px; padding:4px 0; color:#C7CAD4; }
+.tcart-confirm-total{ display:flex; justify-content:space-between; font-weight:800; font-size:16px; }
+.tcart-steps{ display:flex; gap:6px; margin:18px 0 4px; }
+.tcart-steps span{ flex:1; height:4px; border-radius:2px; background:var(--border); }
+.tcart-steps span.done{ background:var(--accent); }

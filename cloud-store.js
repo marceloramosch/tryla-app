@@ -146,7 +146,7 @@
         '<div style="background:#fff;border-radius:16px;padding:36px 32px;width:340px;max-width:90vw;' +
         'box-shadow:0 20px 60px rgba(0,0,0,.4);">' +
         '<div style="text-align:center;margin-bottom:22px;">' +
-        '<img src="assets/tryla_logo_alt.png" alt="Tryla" style="width:56px;height:56px;border-radius:14px;margin-bottom:12px;">' +
+        '<img src="../assets/tryla_logo_alt.png" alt="Tryla" style="width:56px;height:56px;border-radius:14px;margin-bottom:12px;">' +
         '<div style="font:800 26px \'Unbounded\',Arial,sans-serif;color:#171433;letter-spacing:1px;">TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></div>' +
         '<div style="font:600 9px Arial;color:#5B54FF;letter-spacing:3px;">CRM</div>' +
         "</div>" +

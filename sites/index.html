@@ -63,6 +63,7 @@
   #notFound h1{font-family:'Unbounded',Arial,sans-serif;font-size:22px;letter-spacing:-0.3px;}
   #notFound p{color:var(--gray);max-width:360px;}
 </style>
+<link rel="stylesheet" href="../order-cart.css">
 </head>
 <body>
 
@@ -71,6 +72,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../supabase-config.js"></script>
+<script src="../order-cart.js"></script>
 <script>
 (function () {
   function escapeHtml(s) {
@@ -100,7 +102,7 @@
     return `<div class="logoFallback"><svg viewBox="0 0 120 120" width="33" height="33"><polygon points="21.6,25.8 98.3,25.8 106.9,45.0 30.2,45.0" fill="#fff"/><polygon points="57.9,45.0 79.2,45.0 100.5,94.2 79.2,94.2" fill="#fff"/></svg></div>`;
   }
 
-  function render(site) {
+  function render(site, paymentsEnabled) {
     document.title = site.restaurant_name + (site.tagline ? " — " + site.tagline : "");
 
     const menuHtml = (site.menu || []).length
@@ -109,6 +111,7 @@
             <div class="menuItem">
               <div class="mTop"><span>${escapeHtml(m.name)}</span>${m.price ? `<span class="mPrice">$${escapeHtml(m.price)}</span>` : ""}</div>
               ${m.desc ? `<div class="mDesc">${escapeHtml(m.desc)}</div>` : ""}
+              ${paymentsEnabled && window.TrylaOrderCart ? window.TrylaOrderCart.menuActionHtml(m) : ""}
             </div>`).join("")
         }</div></div></section>`
       : "";
@@ -185,8 +188,15 @@
       renderNotFound();
       return;
     }
+    const sb = supabase.createClient(cfg.url, cfg.anonKey);
+
+    const orderId = new URLSearchParams(location.search).get("order");
+    if (orderId && window.TrylaOrderCart) {
+      await window.TrylaOrderCart.showOrderConfirmation(orderId, subdomain, sb);
+      return;
+    }
+
     try {
-      const sb = supabase.createClient(cfg.url, cfg.anonKey);
       const { data, error } = await sb
         .from("tryla_sites")
         .select("*")
@@ -197,7 +207,14 @@
         renderNotFound();
         return;
       }
-      render(data);
+      let paymentsEnabled = false;
+      try {
+        const { data: enabled } = await sb.rpc("get_payment_status", { p_subdomain: subdomain });
+        paymentsEnabled = !!enabled;
+      } catch (e) { /* tabla de pedidos aun no desplegada — sitio sigue funcionando normal */ }
+
+      render(data, paymentsEnabled);
+      if (paymentsEnabled && window.TrylaOrderCart) window.TrylaOrderCart.mount(data, sb);
     } catch (e) {
       console.warn("[TrylaSites] Error cargando sitio:", e);
       renderNotFound();
