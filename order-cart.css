@@ -73,7 +73,7 @@
 #tcartConfirm{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(165deg,#06070A 0%,#06038D 100%); }
 .tcart-confirm-card{ max-width:420px; width:100%; background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:28px 24px; text-align:center; }
 .tcart-confirm-icon{ width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg,var(--accent),var(--accent-dim)); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
-.tcart-confirm-status{ font-family:'Unbounded',Arial,sans-serif; font-size:18px; margin-bottom:6px; }
+.tcart-confirm-status{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:19px; margin-bottom:6px; }
 .tcart-confirm-sub{ color:var(--gray); font-size:13px; margin-bottom:20px; }
 .tcart-confirm-items{ text-align:left; border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:14px 0; margin-bottom:14px; }
 .tcart-confirm-row{ display:flex; justify-content:space-between; font-size:13px; padding:4px 0; color:#C7CAD4; }

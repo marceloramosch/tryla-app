@@ -69,9 +69,36 @@
   .ios-tab.active svg{ stroke:#5B54FF; transform:translateY(-1px) scale(1.06); }
   .ios-tab .dot{ position:absolute; margin-top:-24px; margin-left:14px; width:7px; height:7px; border-radius:50%; background:#E0A94C; border:1.5px solid #fff; }
 
+  /* ================= Desktop shell (sidebar nav) ================= */
+  @media (min-width:880px){
+    #app{ display:grid; grid-template-columns:240px 1fr; grid-template-rows:auto 1fr; grid-template-areas:"nav nav" "tabbar screens"; height:100vh; }
+    .ios-nav{ grid-area:nav; padding:16px 28px; }
+    .ios-nav .word{ font-size:17px; }
+    .ios-screens{ grid-area:screens; padding:8px 0 40px; }
+    .ios-screen{ max-width:760px; padding:32px 40px calc(40px + env(safe-area-inset-bottom,0px)); margin:0; }
+    .section-title{ font-size:23px; }
+
+    .ios-tabbar{
+      grid-area:tabbar; flex-direction:column; align-items:stretch; gap:3px; width:240px;
+      background:#fff; border-top:none; border-right:1px solid #EAE9F5; backdrop-filter:none; -webkit-backdrop-filter:none;
+      padding:18px 12px calc(18px + env(safe-area-inset-bottom,0px)); overflow-y:auto;
+    }
+    .ios-tab{
+      flex-direction:row; justify-content:flex-start; align-items:center; gap:12px; text-align:left;
+      padding:11px 14px; border-radius:11px; font-size:13.5px;
+    }
+    .ios-tab:hover{ background:#F5F4FC; }
+    .ios-tab.active{ background:#F1F0FF; }
+    .ios-tab svg{ width:20px; height:20px; flex-shrink:0; }
+    .ios-tab .dot{ position:static; margin:0 0 0 auto; }
+
+    .op-orders{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); align-items:start; gap:14px; }
+    .row .field{ min-width:220px; }
+  }
+
   /* ---- generic iOS-ish card language ---- */
   .card{ background:#fff; border-radius:16px; padding:20px 20px; margin-bottom:14px; box-shadow:0 1px 2px rgba(20,16,50,.05); }
-  .card h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:15px; color:#06038D; margin:0 0 4px; }
+  .card h2{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:15px; color:#06038D; margin:0 0 4px; }
   .card .hint{ font-size:12px; color:#7c8aa6; margin-bottom:14px; line-height:1.5; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#5b6b8c; text-transform:uppercase; margin-bottom:5px; }
@@ -87,12 +114,11 @@
   .msg{ font-size:12.5px; color:#1CAD5A; font-weight:700; margin-top:10px; display:block; }
   .msg.err{ color:#C0392B; }
 
-  .section-title{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:19px; color:#fff; margin:2px 0 16px; }
-  #screen-location .section-title, #screen-permits .section-title, #screen-chef .section-title, #screen-operate .section-title{ color:#171433; }
+  .section-title{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:19px; color:#171433; margin:2px 0 16px; }
 
   /* ---- landing (no token) ---- */
   .landing{ max-width:520px; margin:0 auto; padding:70px 20px 90px; text-align:center; }
-  .landing h1{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:clamp(26px,5vw,34px); color:#fff; line-height:1.15; margin:0 0 16px; }
+  .landing h1{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:clamp(26px,5vw,34px); color:#fff; line-height:1.15; margin:0 0 16px; }
   .landing p{ font-size:15px; color:#C9C6FF; line-height:1.6; margin:0 0 30px; }
   .landing .actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
   .landing .btn2{ font:700 14px/1 Arial,sans-serif; padding:13px 22px; border-radius:9px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
@@ -123,7 +149,7 @@
   /* ---- Location Intelligence specifics ---- */
   .li-score-card{ text-align:center; background:linear-gradient(135deg,#5B54FF,#3B36D6); border-radius:12px; padding:18px; margin-bottom:14px; color:#fff; }
   .li-score-label{ font:700 10px/1 'Sora',Arial,sans-serif; letter-spacing:1.5px; text-transform:uppercase; opacity:.85; }
-  .li-score-num{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:34px; margin:6px 0 2px; }
+  .li-score-num{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:34px; margin:6px 0 2px; }
   .li-score-sub{ font-size:12.5px; opacity:.9; }
   .li-metric{ margin-bottom:12px; }
   .li-metric:last-child{ margin-bottom:0; }
@@ -138,7 +164,7 @@
   .stub{ text-align:center; padding:36px 10px; }
   .stub .stub-icon{ width:64px; height:64px; border-radius:18px; background:linear-gradient(135deg,#5B54FF,#3B36D6); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; }
   .stub .stub-icon svg{ width:30px; height:30px; stroke:#fff; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-  .stub h2{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:18px; color:#171433; margin:0 0 10px; }
+  .stub h2{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:18px; color:#171433; margin:0 0 10px; }
   .stub p{ font-size:13.5px; color:#5b6b8c; line-height:1.6; max-width:340px; margin:0 auto; }
   .stub .soon-pill{ display:inline-block; margin-top:16px; font:700 10.5px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#5B54FF; background:#F1F0FF; padding:7px 14px; border-radius:999px; }
 
@@ -165,7 +191,7 @@
   .op-status-label{ font:700 10.5px 'Sora',Arial,sans-serif; color:#8B87A6; text-transform:uppercase; letter-spacing:.5px; flex-shrink:0; }
   .op-fulfill-pill{ display:inline-block; font:700 10.5px/1 'Sora',Arial,sans-serif; padding:5px 10px; border-radius:999px; background:#F1F0FF; color:#5B54FF; margin-bottom:9px; }
   .op-order-items{ font-size:12.5px; color:#5b6b8c; line-height:1.6; margin-bottom:8px; }
-  .op-order-total{ font:800 16px/1 'Unbounded',Arial,sans-serif; color:#171433; margin-bottom:12px; }
+  .op-order-total{ font:700 17px/1 'Sora',Arial,sans-serif; color:#171433; margin-bottom:12px; }
   .op-order-actions{ display:flex; gap:8px; }
   .op-btn-next{ flex:1; font:700 13px/1 'Sora',Arial,sans-serif; padding:13px; border-radius:10px; border:none; background:#5B54FF; color:#fff; cursor:pointer; }
   .op-btn-cancel{ flex:0 0 auto; font:700 13px/1 'Sora',Arial,sans-serif; padding:13px 16px; border-radius:10px; border:none; background:#FBEAEA; color:#C0392B; cursor:pointer; }

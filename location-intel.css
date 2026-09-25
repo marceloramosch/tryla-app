@@ -6,7 +6,7 @@
 .tli-marker-wrap{ position:relative; display:flex; flex-direction:column; align-items:center; transform:translateY(-6px); }
 .tli-marker-trailer{ display:block; filter:drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
 .tli-marker-badge{
-  position:absolute; top:-14px; right:-6px; color:#fff; font:800 11px/1 'Unbounded',Arial,sans-serif;
+  position:absolute; top:-14px; right:-6px; color:#fff; font:700 11px/1 'Sora',Arial,sans-serif;
   padding:3px 6px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,.35); z-index:2;
 }
 .tli-marker{ transform:translateY(-40px) scale(0.6); opacity:0; transition:transform .55s cubic-bezier(.34,1.56,.64,1), opacity .35s ease; }
