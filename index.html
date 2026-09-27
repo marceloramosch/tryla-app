@@ -352,6 +352,7 @@
       li_hint: "Estimado ilustrativo a partir de la dirección y el tipo de cocina — todavía no conectado a datos reales de tráfico o censo.",
       li_address: "Dirección o zona", li_address_ph: "Ej. 1200 Main St, Dallas, TX",
       li_cuisine: "Tipo de cocina", li_analyze: "Analizar →",
+      li_map_hint: "O da click en el mapa para marcar dónde estaría tu trailer.",
       li_score_label: "Opportunity Score",
       li_traffic: "Tráfico peatonal & demanda", li_space: "Espacio vs. competencia",
       li_demo: "Ajuste demográfico", li_gap: "Brecha de cocina (gap)",
@@ -425,6 +426,7 @@
       li_hint: "Illustrative estimate from the address and cuisine type — not yet connected to real traffic or census data.",
       li_address: "Address or area", li_address_ph: "E.g. 1200 Main St, Dallas, TX",
       li_cuisine: "Cuisine type", li_analyze: "Analyze →",
+      li_map_hint: "Or click the map to drop a pin for your trailer.",
       li_score_label: "Opportunity Score",
       li_traffic: "Foot traffic & demand", li_space: "Space vs. competition",
       li_demo: "Demographic fit", li_gap: "Cuisine gap",
@@ -679,6 +681,8 @@
           t("cuisines").map(function (c) { return '<option value="' + c + '">' + c + "</option>"; }).join("") +
         "</select></div>" +
         '<button type="button" class="btn" id="liAnalyzeBtn">' + t("li_analyze") + '</button>' +
+        '<div class="hint" style="margin-top:14px;">' + t("li_map_hint") + '</div>' +
+        '<div id="liMap" class="tli-map"></div>' +
       "</div>" +
       '<div class="card" id="liResultCard" style="display:none;">' +
         '<div class="li-score-card"><div class="li-score-label">' + t("li_score_label") + '</div><div class="li-score-num" id="liScoreNum">—</div><div class="li-score-sub" id="liScoreSub">—</div></div>' +
@@ -686,7 +690,6 @@
         '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_space") + '</span><b id="liMetricComp">0</b></div><div class="li-bar"><span id="liBarComp" style="width:0%"></span></div></div>' +
         '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_demo") + '</span><b id="liMetricDemo">0</b></div><div class="li-bar"><span id="liBarDemo" style="width:0%"></span></div></div>' +
         '<div class="li-metric"><div class="li-metric-head"><span>' + t("li_gap") + '</span><b id="liMetricGap">0</b></div><div class="li-bar"><span id="liBarGap" style="width:0%"></span></div></div>' +
-        '<div id="liMap" class="tli-map"></div>' +
         '<div id="liInsights"></div>' +
       "</div>" +
     "</section>" +
@@ -729,9 +732,8 @@
 
   // ---- Location Intelligence wiring ----
   var TLI = window.TrylaLocationIntel;
-  document.getElementById("liAnalyzeBtn").addEventListener("click", async function () {
-    var address = document.getElementById("liAddress").value.trim();
-    if (!address) { document.getElementById("liAddress").focus(); return; }
+
+  async function liShowResult(address, point) {
     var cuisine = document.getElementById("liCuisine").value;
     var r = TLI.scoreFor(address, cuisine);
     var tier = TLI.tier(r.overall10);
@@ -754,14 +756,33 @@
       insightsEl.appendChild(div);
     });
     document.getElementById("liResultCard").style.display = "block";
-    var point = await TLI.geocode(address);
     if (point) {
       try {
-        await TLI.mountMap(document.getElementById("liMap"), point, r);
+        await TLI.mountMap(document.getElementById("liMap"), point, r, liOnMapPick);
       } catch (mmErr) {
         console.warn("No se pudo cargar el mapa:", mmErr);
       }
     }
+  }
+
+  // Da click directo en el mapa en vez de escribir una direccion.
+  async function liOnMapPick(point) {
+    var label = await TLI.reverseGeocode(point.lat, point.lon);
+    var address = label || (point.lat.toFixed(5) + ", " + point.lon.toFixed(5));
+    document.getElementById("liAddress").value = address;
+    await liShowResult(address, point);
+  }
+
+  document.getElementById("liAnalyzeBtn").addEventListener("click", async function () {
+    var address = document.getElementById("liAddress").value.trim();
+    if (!address) { document.getElementById("liAddress").focus(); return; }
+    var point = await TLI.geocode(address);
+    await liShowResult(address, point);
+  });
+
+  // Mapa clicable desde el inicio, centrado en Dallas, aun sin analizar nada.
+  TLI.mountMap(document.getElementById("liMap"), null, null, liOnMapPick).catch(function (e) {
+    console.warn("No se pudo cargar el mapa inicial:", e);
   });
 
     renderSite(site);

@@ -84,12 +84,25 @@
   // Real geocoding via OpenStreetMap Nominatim (free, no key). Returns
   // {lat, lon, label} or null if the address can't be resolved.
   async function geocode(address) {
-    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address);
+    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(address);
     try {
       var res = await fetch(url, { headers: { Accept: "application/json" } });
       var data = await res.json();
       if (!data || !data[0]) return null;
       return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), label: data[0].display_name };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Lat/lon -> direccion legible. Se usa cuando el usuario da click directo
+  // en el mapa en vez de escribir una direccion.
+  async function reverseGeocode(lat, lon) {
+    var url = "https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lon;
+    try {
+      var res = await fetch(url, { headers: { Accept: "application/json" } });
+      var data = await res.json();
+      return (data && data.display_name) || null;
     } catch (e) {
       return null;
     }
@@ -134,7 +147,11 @@
           '<rect x="4" y="10" width="72" height="34" rx="4" fill="#5B54FF"/>' +
           '<rect x="4" y="10" width="72" height="10" fill="#3B36D6"/>' +
           '<rect x="12" y="24" width="20" height="14" rx="1.5" fill="#EAF6FF"/>' +
-          '<rect x="36" y="24" width="20" height="14" rx="1.5" fill="#EAF6FF"/>' +
+          '<rect x="38" y="22" width="18" height="18" rx="4" fill="#3B36D6"/>' +
+          '<g transform="translate(37.2,21.9) scale(0.152)">' +
+            '<polygon points="21.6,25.8 98.3,25.8 106.9,45.0 30.2,45.0" fill="#fff"/>' +
+            '<polygon points="57.9,45.0 79.2,45.0 100.5,94.2 79.2,94.2" fill="#fff"/>' +
+          '</g>' +
           '<rect x="76" y="16" width="10" height="20" rx="2" fill="#3B36D6"/>' +
           '<line x1="0" y1="44" x2="4" y2="44" stroke="#171433" stroke-width="3"/>' +
           '<circle cx="20" cy="48" r="7" fill="#171433"/><circle cx="20" cy="48" r="3" fill="#8B87A6"/>' +
@@ -145,16 +162,24 @@
   }
 
   var mapInstances = new WeakMap();
+  // Dallas, TX — centro por defecto del mapa cuando aun no hay direccion
+  // ni pin (nuestro mercado base hoy).
+  var DEFAULT_CENTER = { lat: 32.7767, lon: -96.797 };
 
-  // Mounts (or reuses) a Leaflet map in `container`, flies to {lat, lon} and
-  // drops an animated trailer marker badged with the score. Safe to call again
-  // on the same container for a new analysis — it reuses the map instance.
-  async function mountMap(container, point, scoreObj) {
+  // Mounts (or reuses) a Leaflet map in `container`. With a `point`, flies to
+  // {lat, lon} and drops an animated trailer marker badged with the score.
+  // Without one, shows a pickable base map centered on Dallas. Safe to call
+  // again on the same container for a new analysis — it reuses the map
+  // instance. `onPick(point)` (optional) fires once per map instance when
+  // the user clicks anywhere on the map to drop/move the pin themselves.
+  async function mountMap(container, point, scoreObj, onPick) {
     await ensureLeaflet();
     var L = window.L;
+    var center = point || DEFAULT_CENTER;
+    var zoom = point ? 15 : 11;
     var map = mapInstances.get(container);
     if (!map) {
-      map = L.map(container, { zoomControl: true, attributionControl: true }).setView([point.lat, point.lon], 15);
+      map = L.map(container, { zoomControl: true, attributionControl: true }).setView([center.lat, center.lon], zoom);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap",
@@ -162,15 +187,23 @@
       mapInstances.set(container, map);
     } else {
       map.invalidateSize();
-      map.flyTo([point.lat, point.lon], 15, { duration: 0.8 });
-      if (map.__trailerMarker) map.removeLayer(map.__trailerMarker);
+      map.flyTo([center.lat, center.lon], zoom, { duration: 0.8 });
+      if (map.__trailerMarker) { map.removeLayer(map.__trailerMarker); map.__trailerMarker = null; }
     }
-    var marker = L.marker([point.lat, point.lon], { icon: trailerDivIcon(scoreObj) }).addTo(map);
-    map.__trailerMarker = marker;
-    setTimeout(function () {
-      var el = marker.getElement();
-      if (el) el.classList.add("tli-drop-in");
-    }, 30);
+    if (point) {
+      var marker = L.marker([point.lat, point.lon], { icon: trailerDivIcon(scoreObj) }).addTo(map);
+      map.__trailerMarker = marker;
+      setTimeout(function () {
+        var el = marker.getElement();
+        if (el) el.classList.add("tli-drop-in");
+      }, 30);
+    }
+    if (onPick && !map.__pickWired) {
+      map.__pickWired = true;
+      map.on("click", function (e) {
+        onPick({ lat: e.latlng.lat, lon: e.latlng.lng });
+      });
+    }
     return map;
   }
 
@@ -179,6 +212,7 @@
     tier: tier,
     insightsFor: insightsFor,
     geocode: geocode,
+    reverseGeocode: reverseGeocode,
     mountMap: mountMap,
     ensureLeaflet: ensureLeaflet,
   };
