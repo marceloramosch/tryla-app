@@ -1114,7 +1114,7 @@
       if (!session) { renderAuthScreen("signin"); return; }
       currentUserId = session.user.id;
       siteApi = makeAuthSiteAPI();
-      sb.rpc("claim_my_site").catch(function () {}).then(function () {
+      Promise.resolve(sb.rpc("claim_my_site")).catch(function () {}).then(function () {
         return siteApi.getSite();
       }).then(function (site) {
         if (!site) { renderOnboarding(); return; }
