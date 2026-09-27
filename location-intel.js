@@ -88,12 +88,14 @@
   // llama debe caer de vuelta a scoreFor() (el estimado) en ese caso.
   // "sbClient" es el cliente de Supabase ya creado por quien llama
   // (index.html / crm/index.html), li_places es de lectura publica.
+  var ANCHOR_CATEGORIES = ["fuel", "worship", "bar", "stadium", "mall", "entertainment"];
+
   async function scoreForReal(sbClient, point, cuisine) {
     var latDelta = REAL_RADIUS_MILES / 69;
     var lonDelta = REAL_RADIUS_MILES / (69 * Math.cos(point.lat * Math.PI / 180));
     var res = await sbClient
       .from("li_places")
-      .select("category,cuisine,lat,lon")
+      .select("category,cuisine,name,lat,lon")
       .gte("lat", point.lat - latDelta).lte("lat", point.lat + latDelta)
       .gte("lon", point.lon - lonDelta).lte("lon", point.lon + lonDelta);
     if (res.error || !res.data || !res.data.length) return null;
@@ -102,6 +104,9 @@
     if (!nearby.length) return null;
 
     var restaurants = nearby.filter(function (p) { return p.category === "restaurant"; });
+    var foodParks = nearby.filter(function (p) { return p.category === "food_park"; });
+    var construction = nearby.filter(function (p) { return p.category === "construction"; });
+    var anchors = nearby.filter(function (p) { return ANCHOR_CATEGORIES.indexOf(p.category) !== -1; });
     var aliasKeywords = CUISINE_ALIASES[(cuisine || "").toLowerCase()] || [];
     var sameCuisine = restaurants.filter(function (p) {
       if (!p.cuisine) return false;
@@ -109,15 +114,16 @@
       if (aliasKeywords.some(function (k) { return pc.indexOf(k) !== -1; })) return true;
       return !!cuisine && pc.indexOf(cuisine.toLowerCase()) !== -1;
     });
-    var anchors = nearby.filter(function (p) { return p.category !== "restaurant"; });
 
-    // Espacio vs competencia: mientras menos restaurantes cerca, mas espacio.
-    var space = clamp(100 - restaurants.length * 4, 8, 96);
+    // Espacio vs competencia: los food parks pesan mas — son competencia
+    // directa y concentrada para un trailer, no solo un restaurante mas.
+    var space = clamp(100 - restaurants.length * 4 - foodParks.length * 15, 8, 96);
     // Brecha de cocina: pocos sirviendo lo mismo cerca = brecha (oportunidad) alta.
     var gap = clamp(100 - sameCuisine.length * 15, 10, 95);
     // Trafico/demanda: mas anclas (gasolineras, templos, bares, plazas, estadios,
-    // cines) cerca implica mas movimiento de gente por la zona.
-    var traffic = clamp(anchors.length * 6, 10, 95);
+    // cines) cerca implica mas movimiento de gente; construccion nueva cerca
+    // suma tambien — es demanda futura (colonias/desarrollos nuevos).
+    var traffic = clamp(anchors.length * 6 + construction.length * 8, 10, 95);
     // Demografico real todavia pendiente (falta Census) — neutro por ahora.
     var demo = 55;
 
@@ -130,9 +136,37 @@
       gap: Math.round(gap),
       overall10: Math.round(overall10 * 10) / 10,
       real: true,
+      nearby: nearby,
       nearbyCount: nearby.length,
       anchorCount: anchors.length,
+      restaurantCount: restaurants.length,
+      sameCuisineCount: sameCuisine.length,
+      foodParkCount: foodParks.length,
+      constructionCount: construction.length,
     };
+  }
+
+  // Frases de insight especificas para el score real (a diferencia de
+  // insightsFor(), que es generica y trabaja con el estimado simulado).
+  function insightsForReal(r) {
+    var out = [];
+    if (r.restaurantCount === 0 && r.foodParkCount === 0) {
+      out.push("No hay restaurantes ni food parks en " + REAL_RADIUS_MILES + " millas a la redonda — zona sin competencia directa.");
+    } else {
+      if (r.foodParkCount > 0) {
+        out.push(r.foodParkCount + (r.foodParkCount === 1 ? " food park/food court cerca" : " food parks/food courts cerca") + " — la competencia mas directa para un trailer.");
+      }
+      if (r.restaurantCount > 0) {
+        out.push(r.restaurantCount + " restaurante(s) cerca; " + r.sameCuisineCount + " del mismo tipo de cocina.");
+      }
+    }
+    if (r.constructionCount > 0) {
+      out.push(r.constructionCount + " obra(s) de construccion nueva cerca — senal de colonias/desarrollos en crecimiento.");
+    }
+    if (r.anchorCount > 0) {
+      out.push(r.anchorCount + " puntos de interes cerca (gasolineras, templos, bares, plazas, estadios, cines) que generan trafico peatonal.");
+    }
+    return out;
   }
 
   function tier(overall10) {
@@ -292,14 +326,52 @@
     return map;
   }
 
+  var nearbyLayers = new WeakMap();
+  var CATEGORY_COLORS = {
+    restaurant: "#C0392B",
+    food_park: "#7A0C0C",
+    construction: "#E0A94C",
+    fuel: "#3B36D6", worship: "#3B36D6", bar: "#3B36D6",
+    mall: "#3B36D6", stadium: "#3B36D6", entertainment: "#3B36D6",
+    other: "#8B87A6",
+  };
+
+  // Pinta los lugares reales cercanos (competencia, food parks, construccion,
+  // anclas de trafico) como puntos pequenos alrededor del pin principal —
+  // para poder VER el panorama, no solo leer el score. Reemplaza la capa
+  // anterior si ya existia (evita duplicados al re-analizar en el mismo mapa).
+  function plotNearby(map, nearby) {
+    var L = window.L;
+    var old = nearbyLayers.get(map);
+    if (old) map.removeLayer(old);
+    if (!nearby || !nearby.length) return;
+    var group = L.layerGroup();
+    nearby.forEach(function (p) {
+      var color = CATEGORY_COLORS[p.category] || CATEGORY_COLORS.other;
+      var marker = L.circleMarker([p.lat, p.lon], {
+        radius: p.category === "food_park" ? 7 : 5,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.85,
+        weight: 1.5,
+      });
+      if (p.name) marker.bindTooltip(p.name, { direction: "top" });
+      group.addLayer(marker);
+    });
+    group.addTo(map);
+    nearbyLayers.set(map, group);
+  }
+
   window.TrylaLocationIntel = {
     scoreFor: scoreFor,
     scoreForReal: scoreForReal,
+    insightsForReal: insightsForReal,
     tier: tier,
     insightsFor: insightsFor,
     geocode: geocode,
     reverseGeocode: reverseGeocode,
     mountMap: mountMap,
+    plotNearby: plotNearby,
     ensureLeaflet: ensureLeaflet,
   };
 })();

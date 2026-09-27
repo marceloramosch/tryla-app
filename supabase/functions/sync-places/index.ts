@@ -34,6 +34,15 @@ const OVERPASS_ENDPOINTS = [
 
 type Bbox = { south: number; west: number; north: number; east: number };
 
+type OverpassElement = {
+  type: string;
+  id: number;
+  lat?: number;
+  lon?: number;
+  center?: { lat: number; lon: number };
+  tags?: Record<string, string>;
+};
+
 async function requireStaff(req: Request) {
   const authHeader = req.headers.get("Authorization") || "";
   const jwt = authHeader.replace(/^Bearer\s+/i, "");
@@ -58,12 +67,19 @@ function overpassQuery(bbox: Bbox) {
     node["leisure"~"^(stadium|sports_centre)$"](${b});
     node["shop"="mall"](${b});
     node["amenity"~"^(cinema|theatre)$"](${b});
-  );out body;`;
+    nwr["amenity"="food_court"](${b});
+    nwr["name"~"food truck|food park|foodpark",i](${b});
+    way["building"="construction"](${b});
+    node["construction"](${b});
+  );out center;`;
 }
 
 function categorize(tags: Record<string, string>): string {
   const amenity = tags.amenity;
   const leisure = tags.leisure;
+  const name = (tags.name || "").toLowerCase();
+  if (tags.building === "construction" || tags.construction) return "construction";
+  if (amenity === "food_court" || /food truck|food ?park/.test(name)) return "food_park";
   if (amenity === "restaurant" || amenity === "fast_food" || amenity === "cafe") return "restaurant";
   if (amenity === "fuel") return "fuel";
   if (amenity === "place_of_worship") return "worship";
@@ -86,13 +102,7 @@ async function fetchOverpass(bbox: Bbox) {
       });
       if (!res.ok) throw new Error(`Overpass respondio ${res.status}`);
       const data = await res.json();
-      return data.elements as Array<{
-        type: string;
-        id: number;
-        lat: number;
-        lon: number;
-        tags?: Record<string, string>;
-      }>;
+      return data.elements as OverpassElement[];
     } catch (e) {
       lastErr = e;
     }
@@ -132,20 +142,25 @@ Deno.serve(async (req) => {
     const elements = await fetchOverpass(bbox as Bbox);
 
     const rows = elements
-      .filter((el) => el.lat != null && el.lon != null)
-      .map((el) => ({
-        osm_type: el.type,
-        osm_id: el.id,
-        category: categorize(el.tags || {}),
-        name: el.tags?.name || null,
-        cuisine: el.tags?.cuisine || null,
-        lat: el.lat,
-        lon: el.lon,
-        city: el.tags?.["addr:city"] || null,
-        state: el.tags?.["addr:state"] || null,
-        tags: el.tags || {},
-        pulled_at: new Date().toISOString(),
-      }));
+      .map((el) => {
+        const lat = el.lat ?? el.center?.lat;
+        const lon = el.lon ?? el.center?.lon;
+        if (lat == null || lon == null) return null;
+        return {
+          osm_type: el.type,
+          osm_id: el.id,
+          category: categorize(el.tags || {}),
+          name: el.tags?.name || null,
+          cuisine: el.tags?.cuisine || null,
+          lat,
+          lon,
+          city: el.tags?.["addr:city"] || null,
+          state: el.tags?.["addr:state"] || null,
+          tags: el.tags || {},
+          pulled_at: new Date().toISOString(),
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
 
     if (rows.length) {
       const { error: upsertErr } = await sb

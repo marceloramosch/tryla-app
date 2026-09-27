@@ -764,7 +764,8 @@
     document.getElementById("liBarGap").style.width = r.gap + "%";
     var insightsEl = document.getElementById("liInsights");
     insightsEl.innerHTML = "";
-    TLI.insightsFor(r, cuisine).forEach(function (text) {
+    var insightTexts = r.real ? TLI.insightsForReal(r) : TLI.insightsFor(r, cuisine);
+    insightTexts.forEach(function (text) {
       var div = document.createElement("div");
       div.className = "li-insight";
       div.textContent = text;
@@ -773,7 +774,8 @@
     document.getElementById("liResultCard").style.display = "block";
     if (point) {
       try {
-        await TLI.mountMap(document.getElementById("liMap"), point, r, liOnMapPick);
+        var mapInstance = await TLI.mountMap(document.getElementById("liMap"), point, r, liOnMapPick);
+        if (r.real && r.nearby) TLI.plotNearby(mapInstance, r.nearby);
       } catch (mmErr) {
         console.warn("No se pudo cargar el mapa:", mmErr);
       }
