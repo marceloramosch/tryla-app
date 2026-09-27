@@ -48,7 +48,7 @@
   .ios-nav .mark{ width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#5B54FF,#3B36D6);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
   .ios-nav .word{ font-family:'Unbounded',Arial,sans-serif; font-weight:800; font-size:15px; color:#fff; letter-spacing:-0.2px; }
   .ios-nav .client-name{ font-size:11px; color:#C9C6FF; font-weight:600; }
-  .ios-nav a.site-link{ font:700 12px/1 'Sora',Arial,sans-serif; color:#fff; text-decoration:none; border:1.5px solid rgba(255,255,255,.3); padding:8px 12px; border-radius:20px; }
+  .ios-nav a.site-link, .ios-nav button.site-link{ font:700 12px/1 'Sora',Arial,sans-serif; color:#fff; text-decoration:none; border:1.5px solid rgba(255,255,255,.3); padding:8px 12px; border-radius:20px; }
 
   .ios-screens{ flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; background:#F2F1F8; }
   #app.landing-mode .ios-screens{ background:transparent; }
@@ -253,7 +253,7 @@
 </head>
 <body>
 
-<div id="app">
+<div id="app" class="landing-mode">
   <div class="ios-nav">
     <div class="brand">
       <div class="mark">
@@ -1123,6 +1123,9 @@
         console.warn("[TrylApp] error cargando tu cuenta:", e);
         renderAuthScreen("signin", t("auth_err_session"));
       });
+    }).catch(function (e) {
+      console.warn("[TrylApp] error obteniendo tu sesión:", e);
+      renderAuthScreen("signin", t("auth_err_session"));
     });
   }
 
