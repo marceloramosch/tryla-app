@@ -50,6 +50,91 @@
     };
   }
 
+  // Distancia en millas entre dos puntos lat/lon (formula haversine).
+  function milesBetween(a, b) {
+    var R = 3958.8;
+    var dLat = (b.lat - a.lat) * Math.PI / 180;
+    var dLon = (b.lon - a.lon) * Math.PI / 180;
+    var lat1 = a.lat * Math.PI / 180, lat2 = b.lat * Math.PI / 180;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.asin(Math.sqrt(h));
+  }
+
+  var REAL_RADIUS_MILES = 1.5;
+
+  // El <select> de cocina muestra la etiqueta traducida (ES/EN) como su
+  // propio "value" — para comparar contra el tag cuisine=... de OpenStreetMap
+  // (siempre en ingles, ej. "mexican", "bbq") hace falta este mapeo, ademas
+  // del match directo por si acaso coinciden.
+  var CUISINE_ALIASES = {
+    "tacos / mexicana": ["mexican", "tex-mex", "taco"],
+    "tacos / mexican": ["mexican", "tex-mex", "taco"],
+    "bbq": ["barbecue", "bbq"],
+    "café / postres": ["coffee_shop", "cafe", "dessert", "ice_cream"],
+    "coffee / desserts": ["coffee_shop", "cafe", "dessert", "ice_cream"],
+    "pizza": ["pizza"],
+    "hamburguesas": ["burger"],
+    "burgers": ["burger"],
+    "asiática": ["asian", "chinese", "japanese", "thai", "vietnamese", "korean", "sushi"],
+    "asian": ["asian", "chinese", "japanese", "thai", "vietnamese", "korean", "sushi"],
+    "mariscos": ["seafood"],
+    "seafood": ["seafood"],
+    "vegana / saludable": ["vegan", "vegetarian", "healthy"],
+    "vegan / healthy": ["vegan", "vegetarian", "healthy"],
+  };
+
+  // Score con datos reales de li_places (OpenStreetMap), si la zona ya fue
+  // sincronizada. Regresa null si no hay cobertura ahi todavia — quien
+  // llama debe caer de vuelta a scoreFor() (el estimado) en ese caso.
+  // "sbClient" es el cliente de Supabase ya creado por quien llama
+  // (index.html / crm/index.html), li_places es de lectura publica.
+  async function scoreForReal(sbClient, point, cuisine) {
+    var latDelta = REAL_RADIUS_MILES / 69;
+    var lonDelta = REAL_RADIUS_MILES / (69 * Math.cos(point.lat * Math.PI / 180));
+    var res = await sbClient
+      .from("li_places")
+      .select("category,cuisine,lat,lon")
+      .gte("lat", point.lat - latDelta).lte("lat", point.lat + latDelta)
+      .gte("lon", point.lon - lonDelta).lte("lon", point.lon + lonDelta);
+    if (res.error || !res.data || !res.data.length) return null;
+
+    var nearby = res.data.filter(function (p) { return milesBetween(point, p) <= REAL_RADIUS_MILES; });
+    if (!nearby.length) return null;
+
+    var restaurants = nearby.filter(function (p) { return p.category === "restaurant"; });
+    var aliasKeywords = CUISINE_ALIASES[(cuisine || "").toLowerCase()] || [];
+    var sameCuisine = restaurants.filter(function (p) {
+      if (!p.cuisine) return false;
+      var pc = p.cuisine.toLowerCase();
+      if (aliasKeywords.some(function (k) { return pc.indexOf(k) !== -1; })) return true;
+      return !!cuisine && pc.indexOf(cuisine.toLowerCase()) !== -1;
+    });
+    var anchors = nearby.filter(function (p) { return p.category !== "restaurant"; });
+
+    // Espacio vs competencia: mientras menos restaurantes cerca, mas espacio.
+    var space = clamp(100 - restaurants.length * 4, 8, 96);
+    // Brecha de cocina: pocos sirviendo lo mismo cerca = brecha (oportunidad) alta.
+    var gap = clamp(100 - sameCuisine.length * 15, 10, 95);
+    // Trafico/demanda: mas anclas (gasolineras, templos, bares, plazas, estadios,
+    // cines) cerca implica mas movimiento de gente por la zona.
+    var traffic = clamp(anchors.length * 6, 10, 95);
+    // Demografico real todavia pendiente (falta Census) — neutro por ahora.
+    var demo = 55;
+
+    var overall10 = (traffic * 0.3 + space * 0.25 + demo * 0.25 + gap * 0.2) / 10;
+    return {
+      traffic: Math.round(traffic),
+      space: Math.round(space),
+      competitorsNearby: restaurants.length,
+      demo: Math.round(demo),
+      gap: Math.round(gap),
+      overall10: Math.round(overall10 * 10) / 10,
+      real: true,
+      nearbyCount: nearby.length,
+      anchorCount: anchors.length,
+    };
+  }
+
   function tier(overall10) {
     if (overall10 >= 8) return { label: "Alta oportunidad", cls: "high", color: "#1CAD5A" };
     if (overall10 >= 6) return { label: "Oportunidad moderada", cls: "mid", color: "#E0A94C" };
@@ -209,6 +294,7 @@
 
   window.TrylaLocationIntel = {
     scoreFor: scoreFor,
+    scoreForReal: scoreForReal,
     tier: tier,
     insightsFor: insightsFor,
     geocode: geocode,
