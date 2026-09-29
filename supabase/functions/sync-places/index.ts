@@ -90,21 +90,35 @@ function categorize(tags: Record<string, string>): string {
   return "other";
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function fetchOverpass(bbox: Bbox) {
   const body = "data=" + encodeURIComponent(overpassQuery(bbox));
   let lastErr: unknown = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
-      if (!res.ok) throw new Error(`Overpass respondio ${res.status}`);
-      const data = await res.json();
-      return data.elements as OverpassElement[];
-    } catch (e) {
-      lastErr = e;
+    // Overpass devuelve 429 cuando esta saturado (comun en la instancia
+    // publica, compartida entre TODOS los proyectos de Supabase del mundo).
+    // Reintenta con esperas crecientes antes de rendirse con este endpoint.
+    for (const waitMs of [0, 5000, 15000]) {
+      if (waitMs) await sleep(waitMs);
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        });
+        if (res.status === 429) {
+          lastErr = new Error("Overpass respondio 429 (saturado)");
+          continue;
+        }
+        if (!res.ok) throw new Error(`Overpass respondio ${res.status}`);
+        const data = await res.json();
+        return data.elements as OverpassElement[];
+      } catch (e) {
+        lastErr = e;
+      }
     }
   }
   throw lastErr instanceof Error ? lastErr : new Error("No se pudo contactar Overpass.");
