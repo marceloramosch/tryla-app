@@ -256,11 +256,12 @@
     // 2) Justo al lado de un ancla fuerte (gasolinera, plaza/mall o bar) a
     // menos de un cuarto de milla real — tráfico garantizado, todo el dia,
     // sin depender de que el resto de la zona tambien este saturada. Piso
-    // mas alto que el general (8.4 a 9.4), escalando con la distancia real
-    // al ancla mas cercana (mas cerca = mas alto).
+    // mas bajo que el general de arriba (7.0 a 8.0) — una sola ancla pesa
+    // menos que un cluster completo tipo downtown — escalando con la
+    // distancia real al ancla mas cercana (mas cerca = mas alto).
     var PROXIMITY_CATEGORIES = ["fuel", "mall", "bar"];
     var PROXIMITY_RADIUS_MILES = 0.25;
-    var PROXIMITY_FLOOR_MIN = 8.4, PROXIMITY_FLOOR_MAX = 9.4;
+    var PROXIMITY_FLOOR_MIN = 7.0, PROXIMITY_FLOOR_MAX = 8.0;
     var closeAnchors = nearby.filter(function (p) { return PROXIMITY_CATEGORIES.indexOf(p.category) !== -1; });
     if (closeAnchors.length) {
       var nearestAnchorMiles = Math.min.apply(null, closeAnchors.map(function (p) { return milesBetween(point, p); }));
