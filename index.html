@@ -232,6 +232,36 @@
   .stub-feature-num{ flex:none; width:26px; height:26px; border-radius:8px; background:#F1F0FF; color:#5B54FF; font:800 12px/26px 'Sora',Arial,sans-serif; text-align:center; }
   .stub-feature h4{ font:700 13px/1.3 'Sora',Arial,sans-serif; color:#171433; margin:0 0 3px; }
   .stub-feature p{ font-size:12.5px; color:#7c8aa6; line-height:1.5; margin:0; max-width:none; }
+  .chef-sample{ margin-top:24px; text-align:left; max-width:420px; margin-left:auto; margin-right:auto; }
+  .chef-sample-label{ font:700 10px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#b5b5c9; margin:0 0 8px; text-align:center; }
+  .chef-sample-card{ display:flex; gap:14px; align-items:center; background:#fff; border:1px solid #EEEDF9; border-radius:14px; padding:16px; opacity:.85; }
+  .chef-avatar{ width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#5B54FF,#3B36D6); color:#fff; display:flex; align-items:center; justify-content:center; font:800 16px 'Sora',Arial,sans-serif; flex:none; }
+  .chef-sample-info h4{ font:700 14px 'Sora',Arial,sans-serif; color:#171433; margin:0 0 2px; }
+  .chef-sample-info p{ font-size:12px; color:#7c8aa6; margin:0 0 4px; }
+  .chef-stars{ color:#E0A94C; font-size:13px; letter-spacing:1px; }
+
+  /* ---- Checklist ---- */
+  .checklist-disclaimer{
+    display:flex; gap:10px; align-items:flex-start; background:#FFF6E8; border:1px solid #F3DFB0;
+    border-radius:12px; padding:14px 16px; margin-bottom:16px; font-size:12.5px; color:#8a6d2f; line-height:1.5;
+  }
+  .checklist-disclaimer svg{ flex:none; width:18px; height:18px; stroke:#C98A1D; fill:none; stroke-width:2; margin-top:1px; }
+  .checklist-meta{ display:flex; gap:12px; margin-bottom:18px; }
+  .checklist-meta .field{ flex:1; }
+  .checklist-progress-wrap{ margin-bottom:18px; }
+  .checklist-progress-label{ display:flex; justify-content:space-between; font-size:12.5px; color:#5b6b8c; margin-bottom:6px; }
+  .checklist-items{ display:flex; flex-direction:column; gap:10px; }
+  .checklist-item{
+    display:flex; gap:14px; align-items:flex-start; background:#fff; border:1px solid #EEEDF9;
+    border-radius:14px; padding:16px; cursor:pointer; transition:border-color .12s ease, background .12s ease;
+  }
+  .checklist-item:hover{ border-color:#D8D5FF; }
+  .checklist-item.checked{ background:#F6FBF8; border-color:#CDEBDC; }
+  .checklist-item input[type="checkbox"]{ flex:none; width:22px; height:22px; margin-top:2px; accent-color:#1CAD5A; cursor:pointer; }
+  .checklist-item h4{ font:700 14px/1.3 'Sora',Arial,sans-serif; color:#171433; margin:0 0 4px; }
+  .checklist-item.checked h4{ color:#1CAD5A; }
+  .checklist-item p{ font-size:12.5px; color:#7c8aa6; line-height:1.5; margin:0; }
+  .checklist-reset{ display:block; margin:18px auto 0; background:none; border:none; color:#9797b3; font-size:12px; text-decoration:underline; cursor:pointer; }
 
   /* ---- Home dashboard ---- */
   .home-welcome{ margin-bottom:16px; }
@@ -402,15 +432,30 @@
       li_traffic: "Tráfico peatonal & demanda", li_space: "Espacio vs. competencia",
       li_demo: "Ajuste demográfico", li_gap: "Brecha de cocina (gap)",
       cuisines: ["Tacos / Mexicana", "BBQ", "Café / Postres", "Pizza", "Hamburguesas", "Asiática", "Mariscos", "Vegana / Saludable", "Otro / General"],
-      permits_body: "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.",
       chef_body: "Conecta con cocineros y talento culinario para tu trailer. Estamos armando la red de chefs disponibles en tu zona.",
       soon: "Próximamente",
-      permits_f1_t: "Permisos por condado y estado", permits_f1_b: "La lista exacta de lo que necesitas antes de operar, según dónde vas a poner tu trailer.",
-      permits_f2_t: "Formularios listos para llenar", permits_f2_b: "Plantillas y documentos descargables, sin tener que buscarlos uno por uno.",
-      permits_f3_t: "Recordatorios de renovación", permits_f3_b: "Te avisamos antes de que se te venza un permiso — nunca te agarra desprevenido.",
       chef_f1_t: "Perfiles verificados", chef_f1_b: "Cocineros con experiencia real en trailers y food trucks, no solo un currículum.",
       chef_f2_t: "Match por zona y especialidad", chef_f2_b: "Encuentra talento cerca de tu ubicación, para el tipo de cocina que necesitas.",
       chef_f3_t: "Contacto directo", chef_f3_b: "Platica y contrata sin intermediarios ni comisiones escondidas.",
+      chef_sample_label: "Ejemplo de cómo se va a ver",
+      chef_sample_name: "Chef María G.",
+      chef_sample_specialty: "Tacos / Parrilla · 8 años de experiencia",
+      checklist_title: "Tu checklist de permisos",
+      checklist_disclaimer: "Guía general de categorías — los requisitos exactos varían por condado y estado. Siempre verifica con tu gobierno local antes de operar.",
+      checklist_state_label: "Estado", checklist_state_ph: "Ej. Texas",
+      checklist_county_label: "Condado", checklist_county_ph: "Ej. Dallas County",
+      checklist_progress: "{done} de {total} completados",
+      checklist_reset: "Reiniciar checklist",
+      checklist_i1_t: "Licencia de negocio", checklist_i1_b: "Licencia general para operar un negocio en tu ciudad o condado.",
+      checklist_i2_t: "Permiso de vendedor móvil de alimentos", checklist_i2_b: "Permiso específico para food trucks/trailers, distinto a un restaurante fijo.",
+      checklist_i3_t: "Permiso de salud / inspección sanitaria", checklist_i3_b: "Inspección del departamento de salud de tu condado — casi siempre obligatoria.",
+      checklist_i4_t: "Certificación de manejo de alimentos", checklist_i4_b: "Para ti y cualquier persona que cocine o sirva en el trailer.",
+      checklist_i5_t: "Convenio con cocina comisaria", checklist_i5_b: "Muchos condados piden comprobar que tienes una cocina base con licencia.",
+      checklist_i6_t: "Inspección de gas / seguridad contra incendios", checklist_i6_b: "Si usas propano o equipo de cocción, casi siempre se inspecciona aparte.",
+      checklist_i7_t: "Registro e inspección del remolque", checklist_i7_b: "Registro vehicular y verificación de que el remolque es seguro para circular.",
+      checklist_i8_t: "Seguro de responsabilidad civil", checklist_i8_b: "Casi siempre te lo piden antes de darte permisos o rentar un espacio.",
+      checklist_i9_t: "Permiso de ventas / EIN", checklist_i9_b: "Para cobrar y declarar impuestos de venta legalmente.",
+      checklist_i10_t: "Zonificación y permiso de estacionamiento", checklist_i10_b: "Confirma dónde SÍ puedes operar legalmente tu trailer.",
       site_welcome: "Bienvenido", site_hint: "Edita lo que quieras y da clic en Guardar — se actualiza al instante.", site_your_site: " Tu sitio: ",
       site_name: "Nombre del restaurante", site_tagline: "Eslogan", site_description: "Descripción",
       site_photos: "Fotos", site_logo: "Logo", site_hero: "Foto principal (hero)", site_gallery: "Galería (puedes elegir varias)", site_current: " actual",
@@ -499,15 +544,30 @@
       li_traffic: "Foot traffic & demand", li_space: "Space vs. competition",
       li_demo: "Demographic fit", li_gap: "Cuisine gap",
       cuisines: ["Tacos / Mexican", "BBQ", "Coffee / Desserts", "Pizza", "Burgers", "Asian", "Seafood", "Vegan / Healthy", "Other / General"],
-      permits_body: "Personalized permits and requirements for your county and state — so you know exactly what you need before operating.",
       chef_body: "Connect with cooks and culinary talent for your trailer. We're building the network of chefs available in your area.",
       soon: "Coming soon",
-      permits_f1_t: "Permits by county and state", permits_f1_b: "The exact list of what you need before operating, based on where you'll put your trailer.",
-      permits_f2_t: "Ready-to-fill forms", permits_f2_b: "Downloadable templates and documents, instead of hunting them down one by one.",
-      permits_f3_t: "Renewal reminders", permits_f3_b: "We'll warn you before a permit expires — never caught off guard.",
       chef_f1_t: "Verified profiles", chef_f1_b: "Cooks with real trailer and food truck experience, not just a resume.",
       chef_f2_t: "Match by area and specialty", chef_f2_b: "Find talent near your location, for the kind of cuisine you need.",
       chef_f3_t: "Direct contact", chef_f3_b: "Chat and hire with no middleman and no hidden fees.",
+      chef_sample_label: "Example of how this will look",
+      chef_sample_name: "Chef Maria G.",
+      chef_sample_specialty: "Tacos / Grill · 8 years of experience",
+      checklist_title: "Your permits checklist",
+      checklist_disclaimer: "General guide to categories — exact requirements vary by county and state. Always verify with your local government before operating.",
+      checklist_state_label: "State", checklist_state_ph: "E.g. Texas",
+      checklist_county_label: "County", checklist_county_ph: "E.g. Dallas County",
+      checklist_progress: "{done} of {total} completed",
+      checklist_reset: "Reset checklist",
+      checklist_i1_t: "Business license", checklist_i1_b: "General license to operate a business in your city or county.",
+      checklist_i2_t: "Mobile food vendor permit", checklist_i2_b: "A specific permit for food trucks/trailers, different from a fixed restaurant.",
+      checklist_i3_t: "Health permit / sanitary inspection", checklist_i3_b: "Inspection from your county health department — almost always required.",
+      checklist_i4_t: "Food handler certification", checklist_i4_b: "For you and anyone who cooks or serves on the trailer.",
+      checklist_i5_t: "Commissary kitchen agreement", checklist_i5_b: "Many counties require proof of a licensed base kitchen.",
+      checklist_i6_t: "Gas / fire safety inspection", checklist_i6_b: "If you use propane or cooking equipment, it's almost always inspected separately.",
+      checklist_i7_t: "Trailer registration & inspection", checklist_i7_b: "Vehicle registration and proof the trailer is road-safe.",
+      checklist_i8_t: "Liability insurance", checklist_i8_b: "Almost always required before you get permits or lease a spot.",
+      checklist_i9_t: "Sales tax permit / EIN", checklist_i9_b: "To legally collect and report sales tax.",
+      checklist_i10_t: "Zoning & parking permit", checklist_i10_b: "Confirm where you're legally allowed to operate your trailer.",
       site_welcome: "Welcome", site_hint: "Edit whatever you want and click Save — it updates instantly.", site_your_site: " Your site: ",
       site_name: "Restaurant name", site_tagline: "Tagline", site_description: "Description",
       site_photos: "Photos", site_logo: "Logo", site_hero: "Main photo (hero)", site_gallery: "Gallery (pick several)", site_current: " current",
@@ -722,7 +782,7 @@
     ];
   }
 
-  function stubScreen(id, activeTab, title, body, features, badge) {
+  function stubScreen(id, activeTab, title, body, features, badge, extraHtml) {
     var icon = getTabs().find(function (tb) { return tb.id === id; }).icon;
     var featuresHtml = (features || []).map(function (f, i) {
       return (
@@ -740,6 +800,7 @@
           "<p>" + body + "</p>" +
           '<div class="soon-pill">' + (badge || t("soon")) + "</div>" +
           (featuresHtml ? '<div class="stub-features">' + featuresHtml + "</div>" : "") +
+          (extraHtml || "") +
         "</div>" +
       "</section>"
     );
@@ -791,16 +852,27 @@
       '<div id="siteRoot"><div class="full-loading">' + t("site_loading") + '</div></div>' +
     "</section>" +
 
-    stubScreen("permits", activeTab, t("tab_permits"), t("permits_body"), [
-      { title: t("permits_f1_t"), body: t("permits_f1_b") },
-      { title: t("permits_f2_t"), body: t("permits_f2_b") },
-      { title: t("permits_f3_t"), body: t("permits_f3_b") },
-    ]) +
+    '<section class="ios-screen' + (activeTab === "permits" ? " active" : "") + '" id="screen-permits">' +
+      '<div class="section-title">' + t("tab_permits") + '</div>' +
+      '<div id="checklistRoot"></div>' +
+    "</section>" +
     stubScreen("chef", activeTab, t("tab_chef"), t("chef_body"), [
       { title: t("chef_f1_t"), body: t("chef_f1_b") },
       { title: t("chef_f2_t"), body: t("chef_f2_b") },
       { title: t("chef_f3_t"), body: t("chef_f3_b") },
-    ]) +
+    ], null,
+      '<div class="chef-sample">' +
+        '<p class="chef-sample-label">' + t("chef_sample_label") + '</p>' +
+        '<div class="chef-sample-card">' +
+          '<div class="chef-avatar">MG</div>' +
+          '<div class="chef-sample-info">' +
+            '<h4>' + t("chef_sample_name") + '</h4>' +
+            '<p>' + t("chef_sample_specialty") + '</p>' +
+            '<div class="chef-stars">★★★★★</div>' +
+          "</div>" +
+        "</div>" +
+      "</div>"
+    ) +
 
     '<section class="ios-screen' + (activeTab === "operate" ? " active" : "") + '" id="screen-operate">' +
       '<div class="section-title">' + t("tab_operate") + '</div>' +
@@ -957,6 +1029,97 @@
     renderSite(site);
     initOperator(site);
     renderHomeDashboard(site);
+    renderChecklist(site);
+  }
+
+  // ---- Checklist de permisos (interactivo, guardado en este navegador) ----
+  var CHECKLIST_ITEMS = ["i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "i9", "i10"];
+
+  function checklistStorageKey(site) {
+    var id = (site && (site.subdomain || site.id)) || "guest";
+    return "trylaChecklist_" + id;
+  }
+  function loadChecklistState(site) {
+    try { return JSON.parse(localStorage.getItem(checklistStorageKey(site)) || "{}"); } catch (e) { return {}; }
+  }
+  function saveChecklistState(site, state) {
+    try { localStorage.setItem(checklistStorageKey(site), JSON.stringify(state)); } catch (e) {}
+  }
+  function checklistMetaKey(site) { return checklistStorageKey(site) + "_meta"; }
+  function loadChecklistMeta(site) {
+    try { return JSON.parse(localStorage.getItem(checklistMetaKey(site)) || "{}"); } catch (e) { return {}; }
+  }
+  function saveChecklistMeta(site, meta) {
+    try { localStorage.setItem(checklistMetaKey(site), JSON.stringify(meta)); } catch (e) {}
+  }
+
+  function renderChecklist(site) {
+    var root = document.getElementById("checklistRoot");
+    if (!root) return;
+    var state = loadChecklistState(site);
+    var meta = loadChecklistMeta(site);
+
+    function itemHtml(id) {
+      var checked = !!state[id];
+      return (
+        '<label class="checklist-item' + (checked ? " checked" : "") + '" data-item="' + id + '">' +
+          '<input type="checkbox"' + (checked ? " checked" : "") + '>' +
+          "<div><h4>" + t("checklist_" + id + "_t") + "</h4><p>" + t("checklist_" + id + "_b") + "</p></div>" +
+        "</label>"
+      );
+    }
+
+    function progressHtml() {
+      var done = CHECKLIST_ITEMS.filter(function (id) { return !!state[id]; }).length;
+      var pct = Math.round((done / CHECKLIST_ITEMS.length) * 100);
+      return (
+        '<div class="checklist-progress-label"><span>' +
+          t("checklist_progress").replace("{done}", done).replace("{total}", CHECKLIST_ITEMS.length) +
+          "</span><span>" + pct + "%</span></div>" +
+        '<div class="li-bar"><span style="width:' + pct + '%"></span></div>'
+      );
+    }
+
+    root.innerHTML =
+      '<div class="card">' +
+        "<h2>" + t("checklist_title") + "</h2>" +
+        '<div class="checklist-disclaimer">' +
+          '<svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 2.6 17.5A1.8 1.8 0 0 0 4.2 20h15.6a1.8 1.8 0 0 0 1.6-2.5L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>' +
+          "<span>" + t("checklist_disclaimer") + "</span>" +
+        "</div>" +
+        '<div class="checklist-meta">' +
+          '<div class="field"><label>' + t("checklist_state_label") + '</label><input type="text" id="checklistState" placeholder="' + t("checklist_state_ph") + '" value="' + esc(meta.state) + '"></div>' +
+          '<div class="field"><label>' + t("checklist_county_label") + '</label><input type="text" id="checklistCounty" placeholder="' + t("checklist_county_ph") + '" value="' + esc(meta.county) + '"></div>' +
+        "</div>" +
+        '<div class="checklist-progress-wrap" id="checklistProgress">' + progressHtml() + "</div>" +
+        '<div class="checklist-items">' + CHECKLIST_ITEMS.map(itemHtml).join("") + "</div>" +
+        '<button type="button" class="checklist-reset" id="checklistResetBtn">' + t("checklist_reset") + "</button>" +
+      "</div>";
+
+    root.querySelectorAll(".checklist-item").forEach(function (row) {
+      row.querySelector("input").addEventListener("change", function () {
+        var id = row.dataset.item;
+        state[id] = this.checked;
+        row.classList.toggle("checked", this.checked);
+        saveChecklistState(site, state);
+        document.getElementById("checklistProgress").innerHTML = progressHtml();
+      });
+    });
+
+    document.getElementById("checklistState").addEventListener("change", function () {
+      meta.state = this.value.trim();
+      saveChecklistMeta(site, meta);
+    });
+    document.getElementById("checklistCounty").addEventListener("change", function () {
+      meta.county = this.value.trim();
+      saveChecklistMeta(site, meta);
+    });
+
+    document.getElementById("checklistResetBtn").addEventListener("click", function () {
+      state = {};
+      saveChecklistState(site, state);
+      renderChecklist(site);
+    });
   }
 
   // ---- Home dashboard ----
