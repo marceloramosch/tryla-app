@@ -220,6 +220,11 @@
   .stub h2{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:18px; color:#171433; margin:0 0 10px; }
   .stub p{ font-size:13.5px; color:#5b6b8c; line-height:1.6; max-width:340px; margin:0 auto; }
   .stub .soon-pill{ display:inline-block; margin-top:16px; font:700 10.5px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#5B54FF; background:#F1F0FF; padding:7px 14px; border-radius:999px; }
+  .stub-features{ text-align:left; max-width:420px; margin:28px auto 0; display:flex; flex-direction:column; gap:10px; }
+  .stub-feature{ display:flex; gap:12px; align-items:flex-start; background:#fff; border:1px solid #EEEDF9; border-radius:14px; padding:14px 16px; }
+  .stub-feature-num{ flex:none; width:26px; height:26px; border-radius:8px; background:#F1F0FF; color:#5B54FF; font:800 12px/26px 'Sora',Arial,sans-serif; text-align:center; }
+  .stub-feature h4{ font:700 13px/1.3 'Sora',Arial,sans-serif; color:#171433; margin:0 0 3px; }
+  .stub-feature p{ font-size:12.5px; color:#7c8aa6; line-height:1.5; margin:0; max-width:none; }
 
   /* ---- Home dashboard ---- */
   .home-welcome{ margin-bottom:16px; }
@@ -388,6 +393,12 @@
       permits_body: "Requisitos y permisos personalizados según tu condado y estado — para que sepas exactamente qué necesitas antes de operar.",
       chef_body: "Conecta con cocineros y talento culinario para tu trailer. Estamos armando la red de chefs disponibles en tu zona.",
       soon: "Próximamente",
+      permits_f1_t: "Permisos por condado y estado", permits_f1_b: "La lista exacta de lo que necesitas antes de operar, según dónde vas a poner tu trailer.",
+      permits_f2_t: "Formularios listos para llenar", permits_f2_b: "Plantillas y documentos descargables, sin tener que buscarlos uno por uno.",
+      permits_f3_t: "Recordatorios de renovación", permits_f3_b: "Te avisamos antes de que se te venza un permiso — nunca te agarra desprevenido.",
+      chef_f1_t: "Perfiles verificados", chef_f1_b: "Cocineros con experiencia real en trailers y food trucks, no solo un currículum.",
+      chef_f2_t: "Match por zona y especialidad", chef_f2_b: "Encuentra talento cerca de tu ubicación, para el tipo de cocina que necesitas.",
+      chef_f3_t: "Contacto directo", chef_f3_b: "Platica y contrata sin intermediarios ni comisiones escondidas.",
       site_welcome: "Bienvenido", site_hint: "Edita lo que quieras y da clic en Guardar — se actualiza al instante.", site_your_site: " Tu sitio: ",
       site_name: "Nombre del restaurante", site_tagline: "Eslogan", site_description: "Descripción",
       site_photos: "Fotos", site_logo: "Logo", site_hero: "Foto principal (hero)", site_gallery: "Galería (puedes elegir varias)", site_current: " actual",
@@ -474,6 +485,12 @@
       permits_body: "Personalized permits and requirements for your county and state — so you know exactly what you need before operating.",
       chef_body: "Connect with cooks and culinary talent for your trailer. We're building the network of chefs available in your area.",
       soon: "Coming soon",
+      permits_f1_t: "Permits by county and state", permits_f1_b: "The exact list of what you need before operating, based on where you'll put your trailer.",
+      permits_f2_t: "Ready-to-fill forms", permits_f2_b: "Downloadable templates and documents, instead of hunting them down one by one.",
+      permits_f3_t: "Renewal reminders", permits_f3_b: "We'll warn you before a permit expires — never caught off guard.",
+      chef_f1_t: "Verified profiles", chef_f1_b: "Cooks with real trailer and food truck experience, not just a resume.",
+      chef_f2_t: "Match by area and specialty", chef_f2_b: "Find talent near your location, for the kind of cuisine you need.",
+      chef_f3_t: "Direct contact", chef_f3_b: "Chat and hire with no middleman and no hidden fees.",
       site_welcome: "Welcome", site_hint: "Edit whatever you want and click Save — it updates instantly.", site_your_site: " Your site: ",
       site_name: "Restaurant name", site_tagline: "Tagline", site_description: "Description",
       site_photos: "Photos", site_logo: "Logo", site_hero: "Main photo (hero)", site_gallery: "Gallery (pick several)", site_current: " current",
@@ -688,8 +705,16 @@
     ];
   }
 
-  function stubScreen(id, activeTab, title, body, badge) {
+  function stubScreen(id, activeTab, title, body, features, badge) {
     var icon = getTabs().find(function (tb) { return tb.id === id; }).icon;
+    var featuresHtml = (features || []).map(function (f, i) {
+      return (
+        '<div class="stub-feature">' +
+          '<div class="stub-feature-num">' + (i + 1) + "</div>" +
+          '<div><h4>' + f.title + "</h4><p>" + f.body + "</p></div>" +
+        "</div>"
+      );
+    }).join("");
     return (
       '<section class="ios-screen' + (activeTab === id ? " active" : "") + '" id="screen-' + id + '">' +
         '<div class="stub">' +
@@ -697,6 +722,7 @@
           "<h2>" + title + "</h2>" +
           "<p>" + body + "</p>" +
           '<div class="soon-pill">' + (badge || t("soon")) + "</div>" +
+          (featuresHtml ? '<div class="stub-features">' + featuresHtml + "</div>" : "") +
         "</div>" +
       "</section>"
     );
@@ -746,8 +772,16 @@
       '<div id="siteRoot"><div class="full-loading">' + t("site_loading") + '</div></div>' +
     "</section>" +
 
-    stubScreen("permits", activeTab, t("tab_permits"), t("permits_body")) +
-    stubScreen("chef", activeTab, t("tab_chef"), t("chef_body")) +
+    stubScreen("permits", activeTab, t("tab_permits"), t("permits_body"), [
+      { title: t("permits_f1_t"), body: t("permits_f1_b") },
+      { title: t("permits_f2_t"), body: t("permits_f2_b") },
+      { title: t("permits_f3_t"), body: t("permits_f3_b") },
+    ]) +
+    stubScreen("chef", activeTab, t("tab_chef"), t("chef_body"), [
+      { title: t("chef_f1_t"), body: t("chef_f1_b") },
+      { title: t("chef_f2_t"), body: t("chef_f2_b") },
+      { title: t("chef_f3_t"), body: t("chef_f3_b") },
+    ]) +
 
     '<section class="ios-screen' + (activeTab === "operate" ? " active" : "") + '" id="screen-operate">' +
       '<div class="section-title">' + t("tab_operate") + '</div>' +
