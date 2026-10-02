@@ -13,6 +13,11 @@
 .tli-marker.tli-drop-in{ transform:translateY(0) scale(1); opacity:1; }
 @media(prefers-reduced-motion:reduce){ .tli-marker{ transition:none; transform:none; opacity:1; } }
 
+.tli-poi-marker{
+  width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 1px 3px rgba(0,0,0,.4); border:1.5px solid rgba(255,255,255,.85);
+}
+
 /* Expandir a pantalla completa es una funcion pensada para movil, donde el
    mapa embebido es chico — en desktop ya se ve bien en su tamano normal,
    asi que el boton ni siquiera aparece ahi (evita quedar "atorado" a

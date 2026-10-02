@@ -83,6 +83,61 @@
     "vegan / healthy": ["vegan", "vegetarian", "healthy"],
   };
 
+  // Todo el texto que arma este modulo (insights, tier, etiquetas del mapa)
+  // vive aqui en vez de usar el sistema de traduccion de index.html — este
+  // archivo lo comparte tambien crm/index.html (solo en espanol, sin toggle
+  // de idioma), por eso cada funcion que genera texto recibe un "lang"
+  // opcional y cae a espanol si no se lo mandan.
+  var L10N = {
+    es: {
+      tier_high: "Alta oportunidad", tier_mid: "Oportunidad moderada", tier_low: "Requiere mas analisis",
+      cat: {
+        restaurant: "Restaurante", food_park: "Food park", construction: "Construcción nueva",
+        fuel: "Gasolinera", worship: "Templo / iglesia", bar: "Bar / antro",
+        mall: "Centro comercial", stadium: "Estadio", entertainment: "Cine / teatro", other: "Otro",
+      },
+      foodPark: function (n) { return n + (n === 1 ? " food park/food court cerca" : " food parks/food courts cerca") + " — gente que ya va especificamente a comer ahi, con hambre y lista para gastar. Mas trafico suele pesar mas que la competencia extra."; },
+      bar: function (n) { return n + (n === 1 ? " bar cerca" : " bares cerca") + " — una de las mejores ubicaciones para un trailer en horario nocturno."; },
+      noCompetition: function (radius) { return "No hay restaurantes ni food parks en " + radius + " millas a la redonda — zona sin competencia directa."; },
+      restaurants: function (n, sameCuisine) { return n + " restaurante(s) cerca; " + sameCuisine + " del mismo tipo de cocina."; },
+      construction: function (n) { return n + " obra(s) de construccion nueva cerca — senal de colonias/desarrollos en crecimiento."; },
+      anchors: function (n) { return n + " otros puntos de interes cerca (gasolineras, templos, plazas, estadios, cines) que generan trafico peatonal."; },
+      census: function (pop, income) { return "Zona censal con " + pop.toLocaleString("es-MX") + " habitantes y un ingreso mediano por hogar de $" + income.toLocaleString("es-MX") + " (datos del Census Bureau de USA)."; },
+      trafficHigh: "Trafico peatonal y de vehiculos estimado como alto para este punto — buena exposicion para venta al paso.",
+      trafficLow: "Trafico estimado bajo-medio. Conviene reforzar visibilidad (senalizacion, redes, horario) mas que depender solo de paso.",
+      noCompetitorsEst: function (cuisine) { return "No se detectaron conceptos similares de " + cuisine + " cerca en este estimado — posible espacio abierto."; },
+      lowCompetitorsEst: function (n) { return "Competencia directa estimada baja (" + n + " conceptos similares) — el mercado no esta saturado."; },
+      someCompetitorsEst: function (n, cuisine) { return "Se estiman " + n + " conceptos similares de " + cuisine + " en la zona — diferenciacion de menu o precio sera clave."; },
+      demoHighEst: "El perfil demografico estimado (densidad, ingreso, flujo de commuters) favorece este tipo de negocio.",
+      gapHighEst: function (cuisine) { return "Brecha de oferta estimada alta para " + cuisine + " en esta zona frente a lo que ya existe."; },
+      gapLowEst: function (cuisine) { return "La oferta de " + cuisine + " ya esta relativamente cubierta aqui — considera un angulo de menu distinto."; },
+    },
+    en: {
+      tier_high: "High opportunity", tier_mid: "Moderate opportunity", tier_low: "Needs more analysis",
+      cat: {
+        restaurant: "Restaurant", food_park: "Food park", construction: "New construction",
+        fuel: "Gas station", worship: "Place of worship", bar: "Bar / club",
+        mall: "Shopping mall", stadium: "Stadium", entertainment: "Movie theater", other: "Other",
+      },
+      foodPark: function (n) { return n + (n === 1 ? " food park/food court nearby" : " food parks/food courts nearby") + " — people who already came specifically to eat, hungry and ready to spend. More foot traffic usually outweighs the extra competition."; },
+      bar: function (n) { return n + (n === 1 ? " bar nearby" : " bars nearby") + " — one of the best spots for a trailer during night hours."; },
+      noCompetition: function (radius) { return "No restaurants or food parks within " + radius + " miles — no direct competition in the area."; },
+      restaurants: function (n, sameCuisine) { return n + " restaurant(s) nearby; " + sameCuisine + " of the same cuisine type."; },
+      construction: function (n) { return n + " new construction project(s) nearby — a sign of growing neighborhoods/developments."; },
+      anchors: function (n) { return n + " other points of interest nearby (gas stations, places of worship, plazas, stadiums, theaters) that drive foot traffic."; },
+      census: function (pop, income) { return "Census area with " + pop.toLocaleString("en-US") + " residents and a median household income of $" + income.toLocaleString("en-US") + " (US Census Bureau data)."; },
+      trafficHigh: "Estimated foot and vehicle traffic is high for this spot — good exposure for walk-up sales.",
+      trafficLow: "Estimated traffic is low-to-medium. Lean on visibility (signage, social media, hours) rather than just foot traffic.",
+      noCompetitorsEst: function (cuisine) { return "No similar " + cuisine + " concepts detected nearby in this estimate — possible open space."; },
+      lowCompetitorsEst: function (n) { return "Estimated direct competition is low (" + n + " similar concepts) — the market isn't saturated."; },
+      someCompetitorsEst: function (n, cuisine) { return "An estimated " + n + " similar " + cuisine + " concepts in the area — menu or price differentiation will be key."; },
+      demoHighEst: "The estimated demographic profile (density, income, commuter flow) favors this type of business.",
+      gapHighEst: function (cuisine) { return "High estimated supply gap for " + cuisine + " in this area versus what already exists."; },
+      gapLowEst: function (cuisine) { return cuisine + " supply is already relatively covered here — consider a different menu angle."; },
+    },
+  };
+  function l10n(lang) { return L10N[lang === "en" ? "en" : "es"]; }
+
   // Score con datos reales de li_places (OpenStreetMap), si la zona ya fue
   // sincronizada. Regresa null si no hay cobertura ahi todavia — quien
   // llama debe caer de vuelta a scoreFor() (el estimado) en ese caso.
@@ -201,62 +256,43 @@
 
   // Frases de insight especificas para el score real (a diferencia de
   // insightsFor(), que es generica y trabaja con el estimado simulado).
-  function insightsForReal(r) {
+  function insightsForReal(r, lang) {
+    var s = l10n(lang);
     var out = [];
-    if (r.foodParkCount > 0) {
-      out.push(r.foodParkCount + (r.foodParkCount === 1 ? " food park/food court cerca" : " food parks/food courts cerca") + " — gente que ya va especificamente a comer ahi, con hambre y lista para gastar. Mas trafico suele pesar mas que la competencia extra.");
-    }
-    if (r.barCount > 0) {
-      out.push(r.barCount + (r.barCount === 1 ? " bar cerca" : " bares cerca") + " — una de las mejores ubicaciones para un trailer en horario nocturno.");
-    }
+    if (r.foodParkCount > 0) out.push(s.foodPark(r.foodParkCount));
+    if (r.barCount > 0) out.push(s.bar(r.barCount));
     if (r.restaurantCount === 0 && r.foodParkCount === 0) {
-      out.push("No hay restaurantes ni food parks en " + REAL_RADIUS_MILES + " millas a la redonda — zona sin competencia directa.");
+      out.push(s.noCompetition(REAL_RADIUS_MILES));
     } else if (r.restaurantCount > 0) {
-      out.push(r.restaurantCount + " restaurante(s) cerca; " + r.sameCuisineCount + " del mismo tipo de cocina.");
+      out.push(s.restaurants(r.restaurantCount, r.sameCuisineCount));
     }
-    if (r.constructionCount > 0) {
-      out.push(r.constructionCount + " obra(s) de construccion nueva cerca — senal de colonias/desarrollos en crecimiento.");
-    }
-    if (r.anchorCount > 0) {
-      out.push(r.anchorCount + " otros puntos de interes cerca (gasolineras, templos, plazas, estadios, cines) que generan trafico peatonal.");
-    }
+    if (r.constructionCount > 0) out.push(s.construction(r.constructionCount));
+    if (r.anchorCount > 0) out.push(s.anchors(r.anchorCount));
     if (r.censusPopulation != null && r.censusIncome != null) {
-      out.push(
-        "Zona censal con " + r.censusPopulation.toLocaleString("es-MX") + " habitantes y un ingreso mediano por hogar de $" +
-        Math.round(r.censusIncome).toLocaleString("es-MX") + " (datos del Census Bureau de USA)."
-      );
+      out.push(s.census(r.censusPopulation, Math.round(r.censusIncome)));
     }
     return out;
   }
 
-  function tier(overall10) {
-    if (overall10 >= 8) return { label: "Alta oportunidad", cls: "high", color: "#1CAD5A" };
-    if (overall10 >= 6) return { label: "Oportunidad moderada", cls: "mid", color: "#E0A94C" };
-    return { label: "Requiere mas analisis", cls: "low", color: "#C0392B" };
+  function tier(overall10, lang) {
+    var s = l10n(lang);
+    if (overall10 >= 8) return { label: s.tier_high, cls: "high", color: "#1CAD5A" };
+    if (overall10 >= 6) return { label: s.tier_mid, cls: "mid", color: "#E0A94C" };
+    return { label: s.tier_low, cls: "low", color: "#C0392B" };
   }
 
-  function insightsFor(r, cuisine) {
+  function insightsFor(r, cuisine, lang) {
+    var s = l10n(lang);
+    var cuisineLabel = (cuisine || "").toLowerCase();
     var list = [];
-    if (r.traffic >= 70) {
-      list.push("Trafico peatonal y de vehiculos estimado como alto para este punto — buena exposicion para venta al paso.");
-    } else if (r.traffic < 45) {
-      list.push("Trafico estimado bajo-medio. Conviene reforzar visibilidad (senalizacion, redes, horario) mas que depender solo de paso.");
-    }
-    if (r.competitorsNearby === 0) {
-      list.push("No se detectaron conceptos similares de " + cuisine.toLowerCase() + " cerca en este estimado — posible espacio abierto.");
-    } else if (r.competitorsNearby <= 2) {
-      list.push("Competencia directa estimada baja (" + r.competitorsNearby + " conceptos similares) — el mercado no esta saturado.");
-    } else {
-      list.push("Se estiman " + r.competitorsNearby + " conceptos similares de " + cuisine.toLowerCase() + " en la zona — diferenciacion de menu o precio sera clave.");
-    }
-    if (r.demo >= 70) {
-      list.push("El perfil demografico estimado (densidad, ingreso, flujo de commuters) favorece este tipo de negocio.");
-    }
-    if (r.gap >= 70) {
-      list.push("Brecha de oferta estimada alta para " + cuisine.toLowerCase() + " en esta zona frente a lo que ya existe.");
-    } else if (r.gap < 40) {
-      list.push("La oferta de " + cuisine.toLowerCase() + " ya esta relativamente cubierta aqui — considera un angulo de menu distinto.");
-    }
+    if (r.traffic >= 70) list.push(s.trafficHigh);
+    else if (r.traffic < 45) list.push(s.trafficLow);
+    if (r.competitorsNearby === 0) list.push(s.noCompetitorsEst(cuisineLabel));
+    else if (r.competitorsNearby <= 2) list.push(s.lowCompetitorsEst(r.competitorsNearby));
+    else list.push(s.someCompetitorsEst(r.competitorsNearby, cuisineLabel));
+    if (r.demo >= 70) list.push(s.demoHighEst);
+    if (r.gap >= 70) list.push(s.gapHighEst(cuisineLabel));
+    else if (r.gap < 40) list.push(s.gapLowEst(cuisineLabel));
     return list;
   }
 
@@ -443,35 +479,67 @@
   }
 
   var nearbyLayers = new WeakMap();
+  // Un color distinto por categoria, para poder diferenciarlas de un
+  // vistazo en el mapa (no solo con el nombre al pasar el mouse).
   var CATEGORY_COLORS = {
     restaurant: "#C0392B",
     food_park: "#7A0C0C",
     construction: "#E0A94C",
-    fuel: "#3B36D6", worship: "#3B36D6", bar: "#3B36D6",
-    mall: "#3B36D6", stadium: "#3B36D6", entertainment: "#3B36D6",
+    fuel: "#2D7DD2",
+    worship: "#8E44AD",
+    bar: "#D6336C",
+    mall: "#E67E22",
+    stadium: "#16A085",
+    entertainment: "#34495E",
     other: "#8B87A6",
   };
+  // Glyphs chicos y rellenos (no de linea) — a 13px adentro de un circulo de
+  // 22px, un icono de trazos finos no se alcanza a leer; uno solido si.
+  var CATEGORY_ICONS = {
+    restaurant: '<path fill="#fff" d="M7 2a1 1 0 0 1 1 1v5.17a2 2 0 0 1-.59 1.41L6 11v10a1 1 0 0 1-2 0V11L2.59 9.58A2 2 0 0 1 2 8.17V3a1 1 0 0 1 2 0v5h1V3a1 1 0 0 1 1-1h1zM16 2c-1.66 0-3 2.24-3 5s1.34 5 3 5v9a1 1 0 0 0 2 0V3a1 1 0 0 0-2-1z"/>',
+    fuel: '<path fill="#fff" d="M14 3H6a1 1 0 0 0-1 1v16h10V9h1a2 2 0 0 1 2 2v5.5a1.5 1.5 0 0 0 3 0V8l-3-3v2a1 1 0 0 1-1 1h-1V4a1 1 0 0 0-1-1zM7 6h5v4H7V6z"/>',
+    worship: '<path fill="#fff" d="M13 2h-2v3H8v2h3v3H8v2h3v8h2v-8h3v-2h-3V7h3V5h-3V2z"/>',
+    bar: '<path fill="#fff" d="M4 4h16l-7 8v6h4v2H7v-2h4v-6L4 4zm3.2 2 3.4 3.9L14 6H7.2z"/>',
+    mall: '<path fill="#fff" d="M7 7V6a5 5 0 0 1 10 0v1h2l1 14H4L5 7h2zm2 0h6V6a3 3 0 0 0-6 0v1z"/>',
+    stadium: '<path fill="#fff" d="M12 4c-5 0-9 2.2-9 5v6c0 2.8 4 5 9 5s9-2.2 9-5V9c0-2.8-4-5-9-5zm0 2c4.2 0 7 1.7 7 3s-2.8 3-7 3-7-1.7-7-3 2.8-3 7-3z"/>',
+    entertainment: '<path fill="#fff" d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm-2 5.5 6 3.5-6 3.5v-7z"/>',
+    construction: '<path fill="#fff" d="M12 3 2 21h20L12 3zm-1 8h2v4h-2v-4zm0 5h2v2h-2v-2z"/>',
+    other: '<circle fill="#fff" cx="12" cy="12" r="5"/>',
+  };
+  CATEGORY_ICONS.food_park = CATEGORY_ICONS.restaurant;
+
+  function nearbyDivIcon(category) {
+    var color = CATEGORY_COLORS[category] || CATEGORY_COLORS.other;
+    var glyph = CATEGORY_ICONS[category] || CATEGORY_ICONS.other;
+    var html =
+      '<div class="tli-poi-marker" style="background:' + color + '">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13">' + glyph + "</svg>" +
+      "</div>";
+    return window.L.divIcon({ html: html, className: "tli-poi-icon", iconSize: [22, 22], iconAnchor: [11, 11] });
+  }
+
+  function nearbyTooltipText(p, lang) {
+    var cat = l10n(lang).cat;
+    var catLabel = cat[p.category] || cat.other;
+    if (!p.name) return catLabel;
+    if (p.category === "restaurant" && p.cuisine) return p.name + " · " + p.cuisine;
+    return p.name + " · " + catLabel;
+  }
 
   // Pinta los lugares reales cercanos (competencia, food parks, construccion,
-  // anclas de trafico) como puntos pequenos alrededor del pin principal —
-  // para poder VER el panorama, no solo leer el score. Reemplaza la capa
-  // anterior si ya existia (evita duplicados al re-analizar en el mismo mapa).
-  function plotNearby(map, nearby) {
+  // anclas de trafico) con un icono por categoria alrededor del pin
+  // principal — para poder VER el panorama (que es cada cosa, y el nicho de
+  // cada restaurante) y no solo leer el score. Reemplaza la capa anterior
+  // si ya existia (evita duplicados al re-analizar en el mismo mapa).
+  function plotNearby(map, nearby, lang) {
     var L = window.L;
     var old = nearbyLayers.get(map);
     if (old) map.removeLayer(old);
     if (!nearby || !nearby.length) return;
     var group = L.layerGroup();
     nearby.forEach(function (p) {
-      var color = CATEGORY_COLORS[p.category] || CATEGORY_COLORS.other;
-      var marker = L.circleMarker([p.lat, p.lon], {
-        radius: p.category === "food_park" ? 7 : 5,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.85,
-        weight: 1.5,
-      });
-      if (p.name) marker.bindTooltip(p.name, { direction: "top" });
+      var marker = L.marker([p.lat, p.lon], { icon: nearbyDivIcon(p.category) });
+      marker.bindTooltip(nearbyTooltipText(p, lang), { direction: "top" });
       group.addLayer(marker);
     });
     group.addTo(map);
