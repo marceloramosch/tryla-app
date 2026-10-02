@@ -221,6 +221,22 @@
   .stub p{ font-size:13.5px; color:#5b6b8c; line-height:1.6; max-width:340px; margin:0 auto; }
   .stub .soon-pill{ display:inline-block; margin-top:16px; font:700 10.5px/1 'Sora',Arial,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#5B54FF; background:#F1F0FF; padding:7px 14px; border-radius:999px; }
 
+  /* ---- Home dashboard ---- */
+  .home-welcome{ margin-bottom:16px; }
+  .home-welcome h2{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:21px; color:#171433; margin:0 0 4px; }
+  .home-welcome p{ font-size:13px; color:#7c8aa6; margin:0; }
+  .home-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .home-card{ background:#fff; border-radius:16px; padding:18px; box-shadow:0 1px 2px rgba(20,16,50,.05); cursor:pointer; border:1px solid transparent; transition:transform .12s ease, border-color .12s ease; }
+  .home-card:active{ transform:scale(.97); }
+  .home-card:hover{ border-color:#E4E1FF; }
+  .home-card-icon{ width:34px; height:34px; border-radius:10px; background:#F1F0FF; display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+  .home-card-icon svg{ width:18px; height:18px; stroke:#5B54FF; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .home-card h3{ font:700 12.5px/1.25 'Sora',Arial,sans-serif; color:#171433; margin:0 0 7px; }
+  .home-card-value{ font:800 19px/1.1 'Sora',Arial,sans-serif; color:#06038D; margin-bottom:3px; }
+  .home-card-sub{ font-size:11px; color:#7c8aa6; line-height:1.4; }
+  .home-card .li-bar{ margin-top:7px; }
+  .home-card .soon-pill{ display:inline-block; margin-top:4px; font:700 9px/1 'Sora',Arial,sans-serif; letter-spacing:.8px; text-transform:uppercase; color:#5B54FF; background:#F1F0FF; padding:5px 9px; border-radius:999px; }
+
   /* ---- Operator: cobros, plataformas de delivery, pedidos ---- */
   .op-card-row{ display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F0EFFA; }
   .op-card-row:last-child{ border-bottom:none; }
@@ -348,6 +364,16 @@
       onboarding_create: "Crear", onboarding_creating: "Creando...",
       onboarding_missing: "Faltan datos.", onboarding_dup: "Ese subdominio ya está en uso, prueba otro.",
       tab_location: "Location Intelligence", tab_site: "Web Builder", tab_permits: "Checklist", tab_chef: "Chef Talent", tab_operate: "Operator",
+      tab_home: "Home",
+      home_welcome: "Hola, {name}", home_welcome_default: "Hola",
+      home_welcome_sub: "Aquí está el estado de tu restaurante en Tryla.",
+      home_li_empty: "Aún no has analizado un lugar.",
+      home_li_estimate_tag: " (estimado)",
+      home_site_sub: "del perfil completado",
+      home_checklist_teaser: "Pronto vas a ver aquí los permisos exactos que necesitas.",
+      home_chef_teaser: "Pronto vas a poder ver y contratar talento de cocina nuevo.",
+      home_operate_orders: "pedidos", home_operate_sub: "pedidos recibidos en total",
+      home_operate_empty: "Aún no tienes pedidos.",
       li_card_title: "Analiza un lugar",
       li_hint: "Estimado ilustrativo a partir de la dirección y el tipo de cocina — todavía no conectado a datos reales de tráfico o censo.",
       li_address: "Dirección o zona", li_address_ph: "Ej. 1200 Main St, Dallas, TX",
@@ -424,6 +450,16 @@
       onboarding_create: "Create", onboarding_creating: "Creating...",
       onboarding_missing: "Missing fields.", onboarding_dup: "That subdomain is already taken, try another.",
       tab_location: "Location Intelligence", tab_site: "Web Builder", tab_permits: "Checklist", tab_chef: "Chef Talent", tab_operate: "Operator",
+      tab_home: "Home",
+      home_welcome: "Hi, {name}", home_welcome_default: "Hi there",
+      home_welcome_sub: "Here's the status of your restaurant on Tryla.",
+      home_li_empty: "You haven't analyzed a spot yet.",
+      home_li_estimate_tag: " (estimate)",
+      home_site_sub: "of your profile complete",
+      home_checklist_teaser: "Soon you'll see the exact permits you need here.",
+      home_chef_teaser: "Soon you'll be able to see and hire new kitchen talent.",
+      home_operate_orders: "orders", home_operate_sub: "orders received in total",
+      home_operate_empty: "No orders yet.",
       li_card_title: "Analyze a spot",
       li_hint: "Illustrative estimate from the address and cuisine type — not yet connected to real traffic or census data.",
       li_address: "Address or area", li_address_ph: "E.g. 1200 Main St, Dallas, TX",
@@ -643,6 +679,7 @@
 
   function getTabs() {
     return [
+      { id: "home", label: t("tab_home"), icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>' },
       { id: "location", label: t("tab_location"), icon: '<path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/>' },
       { id: "site", label: t("tab_site"), icon: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><rect x="9.5" y="13" width="5" height="8"/>' },
       { id: "permits", label: t("tab_permits"), icon: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M9.5 13.5l1.5 1.5 3-3.5"/>' },
@@ -671,10 +708,15 @@
     document.getElementById("navSignOut").style.display = siteApi.signOut ? "" : "none";
 
     var prevActiveScreen = document.querySelector(".ios-screen.active");
-    var activeTab = prevActiveScreen ? prevActiveScreen.id.replace("screen-", "") : "location";
+    var activeTab = prevActiveScreen ? prevActiveScreen.id.replace("screen-", "") : "home";
     var TABS = getTabs();
 
     screensEl.innerHTML =
+    '<section class="ios-screen' + (activeTab === "home" ? " active" : "") + '" id="screen-home">' +
+      '<div class="section-title">' + t("tab_home") + '</div>' +
+      '<div id="homeRoot"></div>' +
+    "</section>" +
+
     '<section class="ios-screen' + (activeTab === "location" ? " active" : "") + '" id="screen-location">' +
       '<div class="section-title">' + t("tab_location") + '</div>' +
       '<div class="card">' +
@@ -733,6 +775,7 @@
     document.querySelectorAll(".ios-screen").forEach(function (s) {
       s.classList.toggle("active", s.id === "screen-" + btn.dataset.tab);
     });
+    if (btn.dataset.tab === "home") renderHomeDashboard(site);
   });
 
   // ---- Location Intelligence wiring ----
@@ -780,6 +823,18 @@
         console.warn("No se pudo cargar el mapa:", mmErr);
       }
     }
+
+    if (currentUserId && site && site.id) {
+      site.li_last_address = address;
+      site.li_last_score = r.overall10;
+      site.li_last_real = !!r.real;
+      sb.from("tryla_sites")
+        .update({ li_last_address: address, li_last_score: r.overall10, li_last_real: !!r.real })
+        .eq("id", site.id)
+        .then(function (res) {
+          if (res.error) console.warn("No se pudo guardar el ultimo analisis:", res.error);
+        });
+    }
   }
 
   // Da click directo en el mapa en vez de escribir una direccion.
@@ -804,6 +859,94 @@
 
     renderSite(site);
     initOperator(site);
+    renderHomeDashboard(site);
+  }
+
+  // ---- Home dashboard ----
+  function computeWebBuilderCompletion(site) {
+    site = site || {};
+    var checks = [
+      !!site.restaurant_name,
+      !!site.tagline,
+      !!site.description,
+      !!site.logo_url,
+      !!site.hero_image_url,
+      Array.isArray(site.gallery) && site.gallery.length > 0,
+      Array.isArray(site.menu) && site.menu.length > 0,
+      !!site.phone,
+      !!site.email,
+      !!site.address,
+      !!site.hours,
+      !!(site.instagram || site.facebook || site.tiktok),
+    ];
+    var done = checks.filter(Boolean).length;
+    return Math.round((done / checks.length) * 100);
+  }
+
+  function homeCardHtml(tabId, icon, title, valueHtml, subHtml, extraHtml) {
+    return (
+      '<div class="home-card" data-goto="' + tabId + '">' +
+        '<div class="home-card-icon"><svg viewBox="0 0 24 24">' + icon + "</svg></div>" +
+        "<h3>" + title + "</h3>" +
+        (valueHtml ? '<div class="home-card-value">' + valueHtml + "</div>" : "") +
+        (subHtml ? '<div class="home-card-sub">' + subHtml + "</div>" : "") +
+        (extraHtml || "") +
+      "</div>"
+    );
+  }
+
+  function renderHomeDashboard(site) {
+    site = site || {};
+    var root = document.getElementById("homeRoot");
+    if (!root) return;
+
+    var icons = {};
+    getTabs().forEach(function (tb) { icons[tb.id] = tb.icon; });
+
+    var welcome = site.restaurant_name
+      ? t("home_welcome").replace("{name}", site.restaurant_name)
+      : t("home_welcome_default");
+
+    var scoreValue, scoreSub;
+    if (site.li_last_score != null && site.li_last_address) {
+      scoreValue = Number(site.li_last_score).toFixed(1) + '<span style="font-size:13px;color:#aeb4c8;">/10</span>';
+      scoreSub = esc(site.li_last_address) + (site.li_last_real ? "" : t("home_li_estimate_tag"));
+    } else {
+      scoreValue = "—";
+      scoreSub = t("home_li_empty");
+    }
+
+    var pct = computeWebBuilderCompletion(site);
+    var siteBar = '<div class="li-bar"><span style="width:' + pct + '%"></span></div>';
+
+    var orderCountHtml = '<span id="homeOrderCount">—</span>';
+
+    root.innerHTML =
+      '<div class="home-welcome"><h2>' + esc(welcome) + '</h2><p>' + t("home_welcome_sub") + "</p></div>" +
+      '<div class="home-grid">' +
+        homeCardHtml("location", icons.location, t("tab_location"), scoreValue, scoreSub) +
+        homeCardHtml("site", icons.site, t("tab_site"), pct + "%", t("home_site_sub"), siteBar) +
+        homeCardHtml("permits", icons.permits, t("tab_permits"), null, t("home_checklist_teaser"), '<span class="soon-pill">' + t("soon") + "</span>") +
+        homeCardHtml("chef", icons.chef, t("tab_chef"), null, t("home_chef_teaser"), '<span class="soon-pill">' + t("soon") + "</span>") +
+        homeCardHtml("operate", icons.operate, t("tab_operate"), orderCountHtml, t("home_operate_sub")) +
+      "</div>";
+
+    root.querySelectorAll(".home-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        var tabBtn = document.querySelector('.ios-tab[data-tab="' + card.dataset.goto + '"]');
+        if (tabBtn) tabBtn.click();
+      });
+    });
+
+    if (site.subdomain && siteApi) {
+      siteApi.getOrders(site.subdomain).then(function (orders) {
+        var el = document.getElementById("homeOrderCount");
+        if (el) el.textContent = (orders || []).length;
+      }).catch(function () {});
+    } else {
+      var el0 = document.getElementById("homeOrderCount");
+      if (el0) el0.textContent = "0";
+    }
   }
 
   // ---- Web Builder (Mi Sitio) ----
