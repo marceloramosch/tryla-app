@@ -13,14 +13,22 @@
 .tli-marker.tli-drop-in{ transform:translateY(0) scale(1); opacity:1; }
 @media(prefers-reduced-motion:reduce){ .tli-marker{ transition:none; transform:none; opacity:1; } }
 
+/* Expandir a pantalla completa es una funcion pensada para movil, donde el
+   mapa embebido es chico — en desktop ya se ve bien en su tamano normal,
+   asi que el boton ni siquiera aparece ahi (evita quedar "atorado" a
+   pantalla completa en una pantalla grande donde no hace falta). */
 .tli-expand-btn{
+  display:none;
   width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid rgba(0,0,0,.15);
-  display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.25);
+  align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.25);
   padding:0;
 }
 .tli-expand-btn:hover{ background:#f4f4fb; }
-.tli-map.tli-map-fullscreen{
-  position:fixed; inset:0; z-index:9999; width:100vw; height:100vh;
-  border-radius:0; margin-top:0; border:none;
+@media (max-width: 767px){
+  .tli-expand-btn{ display:flex; }
+  .tli-map.tli-map-fullscreen{
+    position:fixed; inset:0; z-index:9999; width:100vw; height:100vh;
+    border-radius:0; margin-top:0; border:none;
+  }
 }
 body.tli-map-open{ overflow:hidden; }

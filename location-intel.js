@@ -349,12 +349,24 @@
         btn.innerHTML = EXPAND_ICON;
         btn.setAttribute("aria-label", "Expandir mapa");
         L.DomEvent.disableClickPropagation(btn);
-        L.DomEvent.on(btn, "click", function () {
-          var isFull = container.classList.toggle("tli-map-fullscreen");
+
+        function setFullscreen(isFull) {
+          container.classList.toggle("tli-map-fullscreen", isFull);
           btn.innerHTML = isFull ? COLLAPSE_ICON : EXPAND_ICON;
           btn.setAttribute("aria-label", isFull ? "Cerrar mapa completo" : "Expandir mapa");
           document.body.classList.toggle("tli-map-open", isFull);
           requestAnimationFrame(function () { map.invalidateSize(); });
+        }
+
+        L.DomEvent.on(btn, "click", function () {
+          setFullscreen(!container.classList.contains("tli-map-fullscreen"));
+        });
+        // Tecla Escape como salida de emergencia, por si en algun momento
+        // el boton de cerrar no es facil de encontrar/tocar.
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && container.classList.contains("tli-map-fullscreen")) {
+            setFullscreen(false);
+          }
         });
         return btn;
       },
