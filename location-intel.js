@@ -116,25 +116,39 @@
       return !!cuisine && pc.indexOf(cuisine.toLowerCase()) !== -1;
     });
 
-    // Espacio vs competencia: un restaurante mas es competencia directa.
-    // Un food park ya NO se castiga igual de fuerte aqui — ahi abajo en
-    // "trafico" se refleja que lo que de verdad importa de un food park es
-    // la cantidad de gente que atrae, no solo que haya mas trailers.
-    // Pesos calibrados contra una muestra real de 45 puntos en Dallas,
-    // Chicago y Houston (restaurantes van de 0 a 268 cerca de un punto
-    // cualquiera) — con un peso de 4 por restaurante, el score se saturaba
-    // en el piso/techo en casi cualquier zona urbana real.
-    var space = clamp(100 - restaurants.length * 0.7 - foodParks.length * 4, 10, 96);
+    // Espacio vs competencia: un restaurante mas es competencia directa,
+    // PERO un downtown con 200 restaurantes cerca no es "200 veces peor"
+    // que uno con 20 — esa cantidad de restaurantes ES la prueba de que
+    // ahi hay muchisima gente comiendo, no solo saturacion. Penalizacion
+    // lineal normal hasta 20 restaurantes (zona ya calibrada contra datos
+    // reales), y despues raiz cuadrada — cada restaurante extra pesa cada
+    // vez menos. Un food park tampoco se castiga igual de fuerte aqui —
+    // ahi abajo en "trafico" se refleja que lo que de verdad importa de un
+    // food park es la cantidad de gente que atrae, no solo que haya mas
+    // trailers. Pesos base calibrados contra una muestra real de 45 puntos
+    // en Dallas, Chicago y Houston (restaurantes van de 0 a 268 cerca de
+    // un punto cualquiera).
+    var RESTAURANT_LINEAR_CAP = 20;
+    var restaurantPenalty = restaurants.length <= RESTAURANT_LINEAR_CAP
+      ? restaurants.length * 0.7
+      : RESTAURANT_LINEAR_CAP * 0.7 + Math.sqrt(restaurants.length - RESTAURANT_LINEAR_CAP) * 3.4;
+    var space = clamp(100 - restaurantPenalty - foodParks.length * 4, 10, 96);
     // Brecha de cocina: pocos sirviendo lo mismo cerca = brecha (oportunidad) alta.
+    // Esta SI se queda estricta — muchos competidores de tu mismo tipo de
+    // cocina especificamente es una señal real de que hace falta
+    // diferenciarte, sin importar cuanta gente ande por la zona.
     var gap = clamp(100 - sameCuisine.length * 15, 10, 95);
     // Trafico/demanda: los bares pesan mas que una ancla generica — un
     // trailer afuera de un bar en la noche es de las mejores ubicaciones
     // que hay. Un food park cerca pesa todavia mas — es gente que ya fue
     // ahi especificamente a comer, con hambre y lista para gastar; eso
     // importa mas que contarlo solo como "mas competencia". Construccion
-    // nueva cerca tambien suma — demanda futura (colonias/desarrollos).
+    // nueva cerca tambien suma — demanda futura (colonias/desarrollos). La
+    // cantidad de restaurantes tambien suma aqui (con raiz cuadrada, para
+    // que no dispare el numero sin control) — un corredor con 200
+    // restaurantes es, el mismo, evidencia de trafico peatonal alto.
     var traffic = clamp(
-      anchors.length * 2 + bars.length * 3 + foodParks.length * 12 + construction.length * 5,
+      anchors.length * 2 + bars.length * 3 + foodParks.length * 12 + construction.length * 5 + Math.sqrt(restaurants.length) * 1.5,
       10,
       95
     );
