@@ -233,17 +233,43 @@
     }
 
     var overall10 = (traffic * 0.3 + space * 0.25 + demo * 0.25 + gap * 0.2) / 10;
-    // Piso de "alta demanda": una zona de trafico muy alto (downtown, zonas
-    // muy saturadas) o de poblacion muy alta casi siempre le va bien a un
-    // trailer, sin importar que tanta competencia especifica de su mismo
-    // nicho haya — la cantidad de gente compensa casi cualquier otra cosa.
-    // Regla de negocio explicita, no matematica: sin esto, zonas con
-    // trafico al tope (95) pero mucha competencia del mismo nicho se
-    // quedaban cerca de 5/10, cuando en la practica un downtown saturado
-    // es de las mejores apuestas que hay.
-    if (traffic >= 85 || demo >= 75) {
-      overall10 = Math.max(overall10, 7.0);
+
+    // Pisos de "alta demanda" — reglas de negocio explicitas, no solo
+    // matematica del promedio ponderado: la cantidad de gente real compensa
+    // casi cualquier otra cosa (competencia, brecha de nicho). Los dos
+    // pisos escalan de forma continua dentro de su rango (nunca saltan de
+    // golpe a un numero fijo) para que la diferencia entre "cumple apenas"
+    // y "cumple por mucho" se siga notando en el score.
+
+    // 1) Zona de alta demanda en general (downtown, zonas muy saturadas de
+    // trafico, o con poblacion real muy alta): piso de 8.0 a 9.0, segun que
+    // tan por encima del umbral esta el tráfico o la demografia real.
+    var HIGH_DEMAND_FLOOR_MIN = 8.0, HIGH_DEMAND_FLOOR_MAX = 9.0;
+    if (traffic >= 85) {
+      var trafficExcess = clamp((traffic - 85) / (95 - 85), 0, 1);
+      overall10 = Math.max(overall10, HIGH_DEMAND_FLOOR_MIN + trafficExcess * (HIGH_DEMAND_FLOOR_MAX - HIGH_DEMAND_FLOOR_MIN));
+    } else if (demo >= 75) {
+      var demoExcess = clamp((demo - 75) / (100 - 75), 0, 1);
+      overall10 = Math.max(overall10, HIGH_DEMAND_FLOOR_MIN + demoExcess * (HIGH_DEMAND_FLOOR_MAX - HIGH_DEMAND_FLOOR_MIN));
     }
+
+    // 2) Justo al lado de un ancla fuerte (gasolinera, plaza/mall o bar) a
+    // menos de un cuarto de milla real — tráfico garantizado, todo el dia,
+    // sin depender de que el resto de la zona tambien este saturada. Piso
+    // mas alto que el general (8.4 a 9.4), escalando con la distancia real
+    // al ancla mas cercana (mas cerca = mas alto).
+    var PROXIMITY_CATEGORIES = ["fuel", "mall", "bar"];
+    var PROXIMITY_RADIUS_MILES = 0.25;
+    var PROXIMITY_FLOOR_MIN = 8.4, PROXIMITY_FLOOR_MAX = 9.4;
+    var closeAnchors = nearby.filter(function (p) { return PROXIMITY_CATEGORIES.indexOf(p.category) !== -1; });
+    if (closeAnchors.length) {
+      var nearestAnchorMiles = Math.min.apply(null, closeAnchors.map(function (p) { return milesBetween(point, p); }));
+      if (nearestAnchorMiles <= PROXIMITY_RADIUS_MILES) {
+        var closeness = clamp(1 - nearestAnchorMiles / PROXIMITY_RADIUS_MILES, 0, 1);
+        overall10 = Math.max(overall10, PROXIMITY_FLOOR_MIN + closeness * (PROXIMITY_FLOOR_MAX - PROXIMITY_FLOOR_MIN));
+      }
+    }
+
     return {
       traffic: Math.round(traffic),
       space: Math.round(space),
