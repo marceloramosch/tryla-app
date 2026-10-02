@@ -138,8 +138,23 @@
       10,
       95
     );
-    // Demografico real todavia pendiente (falta Census) — neutro por ahora.
+    // Demografico: poblacion e ingreso mediano real del census tract (US
+    // Census Bureau, ACS5), via la Edge Function census-lookup. Si falla
+    // (zona sin cobertura, Census caido, etc.) cae a un valor neutro — no
+    // tira el resto del score real que ya calculamos arriba.
     var demo = 55;
+    var censusPopulation = null;
+    var censusIncome = null;
+    try {
+      var censusRes = await sbClient.functions.invoke("census-lookup", { body: { lat: point.lat, lon: point.lon } });
+      if (!censusRes.error && censusRes.data && typeof censusRes.data.demo === "number") {
+        demo = censusRes.data.demo;
+        censusPopulation = censusRes.data.population;
+        censusIncome = censusRes.data.medianIncome;
+      }
+    } catch (e) {
+      console.warn("Census no disponible, uso demografico neutral:", e);
+    }
 
     var overall10 = (traffic * 0.3 + space * 0.25 + demo * 0.25 + gap * 0.2) / 10;
     return {
@@ -158,6 +173,8 @@
       sameCuisineCount: sameCuisine.length,
       foodParkCount: foodParks.length,
       constructionCount: construction.length,
+      censusPopulation: censusPopulation,
+      censusIncome: censusIncome,
     };
   }
 
@@ -181,6 +198,12 @@
     }
     if (r.anchorCount > 0) {
       out.push(r.anchorCount + " otros puntos de interes cerca (gasolineras, templos, plazas, estadios, cines) que generan trafico peatonal.");
+    }
+    if (r.censusPopulation != null && r.censusIncome != null) {
+      out.push(
+        "Zona censal con " + r.censusPopulation.toLocaleString("es-MX") + " habitantes y un ingreso mediano por hogar de $" +
+        Math.round(r.censusIncome).toLocaleString("es-MX") + " (datos del Census Bureau de USA)."
+      );
     }
     return out;
   }
