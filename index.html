@@ -101,6 +101,7 @@
   .card{ background:#fff; border-radius:16px; padding:20px 20px; margin-bottom:14px; box-shadow:0 1px 2px rgba(20,16,50,.05); }
   .card h2{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:15px; color:#06038D; margin:0 0 4px; }
   .card .hint{ font-size:12px; color:#7c8aa6; margin-bottom:14px; line-height:1.5; }
+  .card .li-radius-note{ margin:10px 0 0; text-align:center; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#5b6b8c; text-transform:uppercase; margin-bottom:5px; }
   .field input[type=text], .field input[type=email], .field select, .field textarea{
@@ -384,6 +385,7 @@
       li_address: "Dirección o zona", li_address_ph: "Ej. 1200 Main St, Dallas, TX",
       li_cuisine: "Tipo de cocina", li_analyze: "Analizar →",
       li_map_hint: "O da click en el mapa para marcar dónde estaría tu trailer.",
+      li_radius_note: "Radio de análisis: 1.5 millas alrededor del pin (3 millas de diámetro).",
       li_badge_real: "📍 Datos reales de la zona (competencia y puntos de interés) — {n} lugares cerca.",
       li_badge_estimate: "Estimado ilustrativo — todavía no tenemos datos reales cargados para esta zona.",
       li_score_label: "Opportunity Score",
@@ -476,6 +478,7 @@
       li_address: "Address or area", li_address_ph: "E.g. 1200 Main St, Dallas, TX",
       li_cuisine: "Cuisine type", li_analyze: "Analyze →",
       li_map_hint: "Or click the map to drop a pin for your trailer.",
+      li_radius_note: "Analysis radius: 1.5 miles around the pin (3-mile diameter).",
       li_badge_real: "📍 Real data for this area (competitors and points of interest) — {n} places nearby.",
       li_badge_estimate: "Illustrative estimate — we don't have real data loaded for this area yet.",
       li_score_label: "Opportunity Score",
@@ -755,6 +758,7 @@
         '<button type="button" class="btn" id="liAnalyzeBtn">' + t("li_analyze") + '</button>' +
         '<div class="hint" style="margin-top:14px;">' + t("li_map_hint") + '</div>' +
         '<div id="liMap" class="tli-map"></div>' +
+        '<div class="hint li-radius-note">' + t("li_radius_note") + '</div>' +
       "</div>" +
       '<div class="card" id="liResultCard" style="display:none;">' +
         '<div id="liDataBadge" class="hint" style="margin:0 0 10px;"></div>' +
