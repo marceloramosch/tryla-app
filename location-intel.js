@@ -233,6 +233,17 @@
     }
 
     var overall10 = (traffic * 0.3 + space * 0.25 + demo * 0.25 + gap * 0.2) / 10;
+    // Piso de "alta demanda": una zona de trafico muy alto (downtown, zonas
+    // muy saturadas) o de poblacion muy alta casi siempre le va bien a un
+    // trailer, sin importar que tanta competencia especifica de su mismo
+    // nicho haya — la cantidad de gente compensa casi cualquier otra cosa.
+    // Regla de negocio explicita, no matematica: sin esto, zonas con
+    // trafico al tope (95) pero mucha competencia del mismo nicho se
+    // quedaban cerca de 5/10, cuando en la practica un downtown saturado
+    // es de las mejores apuestas que hay.
+    if (traffic >= 85 || demo >= 75) {
+      overall10 = Math.max(overall10, 7.0);
+    }
     return {
       traffic: Math.round(traffic),
       space: Math.round(space),
