@@ -102,6 +102,12 @@
   .card h2{ font-family:'Sora',Arial,sans-serif; font-weight:700; font-size:15px; color:#06038D; margin:0 0 4px; }
   .card .hint{ font-size:12px; color:#7c8aa6; margin-bottom:14px; line-height:1.5; }
   .card .li-radius-note{ margin:10px 0 0; text-align:center; }
+  .li-opportunity-toggle{
+    display:block; width:100%; margin-top:12px; padding:10px 14px; border-radius:10px;
+    border:1.5px solid #5B54FF; background:#fff; color:#5B54FF; font:700 13px 'Sora',Arial,sans-serif; cursor:pointer;
+  }
+  .li-opportunity-toggle.active{ background:#5B54FF; color:#fff; }
+  .li-opportunity-toggle:disabled{ opacity:.6; cursor:default; }
   .field{ margin-bottom:14px; }
   .field label{ display:block; font-size:11px; font-weight:700; letter-spacing:.5px; color:#5b6b8c; text-transform:uppercase; margin-bottom:5px; }
   .field input[type=text], .field input[type=email], .field select, .field textarea{
@@ -386,6 +392,10 @@
       li_cuisine: "Tipo de cocina", li_analyze: "Analizar →",
       li_map_hint: "O da click en el mapa para marcar dónde estaría tu trailer.",
       li_radius_note: "Radio de análisis: 1.5 millas alrededor del pin (3 millas de diámetro).",
+      li_opportunity_toggle: "Ver zonas de oportunidad (8-10) para esta cocina",
+      li_opportunity_toggle_off: "Ocultar zonas de oportunidad",
+      li_opportunity_loading: "Calculando zonas...",
+      li_opportunity_none: "No se encontraron zonas de 8-10 en el área visible del mapa.",
       li_badge_real: "📍 Datos reales de la zona (competencia y puntos de interés) — {n} lugares cerca.",
       li_badge_estimate: "Estimado ilustrativo — todavía no tenemos datos reales cargados para esta zona.",
       li_score_label: "Opportunity Score",
@@ -479,6 +489,10 @@
       li_cuisine: "Cuisine type", li_analyze: "Analyze →",
       li_map_hint: "Or click the map to drop a pin for your trailer.",
       li_radius_note: "Analysis radius: 1.5 miles around the pin (3-mile diameter).",
+      li_opportunity_toggle: "Show opportunity zones (8-10) for this cuisine",
+      li_opportunity_toggle_off: "Hide opportunity zones",
+      li_opportunity_loading: "Calculating zones...",
+      li_opportunity_none: "No 8-10 zones found in the visible area of the map.",
       li_badge_real: "📍 Real data for this area (competitors and points of interest) — {n} places nearby.",
       li_badge_estimate: "Illustrative estimate — we don't have real data loaded for this area yet.",
       li_score_label: "Opportunity Score",
@@ -759,6 +773,7 @@
         '<div class="hint" style="margin-top:14px;">' + t("li_map_hint") + '</div>' +
         '<div id="liMap" class="tli-map"></div>' +
         '<div class="hint li-radius-note">' + t("li_radius_note") + '</div>' +
+        '<button type="button" class="li-opportunity-toggle" id="liOpportunityToggle">' + t("li_opportunity_toggle") + '</button>' +
       "</div>" +
       '<div class="card" id="liResultCard" style="display:none;">' +
         '<div id="liDataBadge" class="hint" style="margin:0 0 10px;"></div>' +
@@ -893,6 +908,45 @@
     if (!address) { document.getElementById("liAddress").focus(); return; }
     var point = await TLI.geocode(address);
     await liShowResult(address, point);
+  });
+
+  // ---- Zonas de oportunidad (8-10) por cocina, pintadas sobre el mapa ----
+  var opportunityActive = false;
+  var opportunityBtn = document.getElementById("liOpportunityToggle");
+
+  async function runOpportunityGrid() {
+    var mapInstance = TLI.getMap(document.getElementById("liMap"));
+    if (!mapInstance) return;
+    var cuisine = document.getElementById("liCuisine").value;
+    opportunityBtn.disabled = true;
+    var prevLabel = opportunityBtn.textContent;
+    opportunityBtn.textContent = t("li_opportunity_loading");
+    try {
+      var result = await TLI.plotOpportunityGrid(sb, mapInstance, cuisine);
+      if (result && result.cellsGreen === 0) alert(t("li_opportunity_none"));
+    } catch (e) {
+      console.warn("No se pudo calcular la zona de oportunidad:", e);
+    } finally {
+      opportunityBtn.disabled = false;
+      opportunityBtn.textContent = opportunityActive ? t("li_opportunity_toggle_off") : prevLabel;
+    }
+  }
+
+  opportunityBtn.addEventListener("click", function () {
+    var mapInstance = TLI.getMap(document.getElementById("liMap"));
+    if (!mapInstance) return;
+    opportunityActive = !opportunityActive;
+    opportunityBtn.classList.toggle("active", opportunityActive);
+    opportunityBtn.textContent = opportunityActive ? t("li_opportunity_toggle_off") : t("li_opportunity_toggle");
+    if (opportunityActive) {
+      runOpportunityGrid();
+    } else {
+      TLI.clearOpportunityGrid(mapInstance);
+    }
+  });
+
+  document.getElementById("liCuisine").addEventListener("change", function () {
+    if (opportunityActive) runOpportunityGrid();
   });
 
   // Mapa clicable desde el inicio, centrado en Dallas, aun sin analizar nada.

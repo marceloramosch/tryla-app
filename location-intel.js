@@ -145,19 +145,11 @@
   // (index.html / crm/index.html), li_places es de lectura publica.
   var ANCHOR_CATEGORIES = ["fuel", "worship", "stadium", "mall", "entertainment"];
 
-  async function scoreForReal(sbClient, point, cuisine) {
-    var latDelta = REAL_RADIUS_MILES / 69;
-    var lonDelta = REAL_RADIUS_MILES / (69 * Math.cos(point.lat * Math.PI / 180));
-    var res = await sbClient
-      .from("li_places")
-      .select("category,cuisine,name,lat,lon")
-      .gte("lat", point.lat - latDelta).lte("lat", point.lat + latDelta)
-      .gte("lon", point.lon - lonDelta).lte("lon", point.lon + lonDelta);
-    if (res.error || !res.data || !res.data.length) return null;
-
-    var nearby = res.data.filter(function (p) { return milesBetween(point, p) <= REAL_RADIUS_MILES; });
-    if (!nearby.length) return null;
-
+  // Calcula espacio/trafico/brecha a partir de los lugares reales cercanos
+  // a un punto — compartido entre el analisis de un solo pin (scoreForReal)
+  // y la cuadricula de oportunidad (plotOpportunityGrid), para que nunca se
+  // desincronicen los criterios entre los dos.
+  function computeDemandFactors(nearby, cuisine) {
     var restaurants = nearby.filter(function (p) { return p.category === "restaurant"; });
     var foodParks = nearby.filter(function (p) { return p.category === "food_park"; });
     var bars = nearby.filter(function (p) { return p.category === "bar"; });
@@ -207,6 +199,68 @@
       10,
       95
     );
+    return {
+      restaurants: restaurants, foodParks: foodParks, bars: bars, construction: construction,
+      anchors: anchors, sameCuisine: sameCuisine, space: space, gap: gap, traffic: traffic,
+    };
+  }
+
+  // Pisos de "alta demanda" — reglas de negocio explicitas, no solo
+  // matematica del promedio ponderado: la cantidad de gente real compensa
+  // casi cualquier otra cosa (competencia, brecha de nicho). Los dos pisos
+  // escalan de forma continua dentro de su rango (nunca saltan de golpe a
+  // un numero fijo) para que la diferencia entre "cumple apenas" y "cumple
+  // por mucho" se siga notando en el score. "demo" puede venir null (la
+  // cuadricula de oportunidad no hace una llamada a Census por celda) — en
+  // ese caso el piso 1 solo se evalua con trafico.
+  function applyHighDemandFloors(overall10, traffic, demo, nearby, point) {
+    // 1) Zona de alta demanda en general (downtown, zonas muy saturadas de
+    // trafico, o con poblacion real muy alta): piso de 8.0 a 9.0, segun que
+    // tan por encima del umbral esta el tráfico o la demografia real.
+    var HIGH_DEMAND_FLOOR_MIN = 8.0, HIGH_DEMAND_FLOOR_MAX = 9.0;
+    if (traffic >= 85) {
+      var trafficExcess = clamp((traffic - 85) / (95 - 85), 0, 1);
+      overall10 = Math.max(overall10, HIGH_DEMAND_FLOOR_MIN + trafficExcess * (HIGH_DEMAND_FLOOR_MAX - HIGH_DEMAND_FLOOR_MIN));
+    } else if (demo != null && demo >= 75) {
+      var demoExcess = clamp((demo - 75) / (100 - 75), 0, 1);
+      overall10 = Math.max(overall10, HIGH_DEMAND_FLOOR_MIN + demoExcess * (HIGH_DEMAND_FLOOR_MAX - HIGH_DEMAND_FLOOR_MIN));
+    }
+
+    // 2) Justo al lado de un ancla fuerte (gasolinera, plaza/mall o bar) a
+    // menos de un cuarto de milla real — tráfico garantizado, todo el dia,
+    // sin depender de que el resto de la zona tambien este saturada. Piso
+    // mas bajo que el general de arriba (7.0 a 8.0) — una sola ancla pesa
+    // menos que un cluster completo tipo downtown — escalando con la
+    // distancia real al ancla mas cercana (mas cerca = mas alto).
+    var PROXIMITY_CATEGORIES = ["fuel", "mall", "bar"];
+    var PROXIMITY_RADIUS_MILES = 0.25;
+    var PROXIMITY_FLOOR_MIN = 7.0, PROXIMITY_FLOOR_MAX = 8.0;
+    var closeAnchors = nearby.filter(function (p) { return PROXIMITY_CATEGORIES.indexOf(p.category) !== -1; });
+    if (closeAnchors.length) {
+      var nearestAnchorMiles = Math.min.apply(null, closeAnchors.map(function (p) { return milesBetween(point, p); }));
+      if (nearestAnchorMiles <= PROXIMITY_RADIUS_MILES) {
+        var closeness = clamp(1 - nearestAnchorMiles / PROXIMITY_RADIUS_MILES, 0, 1);
+        overall10 = Math.max(overall10, PROXIMITY_FLOOR_MIN + closeness * (PROXIMITY_FLOOR_MAX - PROXIMITY_FLOOR_MIN));
+      }
+    }
+    return overall10;
+  }
+
+  async function scoreForReal(sbClient, point, cuisine) {
+    var latDelta = REAL_RADIUS_MILES / 69;
+    var lonDelta = REAL_RADIUS_MILES / (69 * Math.cos(point.lat * Math.PI / 180));
+    var res = await sbClient
+      .from("li_places")
+      .select("category,cuisine,name,lat,lon")
+      .gte("lat", point.lat - latDelta).lte("lat", point.lat + latDelta)
+      .gte("lon", point.lon - lonDelta).lte("lon", point.lon + lonDelta);
+    if (res.error || !res.data || !res.data.length) return null;
+
+    var nearby = res.data.filter(function (p) { return milesBetween(point, p) <= REAL_RADIUS_MILES; });
+    if (!nearby.length) return null;
+
+    var f = computeDemandFactors(nearby, cuisine);
+
     // Demografico: poblacion e ingreso mediano real del census tract (US
     // Census Bureau, ACS5), via la Edge Function census-lookup. Si falla
     // (zona sin cobertura, Census caido, etc.) cae a un valor neutro — no
@@ -232,61 +286,25 @@
       console.warn("Census no disponible, uso demografico neutral:", e);
     }
 
-    var overall10 = (traffic * 0.3 + space * 0.25 + demo * 0.25 + gap * 0.2) / 10;
-
-    // Pisos de "alta demanda" — reglas de negocio explicitas, no solo
-    // matematica del promedio ponderado: la cantidad de gente real compensa
-    // casi cualquier otra cosa (competencia, brecha de nicho). Los dos
-    // pisos escalan de forma continua dentro de su rango (nunca saltan de
-    // golpe a un numero fijo) para que la diferencia entre "cumple apenas"
-    // y "cumple por mucho" se siga notando en el score.
-
-    // 1) Zona de alta demanda en general (downtown, zonas muy saturadas de
-    // trafico, o con poblacion real muy alta): piso de 8.0 a 9.0, segun que
-    // tan por encima del umbral esta el tráfico o la demografia real.
-    var HIGH_DEMAND_FLOOR_MIN = 8.0, HIGH_DEMAND_FLOOR_MAX = 9.0;
-    if (traffic >= 85) {
-      var trafficExcess = clamp((traffic - 85) / (95 - 85), 0, 1);
-      overall10 = Math.max(overall10, HIGH_DEMAND_FLOOR_MIN + trafficExcess * (HIGH_DEMAND_FLOOR_MAX - HIGH_DEMAND_FLOOR_MIN));
-    } else if (demo >= 75) {
-      var demoExcess = clamp((demo - 75) / (100 - 75), 0, 1);
-      overall10 = Math.max(overall10, HIGH_DEMAND_FLOOR_MIN + demoExcess * (HIGH_DEMAND_FLOOR_MAX - HIGH_DEMAND_FLOOR_MIN));
-    }
-
-    // 2) Justo al lado de un ancla fuerte (gasolinera, plaza/mall o bar) a
-    // menos de un cuarto de milla real — tráfico garantizado, todo el dia,
-    // sin depender de que el resto de la zona tambien este saturada. Piso
-    // mas bajo que el general de arriba (7.0 a 8.0) — una sola ancla pesa
-    // menos que un cluster completo tipo downtown — escalando con la
-    // distancia real al ancla mas cercana (mas cerca = mas alto).
-    var PROXIMITY_CATEGORIES = ["fuel", "mall", "bar"];
-    var PROXIMITY_RADIUS_MILES = 0.25;
-    var PROXIMITY_FLOOR_MIN = 7.0, PROXIMITY_FLOOR_MAX = 8.0;
-    var closeAnchors = nearby.filter(function (p) { return PROXIMITY_CATEGORIES.indexOf(p.category) !== -1; });
-    if (closeAnchors.length) {
-      var nearestAnchorMiles = Math.min.apply(null, closeAnchors.map(function (p) { return milesBetween(point, p); }));
-      if (nearestAnchorMiles <= PROXIMITY_RADIUS_MILES) {
-        var closeness = clamp(1 - nearestAnchorMiles / PROXIMITY_RADIUS_MILES, 0, 1);
-        overall10 = Math.max(overall10, PROXIMITY_FLOOR_MIN + closeness * (PROXIMITY_FLOOR_MAX - PROXIMITY_FLOOR_MIN));
-      }
-    }
+    var overall10 = (f.traffic * 0.3 + f.space * 0.25 + demo * 0.25 + f.gap * 0.2) / 10;
+    overall10 = applyHighDemandFloors(overall10, f.traffic, demo, nearby, point);
 
     return {
-      traffic: Math.round(traffic),
-      space: Math.round(space),
-      competitorsNearby: restaurants.length,
+      traffic: Math.round(f.traffic),
+      space: Math.round(f.space),
+      competitorsNearby: f.restaurants.length,
       demo: Math.round(demo),
-      gap: Math.round(gap),
+      gap: Math.round(f.gap),
       overall10: Math.round(overall10 * 10) / 10,
       real: true,
       nearby: nearby,
       nearbyCount: nearby.length,
-      anchorCount: anchors.length,
-      barCount: bars.length,
-      restaurantCount: restaurants.length,
-      sameCuisineCount: sameCuisine.length,
-      foodParkCount: foodParks.length,
-      constructionCount: construction.length,
+      anchorCount: f.anchors.length,
+      barCount: f.bars.length,
+      restaurantCount: f.restaurants.length,
+      sameCuisineCount: f.sameCuisine.length,
+      foodParkCount: f.foodParks.length,
+      constructionCount: f.construction.length,
       censusPopulation: censusPopulation,
       censusIncome: censusIncome,
     };
@@ -584,6 +602,89 @@
     nearbyLayers.set(map, group);
   }
 
+  function getMap(container) {
+    return mapInstances.get(container);
+  }
+
+  var opportunityLayers = new WeakMap();
+  var OPPORTUNITY_GRID_STEP_MILES = 0.3;
+  var OPPORTUNITY_MAX_CELLS = 700;
+  var OPPORTUNITY_THRESHOLD = 8;
+
+  function clearOpportunityGrid(map) {
+    var old = opportunityLayers.get(map);
+    if (old) {
+      map.removeLayer(old);
+      opportunityLayers.delete(map);
+    }
+  }
+
+  // Pinta en verde las zonas (dentro de lo visible del mapa) donde el score
+  // de oportunidad para "cuisine" daria 8-10. Jala los lugares reales UNA
+  // sola vez para todo el area visible (no uno por celda) y calcula cada
+  // celda en memoria con computeDemandFactors/applyHighDemandFloors — los
+  // mismos criterios que usa el analisis de un solo pin. No hace una
+  // llamada a Census por celda (seria demasiado lento: cientos de celdas x
+  // una llamada externa cada una) — por eso el demografico se deja fuera
+  // aqui y se reescalan los otros 3 pesos para que sigan sumando 100%.
+  async function plotOpportunityGrid(sbClient, map, cuisine) {
+    var L = window.L;
+    var bounds = map.getBounds();
+    var south = bounds.getSouth(), north = bounds.getNorth();
+    var west = bounds.getWest(), east = bounds.getEast();
+
+    // Se agranda el area de busqueda por el radio de analisis, para que las
+    // celdas cerca del borde visible tambien vean todo su radio de lugares
+    // reales (si no, saldrian con menos "nearby" del que en realidad hay).
+    var latPad = REAL_RADIUS_MILES / 69;
+    var midLat = (south + north) / 2;
+    var lonPad = REAL_RADIUS_MILES / (69 * Math.cos(midLat * Math.PI / 180));
+
+    var res = await sbClient
+      .from("li_places")
+      .select("category,cuisine,lat,lon")
+      .gte("lat", south - latPad).lte("lat", north + latPad)
+      .gte("lon", west - lonPad).lte("lon", east + lonPad);
+    if (res.error || !res.data) throw res.error || new Error("No se pudieron cargar los lugares reales.");
+    var allPlaces = res.data;
+
+    var latStep = OPPORTUNITY_GRID_STEP_MILES / 69;
+    var lonStep = OPPORTUNITY_GRID_STEP_MILES / (69 * Math.cos(midLat * Math.PI / 180));
+
+    var cells = [];
+    for (var lat = south; lat <= north && cells.length < OPPORTUNITY_MAX_CELLS; lat += latStep) {
+      for (var lon = west; lon <= east && cells.length < OPPORTUNITY_MAX_CELLS; lon += lonStep) {
+        cells.push({ lat: lat, lon: lon });
+      }
+    }
+
+    var group = L.layerGroup();
+    cells.forEach(function (cell) {
+      var nearbyAtCell = allPlaces.filter(function (p) { return milesBetween(cell, p) <= REAL_RADIUS_MILES; });
+      if (!nearbyAtCell.length) return;
+      var f = computeDemandFactors(nearbyAtCell, cuisine);
+      // Pesos originales sin demografico (0.3 trafico / 0.25 espacio / 0.2
+      // brecha, de 0.75 en total) reescalados para que sumen 1 otra vez.
+      var overallNoDemo = (f.traffic * 0.4 + f.space * (0.25 / 0.75) + f.gap * (0.2 / 0.75)) / 10;
+      overallNoDemo = applyHighDemandFloors(overallNoDemo, f.traffic, null, nearbyAtCell, cell);
+      if (overallNoDemo >= OPPORTUNITY_THRESHOLD) {
+        var marker = L.circleMarker([cell.lat, cell.lon], {
+          radius: 16,
+          stroke: false,
+          fillColor: "#1CAD5A",
+          fillOpacity: 0.3,
+          interactive: false,
+        });
+        group.addLayer(marker);
+      }
+    });
+
+    clearOpportunityGrid(map);
+    group.addTo(map);
+    opportunityLayers.set(map, group);
+    return { cellsChecked: cells.length, cellsGreen: group.getLayers().length };
+  }
+
   window.TrylaLocationIntel = {
     scoreFor: scoreFor,
     scoreForReal: scoreForReal,
@@ -596,6 +697,9 @@
     plotNearby: plotNearby,
     ensureLeaflet: ensureLeaflet,
     invalidateMap: invalidateMap,
+    getMap: getMap,
+    plotOpportunityGrid: plotOpportunityGrid,
+    clearOpportunityGrid: clearOpportunityGrid,
   };
 })();
 
