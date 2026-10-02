@@ -48,13 +48,27 @@ async function requireAuth(req: Request): Promise<string | null> {
   return data.user.id;
 }
 
+// El Census Geocoder y la API de ACS a veces tardan mucho o se quedan sin
+// responder — sin limite de tiempo, esto colgaba toda la funcion (y por lo
+// tanto el score y los lugares cercanos en el navegador, que esperan a que
+// esto termine antes de dibujar nada). fetchWithTimeout() corta la espera.
+async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 type TractRef = { state: string; county: string; tract: string };
 
 async function geocodeTract(lat: number, lon: number): Promise<TractRef | null> {
   const url =
     `https://geocoding.geo.census.gov/geocoder/geographies/coordinates` +
     `?x=${lon}&y=${lat}&benchmark=Public_AR_Current&vintage=Current_Current&format=json`;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, 6000);
   if (!res.ok) throw new Error(`Census geocoder respondio ${res.status}`);
   const data = await res.json();
   const geographies = (data && data.result && data.result.geographies) || {};
@@ -72,7 +86,7 @@ async function fetchAcsData(ref: TractRef): Promise<AcsResult | null> {
       `https://api.census.gov/data/${year}/acs/acs5?get=B01003_001E,B19013_001E` +
       `&for=tract:${ref.tract}&in=state:${ref.state}+county:${ref.county}&key=${CENSUS_API_KEY}`;
     try {
-      const res = await fetch(url);
+      const res = await fetchWithTimeout(url, 6000);
       if (!res.ok) continue;
       const rows = await res.json();
       if (!Array.isArray(rows) || rows.length < 2) continue;

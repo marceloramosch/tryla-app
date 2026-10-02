@@ -146,8 +146,15 @@
     var censusPopulation = null;
     var censusIncome = null;
     try {
-      var censusRes = await sbClient.functions.invoke("census-lookup", { body: { lat: point.lat, lon: point.lon } });
-      if (!censusRes.error && censusRes.data && typeof censusRes.data.demo === "number") {
+      // Si Census tarda mas de 8s (o se cuelga), seguimos con el valor
+      // neutro en vez de dejar el score entero esperando para siempre.
+      var censusTimeout = new Promise(function (resolve) { setTimeout(function () { resolve({ timedOut: true }); }, 8000); });
+      var censusRes = await Promise.race([
+        sbClient.functions.invoke("census-lookup", { body: { lat: point.lat, lon: point.lon } }),
+        censusTimeout,
+      ]);
+      if (censusRes.timedOut) console.warn("Census tardo demasiado, uso demografico neutral.");
+      if (!censusRes.timedOut && !censusRes.error && censusRes.data && typeof censusRes.data.demo === "number") {
         demo = censusRes.data.demo;
         censusPopulation = censusRes.data.population;
         censusIncome = censusRes.data.medianIncome;
@@ -262,6 +269,7 @@
       var data = await res.json();
       return (data && data.display_name) || null;
     } catch (e) {
+      console.warn("Reverse geocode (Nominatim) fallo, muestro coordenadas:", e);
       return null;
     }
   }
