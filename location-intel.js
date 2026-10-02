@@ -88,7 +88,7 @@
   // llama debe caer de vuelta a scoreFor() (el estimado) en ese caso.
   // "sbClient" es el cliente de Supabase ya creado por quien llama
   // (index.html / crm/index.html), li_places es de lectura publica.
-  var ANCHOR_CATEGORIES = ["fuel", "worship", "bar", "stadium", "mall", "entertainment"];
+  var ANCHOR_CATEGORIES = ["fuel", "worship", "stadium", "mall", "entertainment"];
 
   async function scoreForReal(sbClient, point, cuisine) {
     var latDelta = REAL_RADIUS_MILES / 69;
@@ -105,6 +105,7 @@
 
     var restaurants = nearby.filter(function (p) { return p.category === "restaurant"; });
     var foodParks = nearby.filter(function (p) { return p.category === "food_park"; });
+    var bars = nearby.filter(function (p) { return p.category === "bar"; });
     var construction = nearby.filter(function (p) { return p.category === "construction"; });
     var anchors = nearby.filter(function (p) { return ANCHOR_CATEGORIES.indexOf(p.category) !== -1; });
     var aliasKeywords = CUISINE_ALIASES[(cuisine || "").toLowerCase()] || [];
@@ -115,15 +116,28 @@
       return !!cuisine && pc.indexOf(cuisine.toLowerCase()) !== -1;
     });
 
-    // Espacio vs competencia: los food parks pesan mas — son competencia
-    // directa y concentrada para un trailer, no solo un restaurante mas.
-    var space = clamp(100 - restaurants.length * 4 - foodParks.length * 15, 8, 96);
+    // Espacio vs competencia: un restaurante mas es competencia directa.
+    // Un food park ya NO se castiga igual de fuerte aqui — ahi abajo en
+    // "trafico" se refleja que lo que de verdad importa de un food park es
+    // la cantidad de gente que atrae, no solo que haya mas trailers.
+    // Pesos calibrados contra una muestra real de 45 puntos en Dallas,
+    // Chicago y Houston (restaurantes van de 0 a 268 cerca de un punto
+    // cualquiera) — con un peso de 4 por restaurante, el score se saturaba
+    // en el piso/techo en casi cualquier zona urbana real.
+    var space = clamp(100 - restaurants.length * 0.7 - foodParks.length * 4, 10, 96);
     // Brecha de cocina: pocos sirviendo lo mismo cerca = brecha (oportunidad) alta.
     var gap = clamp(100 - sameCuisine.length * 15, 10, 95);
-    // Trafico/demanda: mas anclas (gasolineras, templos, bares, plazas, estadios,
-    // cines) cerca implica mas movimiento de gente; construccion nueva cerca
-    // suma tambien — es demanda futura (colonias/desarrollos nuevos).
-    var traffic = clamp(anchors.length * 6 + construction.length * 8, 10, 95);
+    // Trafico/demanda: los bares pesan mas que una ancla generica — un
+    // trailer afuera de un bar en la noche es de las mejores ubicaciones
+    // que hay. Un food park cerca pesa todavia mas — es gente que ya fue
+    // ahi especificamente a comer, con hambre y lista para gastar; eso
+    // importa mas que contarlo solo como "mas competencia". Construccion
+    // nueva cerca tambien suma — demanda futura (colonias/desarrollos).
+    var traffic = clamp(
+      anchors.length * 2 + bars.length * 3 + foodParks.length * 12 + construction.length * 5,
+      10,
+      95
+    );
     // Demografico real todavia pendiente (falta Census) — neutro por ahora.
     var demo = 55;
 
@@ -139,6 +153,7 @@
       nearby: nearby,
       nearbyCount: nearby.length,
       anchorCount: anchors.length,
+      barCount: bars.length,
       restaurantCount: restaurants.length,
       sameCuisineCount: sameCuisine.length,
       foodParkCount: foodParks.length,
@@ -150,21 +165,22 @@
   // insightsFor(), que es generica y trabaja con el estimado simulado).
   function insightsForReal(r) {
     var out = [];
+    if (r.foodParkCount > 0) {
+      out.push(r.foodParkCount + (r.foodParkCount === 1 ? " food park/food court cerca" : " food parks/food courts cerca") + " — gente que ya va especificamente a comer ahi, con hambre y lista para gastar. Mas trafico suele pesar mas que la competencia extra.");
+    }
+    if (r.barCount > 0) {
+      out.push(r.barCount + (r.barCount === 1 ? " bar cerca" : " bares cerca") + " — una de las mejores ubicaciones para un trailer en horario nocturno.");
+    }
     if (r.restaurantCount === 0 && r.foodParkCount === 0) {
       out.push("No hay restaurantes ni food parks en " + REAL_RADIUS_MILES + " millas a la redonda — zona sin competencia directa.");
-    } else {
-      if (r.foodParkCount > 0) {
-        out.push(r.foodParkCount + (r.foodParkCount === 1 ? " food park/food court cerca" : " food parks/food courts cerca") + " — la competencia mas directa para un trailer.");
-      }
-      if (r.restaurantCount > 0) {
-        out.push(r.restaurantCount + " restaurante(s) cerca; " + r.sameCuisineCount + " del mismo tipo de cocina.");
-      }
+    } else if (r.restaurantCount > 0) {
+      out.push(r.restaurantCount + " restaurante(s) cerca; " + r.sameCuisineCount + " del mismo tipo de cocina.");
     }
     if (r.constructionCount > 0) {
       out.push(r.constructionCount + " obra(s) de construccion nueva cerca — senal de colonias/desarrollos en crecimiento.");
     }
     if (r.anchorCount > 0) {
-      out.push(r.anchorCount + " puntos de interes cerca (gasolineras, templos, bares, plazas, estadios, cines) que generan trafico peatonal.");
+      out.push(r.anchorCount + " otros puntos de interes cerca (gasolineras, templos, plazas, estadios, cines) que generan trafico peatonal.");
     }
     return out;
   }
