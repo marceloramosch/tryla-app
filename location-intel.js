@@ -332,6 +332,48 @@
   // ni pin (nuestro mercado base hoy).
   var DEFAULT_CENTER = { lat: 32.7767, lon: -96.797 };
 
+  var EXPAND_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#171433" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  var COLLAPSE_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#171433" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>';
+
+  // Boton para ver el mapa a pantalla completa con un click — clave en
+  // movil, donde el mapa embebido es chico. Alterna una clase CSS en el
+  // contenedor (position:fixed cubriendo toda la pantalla) y le pide a
+  // Leaflet que recalcule su tamano despues del cambio.
+  function addExpandControl(map, container) {
+    var L = window.L;
+    var ExpandControl = L.Control.extend({
+      options: { position: "topright" },
+      onAdd: function () {
+        var btn = L.DomUtil.create("button", "tli-expand-btn");
+        btn.type = "button";
+        btn.innerHTML = EXPAND_ICON;
+        btn.setAttribute("aria-label", "Expandir mapa");
+        L.DomEvent.disableClickPropagation(btn);
+        L.DomEvent.on(btn, "click", function () {
+          var isFull = container.classList.toggle("tli-map-fullscreen");
+          btn.innerHTML = isFull ? COLLAPSE_ICON : EXPAND_ICON;
+          btn.setAttribute("aria-label", isFull ? "Cerrar mapa completo" : "Expandir mapa");
+          document.body.classList.toggle("tli-map-open", isFull);
+          requestAnimationFrame(function () { map.invalidateSize(); });
+        });
+        return btn;
+      },
+    });
+    map.addControl(new ExpandControl());
+  }
+
+  // Fuerza a Leaflet a recalcular su tamano. Necesario cuando el mapa se
+  // monta mientras su contenedor esta oculto (display:none) — por ejemplo,
+  // la pestana de Location Intelligence cuando Home es la pestana activa
+  // por default. Sin esto, Leaflet calcula un tamano de 0 al montarse y el
+  // grid de tiles queda roto/parcial hasta que algo (como redimensionar la
+  // ventana) lo fuerce a recalcular. Quien llama debe invocar esto cuando
+  // el contenedor del mapa se vuelve visible (ej. al cambiar de pestana).
+  function invalidateMap(container) {
+    var map = mapInstances.get(container);
+    if (map) map.invalidateSize();
+  }
+
   // Mounts (or reuses) a Leaflet map in `container`. With a `point`, flies to
   // {lat, lon} and drops an animated trailer marker badged with the score.
   // Without one, shows a pickable base map centered on Dallas. Safe to call
@@ -350,6 +392,7 @@
         maxZoom: 19,
         attribution: "&copy; OpenStreetMap",
       }).addTo(map);
+      addExpandControl(map, container);
       mapInstances.set(container, map);
     } else {
       map.invalidateSize();
@@ -420,6 +463,7 @@
     mountMap: mountMap,
     plotNearby: plotNearby,
     ensureLeaflet: ensureLeaflet,
+    invalidateMap: invalidateMap,
   };
 })();
 

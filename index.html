@@ -776,6 +776,11 @@
       s.classList.toggle("active", s.id === "screen-" + btn.dataset.tab);
     });
     if (btn.dataset.tab === "home") renderHomeDashboard(site);
+    if (btn.dataset.tab === "location") {
+      requestAnimationFrame(function () {
+        window.TrylaLocationIntel.invalidateMap(document.getElementById("liMap"));
+      });
+    }
   });
 
   // ---- Location Intelligence wiring ----

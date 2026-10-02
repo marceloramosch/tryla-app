@@ -12,3 +12,15 @@
 .tli-marker{ transform:translateY(-40px) scale(0.6); opacity:0; transition:transform .55s cubic-bezier(.34,1.56,.64,1), opacity .35s ease; }
 .tli-marker.tli-drop-in{ transform:translateY(0) scale(1); opacity:1; }
 @media(prefers-reduced-motion:reduce){ .tli-marker{ transition:none; transform:none; opacity:1; } }
+
+.tli-expand-btn{
+  width:34px; height:34px; border-radius:8px; background:#fff; border:1px solid rgba(0,0,0,.15);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.25);
+  padding:0;
+}
+.tli-expand-btn:hover{ background:#f4f4fb; }
+.tli-map.tli-map-fullscreen{
+  position:fixed; inset:0; z-index:9999; width:100vw; height:100vh;
+  border-radius:0; margin-top:0; border:none;
+}
+body.tli-map-open{ overflow:hidden; }
