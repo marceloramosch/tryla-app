@@ -200,7 +200,6 @@
   .publish{ display:flex; align-items:center; gap:10px; background:#F1F0FF; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
   .publish label{ font-size:13px; font-weight:700; color:#06038D; }
   .live-link{ font-size:12.5px; color:#5B54FF; }
-  .site-domain-note{ display:inline-block; margin-top:4px; font-size:11px; color:#9a9ab8; line-height:1.4; }
   @media(max-width:400px){
     .menu-row{ flex-wrap:wrap; }
     .menu-row input, .menu-row input.menu-price{ flex:1 1 100%; }
@@ -403,7 +402,7 @@
       auth_check_email_body1: "Te mandamos un link para confirmar tu cuenta (", auth_check_email_body2: "). Ábrelo y regresa aquí.",
       onboarding_title: "Crea tu restaurante",
       onboarding_sub: "Dos datos y arrancamos — puedes cambiar todo despues desde Web Builder.",
-      onboarding_name: "Nombre del restaurante", onboarding_subdomain: "Subdominio (tu-sitio.thetryla.com)",
+      onboarding_name: "Nombre del restaurante", onboarding_subdomain: "Subdominio (tu-sitio.thetryla.app)",
       onboarding_create: "Crear", onboarding_creating: "Creando...",
       onboarding_missing: "Faltan datos.", onboarding_dup: "Ese subdominio ya está en uso, prueba otro.",
       tab_location: "Location Intelligence", tab_site: "Web Builder", tab_permits: "Checklist", tab_chef: "Chef Talent", tab_operate: "Operator",
@@ -458,7 +457,6 @@
       checklist_i9_t: "Permiso de ventas / EIN", checklist_i9_b: "Para cobrar y declarar impuestos de venta legalmente.",
       checklist_i10_t: "Zonificación y permiso de estacionamiento", checklist_i10_b: "Confirma dónde SÍ puedes operar legalmente tu trailer.",
       site_welcome: "Bienvenido", site_hint: "Edita lo que quieras y da clic en Guardar — se actualiza al instante.", site_your_site: " Tu sitio: ",
-      site_domain_note: "Tu dominio final será {subdomain}.thetryla.com — por ahora usa este link mientras activamos ese dominio.",
       site_name: "Nombre del restaurante", site_tagline: "Eslogan", site_description: "Descripción",
       site_photos: "Fotos", site_logo: "Logo", site_hero: "Foto principal (hero)", site_gallery: "Galería (puedes elegir varias)", site_current: " actual",
       site_menu: "Menú", site_add_dish: "+ Agregar platillo", site_dish_ph: "Platillo", site_price_ph: "Precio", site_desc_ph: "Descripción (opcional)", site_remove: "Quitar",
@@ -516,7 +514,7 @@
       auth_check_email_body1: "We sent a confirmation link to (", auth_check_email_body2: "). Open it and come back here.",
       onboarding_title: "Create your restaurant",
       onboarding_sub: "Two fields and you're set — you can change everything later from Web Builder.",
-      onboarding_name: "Restaurant name", onboarding_subdomain: "Subdomain (your-site.thetryla.com)",
+      onboarding_name: "Restaurant name", onboarding_subdomain: "Subdomain (your-site.thetryla.app)",
       onboarding_create: "Create", onboarding_creating: "Creating...",
       onboarding_missing: "Missing fields.", onboarding_dup: "That subdomain is already taken, try another.",
       tab_location: "Location Intelligence", tab_site: "Web Builder", tab_permits: "Checklist", tab_chef: "Chef Talent", tab_operate: "Operator",
@@ -571,7 +569,6 @@
       checklist_i9_t: "Sales tax permit / EIN", checklist_i9_b: "To legally collect and report sales tax.",
       checklist_i10_t: "Zoning & parking permit", checklist_i10_b: "Confirm where you're legally allowed to operate your trailer.",
       site_welcome: "Welcome", site_hint: "Edit whatever you want and click Save — it updates instantly.", site_your_site: " Your site: ",
-      site_domain_note: "Your final domain will be {subdomain}.thetryla.com — for now use this link while we activate that domain.",
       site_name: "Restaurant name", site_tagline: "Tagline", site_description: "Description",
       site_photos: "Photos", site_logo: "Logo", site_hero: "Main photo (hero)", site_gallery: "Gallery (pick several)", site_current: " current",
       site_menu: "Menu", site_add_dish: "+ Add dish", site_dish_ph: "Dish", site_price_ph: "Price", site_desc_ph: "Description (optional)", site_remove: "Remove",
@@ -1260,8 +1257,7 @@
         '<div class="hint">' + t("site_hint") +
         (site.subdomain ?
           t("site_your_site") +
-          '<a class="live-link" href="https://thetryla.app/sites/?s=' + encodeURIComponent(site.subdomain) + '" target="_blank">thetryla.app/sites/?s=' + esc(site.subdomain) + "</a>" +
-          '<br><span class="site-domain-note">' + t("site_domain_note").replace("{subdomain}", esc(site.subdomain)) + "</span>"
+          '<a class="live-link" href="https://' + esc(site.subdomain) + '.thetryla.app" target="_blank">' + esc(site.subdomain) + ".thetryla.app</a>"
         : "") +
         "</div>" +
         '<div class="field"><label>' + t("site_name") + '</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
