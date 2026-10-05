@@ -122,6 +122,7 @@
   const payCancelEditBtn = document.getElementById("payCancelEditBtn");
 
   const clientsSearch = document.getElementById("clientsSearch");
+  const pipelineSearch = document.getElementById("pipelineSearch");
   const quotesSearch = document.getElementById("quotesSearch");
   const invoicesSearch = document.getElementById("invoicesSearch");
   const payTableWrap = document.getElementById("payTableWrap");
@@ -136,6 +137,9 @@
   const QUOTES_KEY = "novaQuotes";
   const ACTIVITY_KEY = "novaActivityLog";
   const ACTIVITY_MAX = 200;
+
+  // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
+  const PIPELINE_STAGES = ["Lead", "Contactado", "Cotizado", "Negociacion", "Aceptado", "Perdido"];
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
@@ -946,7 +950,7 @@
       `;
       const statusTd = tr.children[4];
       const statusSelect = document.createElement("select");
-      ["Lead", "Cotizado", "Aceptado", "Perdido"].forEach((s) => {
+      PIPELINE_STAGES.forEach((s) => {
         const o = document.createElement("option");
         o.value = s;
         o.textContent = s;
@@ -1105,6 +1109,132 @@
     }
     persistClients();
     return client;
+  }
+
+  // ===== Pipeline (kanban de leads, estilo HubSpot) =====
+  // Valor en pipeline de un cliente: suma de sus cotizaciones abiertas (sin invoice).
+  function clientPipelineValue(c) {
+    return quotes
+      .filter((q) => q.clientId === c.id && !isInvoice(q))
+      .reduce((s, q) => s + quoteTotals(q).subtotal, 0);
+  }
+
+  function clientInitials(name) {
+    const parts = (name || "?").trim().split(/\s+/).filter(Boolean).slice(0, 2);
+    return (parts.map((p) => p[0]).join("") || "?").toUpperCase();
+  }
+
+  let dragSrcClientId = null;
+
+  function buildPipelineCard(c) {
+    const card = document.createElement("div");
+    card.className = "pipeline-card";
+    card.draggable = true;
+
+    const value = clientPipelineValue(c);
+    const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+
+    card.innerHTML = `
+      <div class="pc-top">
+        <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
+        <span class="pc-name">${escapeHtml(c.name)}</span>
+      </div>
+      ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
+      ${c.ciudad ? `<div class="pc-meta">${escapeHtml(c.ciudad)}</div>` : ""}
+      ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
+      <div class="pc-foot">
+        <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
+        <select class="pc-move" aria-label="Mover a otra etapa"></select>
+        <button type="button" class="pc-edit">Editar</button>
+      </div>
+    `;
+
+    const moveSelect = card.querySelector(".pc-move");
+    PIPELINE_STAGES.forEach((s) => {
+      const o = document.createElement("option");
+      o.value = s;
+      o.textContent = s;
+      if (s === c.status) o.selected = true;
+      moveSelect.appendChild(o);
+    });
+    moveSelect.addEventListener("change", () => {
+      moveClientToStage(c.id, moveSelect.value);
+    });
+
+    card.querySelector(".pc-edit").addEventListener("click", () => {
+      switchTab("clients");
+      startEditClient(c.id);
+    });
+
+    card.addEventListener("dragstart", (e) => {
+      dragSrcClientId = c.id;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      dragSrcClientId = null;
+    });
+
+    return card;
+  }
+
+  function moveClientToStage(clientId, stage) {
+    const c = clients.find((x) => x.id === clientId);
+    if (!c || c.status === stage) return;
+    c.status = stage;
+    persistClients();
+    logActivity(`Movio a "${c.name}" a la etapa "${stage}"`);
+    renderPipeline();
+    renderClientsTable();
+  }
+
+  function renderPipeline() {
+    const board = document.getElementById("pipelineBoard");
+    if (!board) return;
+    const q = (pipelineSearch.value || "").trim().toLowerCase();
+    const filtered = q
+      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas].some((f) => (f || "").toLowerCase().includes(q)))
+      : clients;
+
+    board.innerHTML = "";
+    PIPELINE_STAGES.forEach((stage) => {
+      const stageClients = filtered.filter((c) => (c.status || "Lead") === stage);
+      const stageValue = stageClients.reduce((s, c) => s + clientPipelineValue(c), 0);
+
+      const col = document.createElement("div");
+      col.className = "pipeline-col";
+      col.innerHTML = `
+        <div class="pipeline-col-head">
+          <span class="pipeline-col-title">${escapeHtml(stage)}</span>
+          <span class="pipeline-col-count">${stageClients.length}</span>
+        </div>
+        <div class="pipeline-col-value">${stageValue > 0 ? formatMoney(stageValue) : ""}</div>
+        <div class="pipeline-col-body"></div>
+      `;
+
+      const body = col.querySelector(".pipeline-col-body");
+      if (stageClients.length === 0) {
+        body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
+      } else {
+        stageClients.forEach((c) => body.appendChild(buildPipelineCard(c)));
+      }
+
+      body.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        body.classList.add("drag-over");
+      });
+      body.addEventListener("dragleave", () => {
+        body.classList.remove("drag-over");
+      });
+      body.addEventListener("drop", (e) => {
+        e.preventDefault();
+        body.classList.remove("drag-over");
+        if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage);
+      });
+
+      board.appendChild(col);
+    });
   }
 
   // ===== Cotizaciones guardadas =====
@@ -1951,6 +2081,7 @@
       panel.classList.toggle("active", panel.id === `tab-${name}`);
     });
     if (name === "dashboard") renderDashboard();
+    if (name === "pipeline") renderPipeline();
   }
 
   // ===== Resumen / dashboard =====
@@ -1974,7 +2105,7 @@
     document.getElementById("dashCobrado").textContent = formatMoney(cobrado);
     document.getElementById("dashPendiente").textContent = formatMoney(pendiente);
 
-    const statusOrder = ["Lead", "Cotizado", "Aceptado", "Perdido"];
+    const statusOrder = PIPELINE_STAGES;
     const counts = {};
     statusOrder.forEach((s) => (counts[s] = 0));
     clients.forEach((c) => {
@@ -2017,6 +2148,7 @@
   payFecha.value = new Date().toISOString().slice(0, 10);
 
   clientsSearch.addEventListener("input", renderClientsTable);
+  pipelineSearch.addEventListener("input", renderPipeline);
   quotesSearch.addEventListener("input", renderQuotesTable);
   invoicesSearch.addEventListener("input", renderInvoicesTable);
 

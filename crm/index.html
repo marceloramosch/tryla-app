@@ -291,12 +291,66 @@
     display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;
   }
   .status-Lead{ background:#FEF3D6; color:#9a6b00; }
+  .status-Contactado{ background:#E6E1FF; color:#5B54FF; }
   .status-Cotizado{ background:#DCEBFF; color:var(--blue); }
+  .status-Negociacion{ background:#FFE8CC; color:#b1600a; }
   .status-Aceptado{ background:#DDF4E4; color:#1e7a3c; }
   .status-Perdido{ background:#FBE1E1; color:#c0392b; }
   .status-Borrador{ background:#EEF3FC; color:#7c8aa6; }
   .status-Enviada{ background:#DCEBFF; color:var(--blue); }
   .status-Rechazada{ background:#FBE1E1; color:#c0392b; }
+
+  /* ===== Pipeline (kanban de leads, estilo HubSpot) ===== */
+  .pipeline-board{ display:flex; gap:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px; align-items:flex-start; }
+  .pipeline-col{
+    flex:0 0 240px; width:240px; background:var(--light); border:1px solid var(--border);
+    border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;
+    transition: background .25s ease, border-color .25s ease;
+  }
+  :root[data-theme="dark"] .pipeline-col{ background:var(--panel); }
+  .pipeline-col-head{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .pipeline-col-title{ font-size:12px; font-weight:800; letter-spacing:.5px; color:var(--dark); text-transform:uppercase; }
+  .pipeline-col-count{
+    background:var(--border); color:var(--text); font-size:11px; font-weight:700;
+    border-radius:999px; padding:1px 8px; flex-shrink:0;
+  }
+  .pipeline-col-value{ font-size:12.5px; font-weight:700; color:var(--blue); min-height:16px; }
+  .pipeline-col-body{
+    display:flex; flex-direction:column; gap:8px; min-height:60px; max-height:520px;
+    overflow-y:auto; border-radius:8px; transition: background .15s ease;
+  }
+  .pipeline-col-body.drag-over{ background:rgba(91,84,255,.1); outline:2px dashed var(--blue); }
+  .pipeline-empty{
+    text-align:center; font-size:11.5px; color:var(--text2); border:1px dashed var(--border);
+    border-radius:8px; padding:14px 6px;
+  }
+  .pipeline-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    cursor:grab; box-shadow:0 1px 2px rgba(0,0,0,.05); transition: box-shadow .15s ease, opacity .15s ease;
+  }
+  .pipeline-card:hover{ box-shadow:0 3px 10px rgba(0,0,0,.12); }
+  .pipeline-card.dragging{ opacity:.35; cursor:grabbing; }
+  .pc-top{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+  .pc-avatar{
+    width:26px; height:26px; border-radius:50%; background:var(--blue); color:#fff; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+  }
+  .pc-name{ font-size:13px; font-weight:700; color:var(--dark); line-height:1.25; }
+  .pc-negocio{ font-size:11.5px; color:var(--text); margin-bottom:2px; }
+  .pc-meta{ font-size:11px; color:var(--text2); margin-bottom:4px; }
+  .pc-value{ font-size:13px; font-weight:800; color:var(--blue); margin-bottom:6px; }
+  .pc-foot{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:4px; }
+  .pc-foot span{ font-size:10.5px; color:var(--text2); }
+  .pc-move{ font-size:10.5px; padding:3px 4px; border:1px solid var(--border); border-radius:5px; background:var(--panel); color:var(--text); max-width:90px; }
+  .pc-edit{
+    border:1px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
+    padding:3px 8px; border-radius:5px; cursor:pointer; font-size:10.5px; flex-shrink:0;
+  }
+  .pc-edit:hover{ background:var(--blue); color:#fff; }
+  @media(max-width:600px){
+    .pipeline-col{ flex-basis:200px; width:200px; }
+    .pipeline-col-body{ max-height:420px; }
+  }
 
   #addCustomLine{ margin-top:6px; }
 
@@ -351,7 +405,7 @@
 
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
-    header, .tabs, .layout, .actions, .panel, footer, #novaCloudChip, .preview-actions{ display:none !important; }
+    header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions{ display:none !important; }
     #previewWrap{ display:block !important; margin:0; }
     #previewDoc{ border:none; padding:0; max-width:none; }
     body{ background:#fff; }
@@ -452,6 +506,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="quote">Cotizador</button>
     <button class="tab-btn" data-tab="clients">Clientes (CRM)</button>
+    <button class="tab-btn" data-tab="pipeline">Pipeline</button>
     <button class="tab-btn" data-tab="quotes">Cotizaciones guardadas</button>
     <button class="tab-btn" data-tab="intel">Location Intelligence</button>
     <button class="tab-btn" data-tab="finance">Financiamiento</button>
@@ -587,7 +642,9 @@
           <label>Estatus</label>
           <select id="cEstatus">
             <option>Lead</option>
+            <option>Contactado</option>
             <option>Cotizado</option>
+            <option>Negociacion</option>
             <option>Aceptado</option>
             <option>Perdido</option>
           </select>
@@ -614,6 +671,18 @@
         </table>
       </div>
     </div>
+  </div>
+
+  <!-- ===================== TAB: PIPELINE ===================== -->
+  <div class="tab-panel" id="tab-pipeline">
+    <div class="panel">
+      <h2>Pipeline de leads</h2>
+      <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
+      <div class="field" style="max-width:320px;">
+        <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
+      </div>
+    </div>
+    <div class="pipeline-board" id="pipelineBoard"></div>
   </div>
 
   <!-- ===================== TAB: COTIZACIONES GUARDADAS ===================== -->
