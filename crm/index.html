@@ -290,12 +290,12 @@
   .status-pill{
     display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;
   }
-  .status-Lead{ background:#FEF3D6; color:#9a6b00; }
-  .status-Contactado{ background:#E6E1FF; color:#5B54FF; }
-  .status-Cotizado{ background:#DCEBFF; color:var(--blue); }
-  .status-Negociacion{ background:#FFE8CC; color:#b1600a; }
-  .status-Aceptado{ background:#DDF4E4; color:#1e7a3c; }
-  .status-Perdido{ background:#FBE1E1; color:#c0392b; }
+  .status-Cold{ background:#CFE3FB; color:#2056A8; }
+  .status-Warm{ background:#F6E2A8; color:#6B4A18; }
+  .status-HOT{ background:#F2994A; color:#3D2200; }
+  .status-Finance{ background:#6B4FA0; color:#fff; }
+  .status-Cash{ background:#2E6B52; color:#fff; }
+  .status-Closed{ background:#7BE06A; color:#1B4720; }
   .status-Borrador{ background:#EEF3FC; color:#7c8aa6; }
   .status-Enviada{ background:#DCEBFF; color:var(--blue); }
   .status-Rechazada{ background:#FBE1E1; color:#c0392b; }
@@ -309,7 +309,7 @@
   }
   :root[data-theme="dark"] .pipeline-col{ background:var(--panel); }
   .pipeline-col-head{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
-  .pipeline-col-title{ font-size:12px; font-weight:800; letter-spacing:.5px; color:var(--dark); text-transform:uppercase; }
+  .pipeline-col-title{ display:inline-block; padding:3px 11px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
   .pipeline-col-count{
     background:var(--border); color:var(--text); font-size:11px; font-weight:700;
     border-radius:999px; padding:1px 8px; flex-shrink:0;
@@ -341,7 +341,7 @@
   .pc-value{ font-size:13px; font-weight:800; color:var(--blue); margin-bottom:6px; }
   .pc-foot{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:4px; }
   .pc-foot span{ font-size:10.5px; color:var(--text2); }
-  .pc-move{ font-size:10.5px; padding:3px 4px; border:1px solid var(--border); border-radius:5px; background:var(--panel); color:var(--text); max-width:90px; }
+  .pc-move{ font-size:10.5px; padding:3px 4px; border:1px solid var(--border); border-radius:5px; max-width:90px; }
   .pc-edit{
     border:1px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
     padding:3px 8px; border-radius:5px; cursor:pointer; font-size:10.5px; flex-shrink:0;
@@ -641,12 +641,12 @@
         <div class="field">
           <label>Estatus</label>
           <select id="cEstatus">
-            <option>Lead</option>
-            <option>Contactado</option>
-            <option>Cotizado</option>
-            <option>Negociacion</option>
-            <option>Aceptado</option>
-            <option>Perdido</option>
+            <option>Cold</option>
+            <option>Warm</option>
+            <option>HOT</option>
+            <option>Finance</option>
+            <option>Cash</option>
+            <option>Closed</option>
           </select>
         </div>
       </div>

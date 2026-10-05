@@ -139,10 +139,24 @@
   const ACTIVITY_MAX = 200;
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
-  const PIPELINE_STAGES = ["Lead", "Contactado", "Cotizado", "Negociacion", "Aceptado", "Perdido"];
+  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed"];
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
+
+  // Migra clientes guardados con el esquema de etapas anterior (Lead/Contactado/Cotizado/
+  // Negociacion/Aceptado/Perdido) al nuevo (Cold/Warm/HOT/Finance/Cash/Closed), una sola vez.
+  (function migrateClientStatuses() {
+    const STATUS_MIGRATION = { Lead: "Cold", Contactado: "Warm", Cotizado: "HOT", Negociacion: "HOT", Aceptado: "Closed", Perdido: "Cold" };
+    let migrated = false;
+    clients.forEach((c) => {
+      if (c.status && PIPELINE_STAGES.indexOf(c.status) === -1 && STATUS_MIGRATION[c.status]) {
+        c.status = STATUS_MIGRATION[c.status];
+        migrated = true;
+      }
+    });
+    if (migrated) syncSet(CLIENTS_KEY, JSON.stringify(clients));
+  })();
   let quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || "[]");
   let activityLog = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
 
@@ -957,8 +971,10 @@
         if (s === c.status) o.selected = true;
         statusSelect.appendChild(o);
       });
+      setStatusClass(statusSelect, c.status || "Cold");
       statusSelect.addEventListener("change", () => {
         c.status = statusSelect.value;
+        setStatusClass(statusSelect, c.status);
         persistClients();
       });
       statusTd.appendChild(statusSelect);
@@ -1001,7 +1017,7 @@
     document.getElementById("cContacto").value = c.contacto || "";
     document.getElementById("cNegocio").value = c.negocio || "";
     document.getElementById("cCiudad").value = c.ciudad || "";
-    document.getElementById("cEstatus").value = c.status || "Lead";
+    document.getElementById("cEstatus").value = c.status || "Cold";
     document.getElementById("cNotas").value = c.notas || "";
     btnAddClient.textContent = "Guardar cambios";
     btnCancelEditClient.style.display = "inline-block";
@@ -1014,7 +1030,7 @@
     document.getElementById("cContacto").value = "";
     document.getElementById("cNegocio").value = "";
     document.getElementById("cCiudad").value = "";
-    document.getElementById("cEstatus").value = "Lead";
+    document.getElementById("cEstatus").value = "Cold";
     document.getElementById("cNotas").value = "";
     btnAddClient.textContent = "+ Agregar cliente";
     btnCancelEditClient.style.display = "none";
@@ -1098,14 +1114,14 @@
         name,
         contacto: contacto || "",
         ciudad: ciudad || "",
-        status: "Cotizado",
+        status: "HOT",
         notas: "",
       };
       clients.push(client);
     } else {
       if (contacto) client.contacto = contacto;
       if (ciudad) client.ciudad = ciudad;
-      if (client.status === "Lead") client.status = "Cotizado";
+      if (client.status === "Cold") client.status = "HOT";
     }
     persistClients();
     return client;
@@ -1125,6 +1141,12 @@
   }
 
   let dragSrcClientId = null;
+
+  // Pinta un <select> de etapa con los colores de status-<Etapa> (igual a los chips del sheet)
+  function setStatusClass(el, status) {
+    PIPELINE_STAGES.forEach((s) => el.classList.remove("status-" + s));
+    el.classList.add("status-" + status);
+  }
 
   function buildPipelineCard(c) {
     const card = document.createElement("div");
@@ -1157,7 +1179,9 @@
       if (s === c.status) o.selected = true;
       moveSelect.appendChild(o);
     });
+    setStatusClass(moveSelect, c.status || "Cold");
     moveSelect.addEventListener("change", () => {
+      setStatusClass(moveSelect, moveSelect.value);
       moveClientToStage(c.id, moveSelect.value);
     });
 
@@ -1199,14 +1223,14 @@
 
     board.innerHTML = "";
     PIPELINE_STAGES.forEach((stage) => {
-      const stageClients = filtered.filter((c) => (c.status || "Lead") === stage);
+      const stageClients = filtered.filter((c) => (c.status || "Cold") === stage);
       const stageValue = stageClients.reduce((s, c) => s + clientPipelineValue(c), 0);
 
       const col = document.createElement("div");
       col.className = "pipeline-col";
       col.innerHTML = `
         <div class="pipeline-col-head">
-          <span class="pipeline-col-title">${escapeHtml(stage)}</span>
+          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(stage)}</span>
           <span class="pipeline-col-count">${stageClients.length}</span>
         </div>
         <div class="pipeline-col-value">${stageValue > 0 ? formatMoney(stageValue) : ""}</div>
