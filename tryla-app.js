@@ -943,7 +943,7 @@
     }
     const q = (clientsSearch.value || "").trim().toLowerCase();
     const filtered = q
-      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas].some((f) => (f || "").toLowerCase().includes(q)))
+      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q)))
       : clients;
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7c8aa6;">Sin resultados para tu busqueda</td></tr>';
@@ -956,7 +956,7 @@
         <td>${escapeHtml(c.name)}</td>
         <td>${escapeHtml(c.contacto || "")}</td>
         <td>${escapeHtml(c.negocio || "")}</td>
-        <td>${escapeHtml(c.ciudad || "")}</td>
+        <td>${escapeHtml(c.ciudad || "")}${c.fuente ? ` <span style="color:var(--text2);font-size:10.5px;">· ${escapeHtml(c.fuente)}</span>` : ""}</td>
         <td></td>
         <td>${escapeHtml(c.notas || "")}</td>
         <td>${quoteCount}</td>
@@ -1162,7 +1162,7 @@
         <span class="pc-name">${escapeHtml(c.name)}</span>
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
-      ${c.ciudad ? `<div class="pc-meta">${escapeHtml(c.ciudad)}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       <div class="pc-foot">
         <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
@@ -1218,7 +1218,7 @@
     if (!board) return;
     const q = (pipelineSearch.value || "").trim().toLowerCase();
     const filtered = q
-      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas].some((f) => (f || "").toLowerCase().includes(q)))
+      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q)))
       : clients;
 
     board.innerHTML = "";
