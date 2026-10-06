@@ -26,6 +26,7 @@
   window.NovaCloud = {
     enabled: false,
     email: "local",
+    isFounder: false,
     push: async function () {},
     checkConflict: async function () { return { conflict: false }; },
   };
@@ -102,8 +103,9 @@
         if (cloud[k] !== undefined && cloud[k] !== null) {
           // La nube manda: sobreescribe lo local
           localStorage.setItem(k, JSON.stringify(cloud[k]));
-        } else {
+        } else if (!window.NovaCloud.isFounder) {
           // La nube no tiene este dato: si hay algo local, lo subimos
+          // (las cuentas founder son de solo lectura, nunca siembran nada)
           const local = localStorage.getItem(k);
           if (local && local !== "[]" && local !== "{}") {
             await window.NovaCloud.push(k, local);
@@ -180,7 +182,7 @@
           return;
         }
         ov.remove();
-        resolve(data.user && data.user.email);
+        resolve(data.user);
       }
 
       btn.addEventListener("click", attempt);
@@ -193,15 +195,32 @@
 
   // ---- Arranque ----
   async function start() {
-    let email = null;
+    let user = null;
     try {
       const { data } = await sb.auth.getSession();
-      if (data && data.session) email = data.session.user.email;
+      if (data && data.session) user = data.session.user;
     } catch (e) {}
 
-    if (!email) email = await showLogin();
+    if (!user) user = await showLogin();
 
+    const email = user && user.email;
     window.NovaCloud.email = email || "local";
+
+    // Cuenta "founder" (Portal de Fundadores): solo lectura, sin acceso al
+    // resto del CRM. Se checa aparte de staff_users -- si no esta en
+    // ninguna de las dos tablas, se queda como visitante sin datos (las
+    // policies de nova_store ya no dejan pasar a nadie mas).
+    if (user && user.id) {
+      try {
+        const { data: founderRow } = await sb
+          .from("founder_users")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        window.NovaCloud.isFounder = !!founderRow;
+      } catch (e) {}
+    }
+
     buildStatusChip(email);
     await hydrate();
     resolveReady("cloud");

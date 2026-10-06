@@ -325,11 +325,29 @@
     border-radius:8px; padding:14px 6px;
   }
   .pipeline-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
-    cursor:grab; box-shadow:0 1px 2px rgba(0,0,0,.05); transition: box-shadow .15s ease, opacity .15s ease;
+    position:relative; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px 12px;
+    cursor:grab; box-shadow:0 1px 2px rgba(0,0,0,.05);
+    transition: box-shadow .15s ease, opacity .15s ease, transform .15s ease;
   }
   .pipeline-card:hover{ box-shadow:0 3px 10px rgba(0,0,0,.12); }
-  .pipeline-card.dragging{ opacity:.35; cursor:grabbing; }
+  .pipeline-card.dragging{
+    opacity:.92; cursor:grabbing; transform:scale(1.04) rotate(-1.5deg);
+    box-shadow:0 16px 34px rgba(0,0,0,.3);
+  }
+  /* HOT + marcado que necesita financiamiento: una segunda tarjeta asoma
+     detras -- "esto esta caliente Y TAMBIEN requiere lo otro" */
+  .pipeline-card-stacked{ margin-bottom:12px; }
+  .pipeline-card-stacked::after{
+    content:""; position:absolute; inset:6px -6px -6px 6px; z-index:-1;
+    background:var(--light); border:1px solid var(--border); border-radius:10px; transform:rotate(2deg);
+  }
+  :root[data-theme="dark"] .pipeline-card-stacked::after{ background:var(--bg); }
+  @keyframes pcDropIn{ from{ opacity:0; transform:translateY(-10px) scale(.96); } to{ opacity:1; transform:none; } }
+  .pipeline-card.card-enter{ animation:pcDropIn .32s cubic-bezier(.22,.9,.3,1); }
+  @media (prefers-reduced-motion: reduce){
+    .pipeline-card.card-enter{ animation:none; }
+    .pipeline-card.dragging{ transform:none; }
+  }
   .pc-top{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
   .pc-avatar{
     width:26px; height:26px; border-radius:50%; background:var(--blue); color:#fff; flex-shrink:0;
@@ -339,9 +357,29 @@
   .pc-negocio{ font-size:11.5px; color:var(--text); margin-bottom:2px; }
   .pc-meta{ font-size:11px; color:var(--text2); margin-bottom:4px; }
   .pc-value{ font-size:13px; font-weight:800; color:var(--blue); margin-bottom:6px; }
+  .pc-finance{
+    display:flex; align-items:center; gap:6px; background:#F1EBFF; border:1px solid #D9CCFF;
+    border-radius:8px; padding:5px 8px; margin:2px 0 6px;
+  }
+  :root[data-theme="dark"] .pc-finance{ background:#2A2150; border-color:#4A3D8A; }
+  .pc-finance-label{ font-size:10px; font-weight:700; color:#6B4FA0; flex-shrink:0; white-space:nowrap; }
+  :root[data-theme="dark"] .pc-finance-label{ color:#C9B8FF; }
+  .pc-dp-input{
+    flex:1; min-width:0; font-size:11px; padding:3px 6px; border:1px solid #D9CCFF; border-radius:5px;
+    background:var(--panel); color:var(--text);
+  }
   .pc-foot{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:4px; }
   .pc-foot span{ font-size:10.5px; color:var(--text2); }
-  .pc-move{ font-size:10.5px; padding:3px 4px; border:1px solid var(--border); border-radius:5px; max-width:90px; }
+  .pc-finance-toggle{
+    border:1px solid var(--border); background:var(--panel); border-radius:999px; width:22px; height:22px;
+    font-size:11px; cursor:pointer; line-height:1; flex-shrink:0; opacity:.45;
+    transition: opacity .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .pc-finance-toggle:hover{ opacity:.85; }
+  .pc-finance-toggle.active{ opacity:1; background:#F1EBFF; border-color:#6B4FA0; }
+  :root[data-theme="dark"] .pc-finance-toggle.active{ background:#2A2150; border-color:#8B74E0; }
+  .pc-actions-row{ display:flex; align-items:center; gap:6px; margin-top:6px; }
+  .pc-move{ flex:1; min-width:0; font-size:10.5px; padding:3px 4px; border:1px solid var(--border); border-radius:5px; }
   .pc-edit{
     border:1px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
     padding:3px 8px; border-radius:5px; cursor:pointer; font-size:10.5px; flex-shrink:0;
@@ -1043,6 +1081,12 @@
       </div>
     </div>
 
+    <div class="panel" id="founderLeadsSection" style="display:none;">
+      <h2>Todos los leads</h2>
+      <div class="hint">Vista de solo lectura del pipeline completo.</div>
+      <div class="pipeline-board" id="founderLeadsBoard"></div>
+    </div>
+
     <div class="panel">
       <h2>Clientes por estatus</h2>
       <div class="dash-grid" id="dashClientStatus"></div>
@@ -1061,7 +1105,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="activityPanel">
       <h2>Actividad reciente</h2>
       <div class="hint">Ultimas acciones registradas (quien y cuando).</div>
       <div class="table-scroll">

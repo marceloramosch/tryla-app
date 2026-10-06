@@ -1141,6 +1141,9 @@
   }
 
   let dragSrcClientId = null;
+  // Id del cliente que se acaba de mover, para animar solo esa tarjeta al
+  // reconstruir el board (no todas las que ya estaban ahi)
+  let lastMovedClientId = null;
 
   // Pinta un <select> de etapa con los colores de status-<Etapa> (igual a los chips del sheet)
   function setStatusClass(el, status) {
@@ -1150,8 +1153,16 @@
 
   function buildPipelineCard(c) {
     const card = document.createElement("div");
-    card.className = "pipeline-card";
+    const needsFinancing = c.status === "Finance" || !!c.needsFinancing;
+    // HOT + ya marcado que necesita financiamiento: tarjeta "apilada" --
+    // el detras asoma para decir "esto tambien requiere lo otro"
+    const stacked = c.status === "HOT" && !!c.needsFinancing;
+    card.className = "pipeline-card" + (stacked ? " pipeline-card-stacked" : "");
     card.draggable = true;
+    if (c.id === lastMovedClientId) {
+      card.classList.add("card-enter");
+      lastMovedClientId = null;
+    }
 
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
@@ -1164,8 +1175,14 @@
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
+      <div class="pc-finance" style="display:none;">
+        <span class="pc-finance-label">🏦 Financiamiento</span>
+      </div>
       <div class="pc-foot">
         <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
+        <button type="button" class="pc-finance-toggle" title="Marcar/quitar que necesita financiamiento">🏦</button>
+      </div>
+      <div class="pc-actions-row">
         <select class="pc-move" aria-label="Mover a otra etapa"></select>
         <button type="button" class="pc-edit">Editar</button>
       </div>
@@ -1184,6 +1201,31 @@
       setStatusClass(moveSelect, moveSelect.value);
       moveClientToStage(c.id, moveSelect.value);
     });
+
+    const financeToggle = card.querySelector(".pc-finance-toggle");
+    financeToggle.classList.toggle("active", !!c.needsFinancing);
+    financeToggle.addEventListener("click", () => {
+      c.needsFinancing = !c.needsFinancing;
+      persistClients();
+      renderPipeline();
+    });
+
+    const financeBlock = card.querySelector(".pc-finance");
+    if (needsFinancing) {
+      financeBlock.style.display = "";
+      const dpInput = document.createElement("input");
+      dpInput.type = "text";
+      dpInput.className = "pc-dp-input";
+      dpInput.placeholder = "DP: $0";
+      dpInput.setAttribute("aria-label", "Enganche / downpayment");
+      dpInput.value = c.downpayment || "";
+      dpInput.addEventListener("click", (e) => e.stopPropagation());
+      dpInput.addEventListener("change", () => {
+        c.downpayment = dpInput.value.trim();
+        persistClients();
+      });
+      financeBlock.appendChild(dpInput);
+    }
 
     card.querySelector(".pc-edit").addEventListener("click", () => {
       switchTab("clients");
@@ -1209,6 +1251,7 @@
     c.status = stage;
     persistClients();
     logActivity(`Movio a "${c.name}" a la etapa "${stage}"`);
+    lastMovedClientId = clientId;
     renderPipeline();
     renderClientsTable();
   }
@@ -1257,6 +1300,55 @@
         if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage);
       });
 
+      board.appendChild(col);
+    });
+  }
+
+  // ===== Portal de Fundadores (solo lectura) =====
+  function buildFounderLeadCard(c) {
+    const card = document.createElement("div");
+    const needsFinancing = c.status === "Finance" || !!c.needsFinancing;
+    const stacked = c.status === "HOT" && !!c.needsFinancing;
+    card.className = "pipeline-card" + (stacked ? " pipeline-card-stacked" : "");
+
+    const value = clientPipelineValue(c);
+    const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+
+    card.innerHTML = `
+      <div class="pc-top">
+        <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
+        <span class="pc-name">${escapeHtml(c.name)}</span>
+      </div>
+      ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
+      ${needsFinancing ? `<div class="pc-finance"><span class="pc-finance-label">🏦 Financiamiento${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
+      <div class="pc-foot"><span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span></div>
+    `;
+    return card;
+  }
+
+  function renderFounderLeads() {
+    const board = document.getElementById("founderLeadsBoard");
+    if (!board) return;
+    board.innerHTML = "";
+    PIPELINE_STAGES.forEach((stage) => {
+      const stageClients = clients.filter((c) => (c.status || "Cold") === stage);
+      const col = document.createElement("div");
+      col.className = "pipeline-col";
+      col.innerHTML = `
+        <div class="pipeline-col-head">
+          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(stage)}</span>
+          <span class="pipeline-col-count">${stageClients.length}</span>
+        </div>
+        <div class="pipeline-col-body"></div>
+      `;
+      const body = col.querySelector(".pipeline-col-body");
+      if (!stageClients.length) {
+        body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
+      } else {
+        stageClients.forEach((c) => body.appendChild(buildFounderLeadCard(c)));
+      }
       board.appendChild(col);
     });
   }
@@ -2186,4 +2278,19 @@
   renderFinanceQuoteSelect();
   renderInvoiceQuoteSelect();
   renderInvoicesTable();
+
+  // ===== Portal de Fundadores: cuenta de solo lectura, un solo tab =====
+  if (window.NovaCloud && window.NovaCloud.isFounder) {
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      if (btn.dataset.tab !== "dashboard") btn.style.display = "none";
+    });
+    const dashBtn = document.querySelector('.tab-btn[data-tab="dashboard"]');
+    if (dashBtn) dashBtn.textContent = "Portal de Fundadores";
+    const activityPanel = document.getElementById("activityPanel");
+    if (activityPanel) activityPanel.style.display = "none";
+    const founderLeadsSection = document.getElementById("founderLeadsSection");
+    if (founderLeadsSection) founderLeadsSection.style.display = "";
+    switchTab("dashboard");
+    renderFounderLeads();
+  }
 })();
