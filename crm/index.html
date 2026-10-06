@@ -369,6 +369,7 @@
   .pc-name{ font-size:13px; font-weight:700; color:var(--text); line-height:1.25; }
   .pc-negocio{ font-size:11.5px; color:var(--text); margin-bottom:2px; }
   .pc-meta{ font-size:11px; color:var(--text2); margin-bottom:4px; }
+  .pc-date{ font-size:10px; color:var(--text2); opacity:.75; margin-bottom:4px; }
   .pc-value{ font-size:13px; font-weight:800; color:var(--blue); margin-bottom:6px; }
   .pc-finance{
     display:flex; align-items:center; gap:6px; background:#F1EBFF; border:1px solid #D9CCFF;
@@ -860,13 +861,27 @@
 
     <div class="panel">
       <h2>Clientes</h2>
-      <div class="field" style="max-width:320px;">
-        <input id="clientsSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad, contacto...">
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="max-width:320px; flex:1;">
+          <input id="clientsSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad, contacto...">
+        </div>
+        <div class="field" style="max-width:150px;">
+          <label>Desde</label>
+          <input id="clientsDateFrom" type="date">
+        </div>
+        <div class="field" style="max-width:150px;">
+          <label>Hasta</label>
+          <input id="clientsDateTo" type="date">
+        </div>
+        <div class="field" style="max-width:110px;">
+          <label>&nbsp;</label>
+          <button type="button" id="clientsDateClear" class="btn-small" style="width:100%;">Limpiar</button>
+        </div>
       </div>
       <div class="table-scroll">
         <table class="crm">
           <thead>
-            <tr><th>Nombre</th><th>Contacto</th><th>Negocio</th><th>Ciudad</th><th>Estatus</th><th>Notas</th><th>Cotizaciones</th><th></th></tr>
+            <tr><th>Fecha</th><th>Nombre</th><th>Contacto</th><th>Negocio</th><th>Ciudad</th><th>Estatus</th><th>Notas</th><th>Cotizaciones</th><th></th></tr>
           </thead>
           <tbody id="clientsTable"></tbody>
         </table>
@@ -880,8 +895,20 @@
       <h2>Pipeline de leads</h2>
       <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. Click en una tarjeta para ver toda su info. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
       <div class="field-row" style="align-items:flex-end;">
-        <div class="field" style="max-width:320px; flex:1;">
+        <div class="field" style="max-width:260px; flex:1;">
           <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
+        </div>
+        <div class="field" style="max-width:150px;">
+          <label>Desde</label>
+          <input id="pipelineDateFrom" type="date">
+        </div>
+        <div class="field" style="max-width:150px;">
+          <label>Hasta</label>
+          <input id="pipelineDateTo" type="date">
+        </div>
+        <div class="field" style="max-width:100px;">
+          <label>&nbsp;</label>
+          <button type="button" id="pipelineDateClear" class="btn-small" style="width:100%;">Limpiar</button>
         </div>
         <div class="view-toggle" role="tablist" aria-label="Vista del pipeline">
           <button type="button" class="view-toggle-btn active" data-view="board">&#9638; Tablero</button>
@@ -894,7 +921,7 @@
       <div class="table-scroll">
         <table class="crm">
           <thead>
-            <tr><th>Cliente</th><th>Telefono</th><th>Ciudad / Fuente</th><th>Etapa</th><th>Valor</th><th>Notas</th></tr>
+            <tr><th>Fecha</th><th>Cliente</th><th>Telefono</th><th>Ciudad / Fuente</th><th>Etapa</th><th>Valor</th><th>Notas</th></tr>
           </thead>
           <tbody id="pipelineListTable"></tbody>
         </table>

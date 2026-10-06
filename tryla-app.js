@@ -122,7 +122,11 @@
   const payCancelEditBtn = document.getElementById("payCancelEditBtn");
 
   const clientsSearch = document.getElementById("clientsSearch");
+  const clientsDateFrom = document.getElementById("clientsDateFrom");
+  const clientsDateTo = document.getElementById("clientsDateTo");
   const pipelineSearch = document.getElementById("pipelineSearch");
+  const pipelineDateFrom = document.getElementById("pipelineDateFrom");
+  const pipelineDateTo = document.getElementById("pipelineDateTo");
   const quotesSearch = document.getElementById("quotesSearch");
   const invoicesSearch = document.getElementById("invoicesSearch");
   const payTableWrap = document.getElementById("payTableWrap");
@@ -157,6 +161,36 @@
     });
     if (migrated) syncSet(CLIENTS_KEY, JSON.stringify(clients));
   })();
+
+  // Rellena createdAt en clientes que no lo tengan (de antes de que existiera el
+  // campo): los creados manualmente llevan el timestamp escondido en su id
+  // ("c" + Date.now()); los que vinieron del Sheet ("sheet-N") se quedan sin
+  // fecha conocida -- no hay forma de recuperarla despues del hecho.
+  (function backfillClientDates() {
+    let migrated = false;
+    clients.forEach((c) => {
+      if (!c.createdAt && /^c\d+$/.test(c.id)) {
+        c.createdAt = parseInt(c.id.slice(1), 10);
+        migrated = true;
+      }
+    });
+    if (migrated) syncSet(CLIENTS_KEY, JSON.stringify(clients));
+  })();
+
+  // ---- Fecha de un cliente (para mostrar y filtrar en Clientes/Pipeline) ----
+  function formatClientDate(c) {
+    return c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-MX", { dateStyle: "medium" }) : "—";
+  }
+  // El filtro usa fechas (sin hora) en formato yyyy-mm-dd, como entregan los <input type="date">
+  function clientInDateRange(c, fromStr, toStr) {
+    if (!fromStr && !toStr) return true;
+    if (!c.createdAt) return false; // sin fecha conocida: no se puede confirmar que caiga en el rango
+    const day = new Date(c.createdAt).toISOString().slice(0, 10);
+    if (fromStr && day < fromStr) return false;
+    if (toStr && day > toStr) return false;
+    return true;
+  }
+
   let quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || "[]");
   let activityLog = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
 
@@ -938,21 +972,28 @@
     const tbody = document.getElementById("clientsTable");
     tbody.innerHTML = "";
     if (clients.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7c8aa6;">Sin clientes todavia</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#7c8aa6;">Sin clientes todavia</td></tr>';
       return;
     }
     const q = (clientsSearch.value || "").trim().toLowerCase();
-    const filtered = q
-      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q)))
-      : clients;
+    const fromStr = clientsDateFrom.value;
+    const toStr = clientsDateTo.value;
+    const filtered = clients.filter((c) => {
+      const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
+      return matchesSearch && clientInDateRange(c, fromStr, toStr);
+    });
     if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7c8aa6;">Sin resultados para tu busqueda</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#7c8aa6;">Sin resultados para tu busqueda</td></tr>';
       return;
     }
-    filtered.forEach((c) => {
+    filtered
+      .slice()
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .forEach((c) => {
       const tr = document.createElement("tr");
       const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
       tr.innerHTML = `
+        <td style="white-space:nowrap; color:var(--text2); font-size:11.5px;">${formatClientDate(c)}</td>
         <td>${escapeHtml(c.name)}</td>
         <td>${escapeHtml(c.contacto || "")}</td>
         <td>${escapeHtml(c.negocio || "")}</td>
@@ -962,7 +1003,7 @@
         <td>${quoteCount}</td>
         <td class="actions-cell"></td>
       `;
-      const statusTd = tr.children[4];
+      const statusTd = tr.children[5];
       const statusSelect = document.createElement("select");
       PIPELINE_STAGES.forEach((s) => {
         const o = document.createElement("option");
@@ -979,7 +1020,7 @@
       });
       statusTd.appendChild(statusSelect);
 
-      const actionsTd = tr.children[7];
+      const actionsTd = tr.children[8];
       const editBtn = document.createElement("button");
       editBtn.type = "button";
       editBtn.className = "btn-small";
@@ -1095,6 +1136,7 @@
         ciudad: document.getElementById("cCiudad").value.trim(),
         status: document.getElementById("cEstatus").value,
         notas: document.getElementById("cNotas").value.trim(),
+        createdAt: Date.now(),
       });
       logActivity(`Creo el cliente "${name}"`);
     }
@@ -1116,6 +1158,7 @@
         ciudad: ciudad || "",
         status: "HOT",
         notas: "",
+        createdAt: Date.now(),
       };
       clients.push(client);
     } else {
@@ -1427,6 +1470,7 @@
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       <div class="pc-finance" style="display:none;">
         <span class="pc-finance-label">🏦 Financiamiento</span>
@@ -1548,13 +1592,21 @@
     renderClientsTable();
   }
 
+  // Busqueda de texto + rango de fechas, compartido entre el tablero y la lista del Pipeline
+  function filterPipelineClients() {
+    const q = (pipelineSearch.value || "").trim().toLowerCase();
+    const fromStr = pipelineDateFrom.value;
+    const toStr = pipelineDateTo.value;
+    return clients.filter((c) => {
+      const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
+      return matchesSearch && clientInDateRange(c, fromStr, toStr);
+    });
+  }
+
   function renderPipeline() {
     const board = document.getElementById("pipelineBoard");
     if (!board) return;
-    const q = (pipelineSearch.value || "").trim().toLowerCase();
-    const filtered = q
-      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q)))
-      : clients;
+    const filtered = filterPipelineClients();
 
     board.innerHTML = "";
     PIPELINE_STAGES.forEach((stage) => {
@@ -1601,19 +1653,16 @@
   function renderPipelineList() {
     const tbody = document.getElementById("pipelineListTable");
     if (!tbody) return;
-    const q = (pipelineSearch.value || "").trim().toLowerCase();
-    const filtered = q
-      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q)))
-      : clients;
+    const filtered = filterPipelineClients();
     const sorted = filtered.slice().sort((a, b) => {
       const ai = PIPELINE_STAGES.indexOf(a.status || "Cold");
       const bi = PIPELINE_STAGES.indexOf(b.status || "Cold");
       if (ai !== bi) return ai - bi;
-      return (a.name || "").localeCompare(b.name || "");
+      return (b.createdAt || 0) - (a.createdAt || 0);
     });
 
     if (!sorted.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#7c8aa6;">Sin leads todavia</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#7c8aa6;">Sin leads todavia</td></tr>';
       return;
     }
 
@@ -1623,6 +1672,7 @@
         const href = telHref(c.contacto);
         return `
         <tr data-client-id="${escapeHtml(c.id)}" class="pipeline-list-row">
+          <td style="white-space:nowrap; color:var(--text2); font-size:11.5px;">${formatClientDate(c)}</td>
           <td>${escapeHtml(c.name)}</td>
           <td>${href ? `<a href="${href}" class="pc-call">📞 ${escapeHtml(c.contacto)}</a>` : ""}</td>
           <td>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</td>
@@ -1659,6 +1709,7 @@
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       ${needsFinancing ? `<div class="pc-finance"><span class="pc-finance-label">🏦 Financiamiento${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
       <div class="pc-foot"><span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span></div>
@@ -2602,7 +2653,21 @@
   payFecha.value = new Date().toISOString().slice(0, 10);
 
   clientsSearch.addEventListener("input", renderClientsTable);
+  clientsDateFrom.addEventListener("change", renderClientsTable);
+  clientsDateTo.addEventListener("change", renderClientsTable);
+  document.getElementById("clientsDateClear").addEventListener("click", () => {
+    clientsDateFrom.value = "";
+    clientsDateTo.value = "";
+    renderClientsTable();
+  });
   pipelineSearch.addEventListener("input", renderPipeline);
+  pipelineDateFrom.addEventListener("change", renderPipeline);
+  pipelineDateTo.addEventListener("change", renderPipeline);
+  document.getElementById("pipelineDateClear").addEventListener("click", () => {
+    pipelineDateFrom.value = "";
+    pipelineDateTo.value = "";
+    renderPipeline();
+  });
   quotesSearch.addEventListener("input", renderQuotesTable);
   invoicesSearch.addEventListener("input", renderInvoicesTable);
 

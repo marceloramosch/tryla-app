@@ -59,6 +59,7 @@ type Client = {
   status: string;
   notas: string;
   fuente?: string;
+  createdAt?: number;
 };
 
 Deno.serve(async (req) => {
@@ -112,6 +113,7 @@ Deno.serve(async (req) => {
         status,
         notas: (lead.notas || "").trim(),
         fuente: (lead.fuente || "").trim(),
+        createdAt: Date.now(),
       });
       existingIds.add(id);
       inserted.push(rowId);
