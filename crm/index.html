@@ -154,10 +154,23 @@
   .tab-btn{
     border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
     padding: 10px 18px; border-radius:999px; cursor:pointer; font-size:13px;
+    transition: background .15s ease, color .15s ease, transform .12s ease, box-shadow .15s ease;
   }
   .tab-btn.active, .tab-btn:hover{ background:var(--blue); color:#fff; }
+  .tab-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(91,84,255,.25); }
+  .tab-btn:active{ transform:translateY(0); }
   .tab-panel{ display:none; }
-  .tab-panel.active{ display:block; }
+  @keyframes tabFadeIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .tab-panel.active{ display:block; animation:tabFadeIn .28s cubic-bezier(.22,.8,.3,1); }
+  @media (prefers-reduced-motion: reduce){ .tab-panel.active{ animation:none; } }
+
+  /* Un poco de vida en controles de uso frecuente */
+  .panel{ transition: box-shadow .2s ease; }
+  .panel:hover{ box-shadow:0 2px 14px rgba(91,84,255,.07); }
+  .dash-card{ transition: transform .15s ease, box-shadow .15s ease; }
+  .dash-card:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(91,84,255,.15); }
+  .btn-small, .actions button{ transition: background .15s ease, color .15s ease, transform .12s ease; }
+  .btn-small:active, .actions button:active{ transform:scale(.97); }
 
   .layout{ display:grid; grid-template-columns: 1fr 1.3fr; gap:20px; }
   .layout > *{ min-width:0; } /* evita que un hijo ancho (ej. tabla) fuerce el grid a desbordarse */
@@ -390,6 +403,82 @@
     .pipeline-col-body{ max-height:420px; }
   }
 
+  /* Tag explicito de "tambien necesita financiamiento" en tarjetas apiladas */
+  .pc-finance-tag{
+    position:absolute; top:-8px; right:8px; background:#6B4FA0; color:#fff; font-size:9.5px; font-weight:800;
+    letter-spacing:.3px; padding:2px 8px; border-radius:999px; box-shadow:0 2px 6px rgba(107,79,160,.4);
+    text-transform:uppercase;
+  }
+
+  /* Boton de llamada + contador de intentos */
+  .pc-call{
+    display:inline-flex; align-items:center; gap:4px; text-decoration:none; font-size:10.5px; font-weight:700;
+    color:#1e7a3c; background:#DDF4E4; border-radius:999px; padding:3px 8px; flex-shrink:0;
+    transition: background .15s ease, transform .12s ease;
+  }
+  .pc-call:hover{ background:#c5edd1; transform:translateY(-1px); }
+  .pc-call:active{ transform:translateY(0); }
+  :root[data-theme="dark"] .pc-call{ background:#173A24; color:#6FE39A; }
+  .pc-call-count{ opacity:.75; }
+
+  /* ===== Toggle tablero / lista del Pipeline ===== */
+  .view-toggle{ display:flex; border:2px solid var(--blue); border-radius:999px; overflow:hidden; flex-shrink:0; }
+  .view-toggle-btn{
+    border:none; background:var(--panel); color:var(--blue); font-weight:700; font-size:12px;
+    padding:8px 14px; cursor:pointer; transition: background .15s ease, color .15s ease;
+  }
+  .view-toggle-btn.active{ background:var(--blue); color:#fff; }
+  .pipeline-list-row{ cursor:pointer; transition: background .12s ease; }
+  :root:not([data-theme="dark"]) .pipeline-list-row:hover{ background:var(--light); }
+  :root[data-theme="dark"] .pipeline-list-row:hover{ background:var(--panel); }
+
+  /* ===== Panel lateral: info completa de un lead ===== */
+  .lead-drawer-backdrop{
+    position:fixed; inset:0; background:rgba(10,8,40,.35); z-index:9100; opacity:0; pointer-events:none;
+    transition: opacity .2s ease;
+  }
+  .lead-drawer-backdrop.open{ opacity:1; pointer-events:auto; }
+  .lead-drawer{
+    position:fixed; top:0; right:0; bottom:0; width:380px; max-width:92vw; background:var(--panel);
+    box-shadow:-8px 0 30px rgba(0,0,0,.25); z-index:9101; transform:translateX(100%);
+    transition: transform .25s cubic-bezier(.22,.8,.3,1); display:flex; flex-direction:column;
+  }
+  .lead-drawer.open{ transform:translateX(0); }
+  .lead-drawer-head{
+    display:flex; align-items:center; gap:12px; padding:20px; border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .lead-drawer-avatar{
+    width:40px; height:40px; border-radius:50%; background:var(--blue); color:#fff; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800;
+  }
+  .lead-drawer-name{ font-size:16px; font-weight:800; color:var(--dark); }
+  .lead-drawer-negocio{ font-size:12px; color:var(--text2); }
+  .lead-drawer-close{
+    margin-left:auto; border:none; background:transparent; color:var(--text2); font-size:24px; line-height:1;
+    cursor:pointer; padding:4px 8px; border-radius:6px; transition: background .15s ease, color .15s ease;
+  }
+  .lead-drawer-close:hover{ background:var(--light); color:var(--dark); }
+  .lead-drawer-body{ padding:20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px; }
+  .ld-row{ display:flex; flex-direction:column; gap:4px; }
+  .ld-label{ font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:var(--text2); font-weight:700; }
+  .ld-value{ font-size:13.5px; color:var(--text); line-height:1.5; }
+  .ld-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ld-actions a, .ld-actions button{
+    border:2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
+    padding:8px 14px; border-radius:8px; cursor:pointer; font-size:12.5px; text-decoration:none;
+    transition: background .15s ease, color .15s ease, transform .12s ease;
+  }
+  .ld-actions a:hover, .ld-actions button:hover{ background:var(--blue); color:#fff; transform:translateY(-1px); }
+
+  /* ===== Tooltip flotante al dejar el mouse sobre una tarjeta ===== */
+  .card-tooltip{
+    position:fixed; z-index:9050; max-width:260px; background:var(--dark); color:#fff; font-size:12px;
+    line-height:1.5; padding:12px 14px; border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,.3);
+    opacity:0; pointer-events:none; transform:translateY(4px); transition: opacity .15s ease, transform .15s ease;
+  }
+  .card-tooltip.show{ opacity:1; transform:none; }
+  .card-tooltip b{ color:#C9C6E8; }
+
   #addCustomLine{ margin-top:6px; }
 
   /* ===== Documento de cotizacion (preview / impresion) ===== */
@@ -443,7 +532,8 @@
 
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
-    header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions{ display:none !important; }
+    header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions,
+    .lead-drawer, .lead-drawer-backdrop, .card-tooltip{ display:none !important; }
     #previewWrap{ display:block !important; margin:0; }
     #previewDoc{ border:none; padding:0; max-width:none; }
     body{ background:#fff; }
@@ -543,7 +633,7 @@
 <main>
   <div class="tabs">
     <button class="tab-btn active" data-tab="quote">Cotizador</button>
-    <button class="tab-btn" data-tab="clients">Clientes (CRM)</button>
+    <button class="tab-btn" data-tab="clients">Clientes</button>
     <button class="tab-btn" data-tab="pipeline">Pipeline</button>
     <button class="tab-btn" data-tab="quotes">Cotizaciones guardadas</button>
     <button class="tab-btn" data-tab="intel">Location Intelligence</button>
@@ -715,12 +805,28 @@
   <div class="tab-panel" id="tab-pipeline">
     <div class="panel">
       <h2>Pipeline de leads</h2>
-      <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
-      <div class="field" style="max-width:320px;">
-        <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
+      <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. Click en una tarjeta para ver toda su info. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="max-width:320px; flex:1;">
+          <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
+        </div>
+        <div class="view-toggle" role="tablist" aria-label="Vista del pipeline">
+          <button type="button" class="view-toggle-btn active" data-view="board">&#9638; Tablero</button>
+          <button type="button" class="view-toggle-btn" data-view="list">&#9776; Lista</button>
+        </div>
       </div>
     </div>
     <div class="pipeline-board" id="pipelineBoard"></div>
+    <div class="panel" id="pipelineListWrap" style="display:none;">
+      <div class="table-scroll">
+        <table class="crm">
+          <thead>
+            <tr><th>Cliente</th><th>Telefono</th><th>Ciudad / Fuente</th><th>Etapa</th><th>Valor</th><th>Notas</th></tr>
+          </thead>
+          <tbody id="pipelineListTable"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ===================== TAB: COTIZACIONES GUARDADAS ===================== -->
@@ -1127,6 +1233,23 @@
     <div id="previewDoc"></div>
   </div>
 </main>
+
+<!-- Panel lateral: info completa de un lead (se abre al hacer click en su tarjeta) -->
+<div id="leadDrawerBackdrop" class="lead-drawer-backdrop"></div>
+<aside id="leadDrawer" class="lead-drawer" aria-hidden="true">
+  <div class="lead-drawer-head">
+    <span class="lead-drawer-avatar" id="ldAvatar"></span>
+    <div>
+      <div class="lead-drawer-name" id="ldName"></div>
+      <div class="lead-drawer-negocio" id="ldNegocio"></div>
+    </div>
+    <button type="button" id="ldClose" class="lead-drawer-close" aria-label="Cerrar">&times;</button>
+  </div>
+  <div class="lead-drawer-body" id="ldBody"></div>
+</aside>
+
+<!-- Tooltip flotante: info rapida al dejar el mouse sobre una tarjeta -->
+<div id="cardTooltip" class="card-tooltip"></div>
 
 <footer>
   <b>Tryla</b> &middot; 1111 Ellenwood St, Dallas, TX 75217 &middot; Marcelo Ramos Schiaffino &middot; +1 (645) 235-3186 &middot; marcelo.ramos@thetryla.com

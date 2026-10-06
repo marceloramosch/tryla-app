@@ -1144,11 +1144,112 @@
   // Id del cliente que se acaba de mover, para animar solo esa tarjeta al
   // reconstruir el board (no todas las que ya estaban ahi)
   let lastMovedClientId = null;
+  let pipelineView = "board"; // "board" | "list"
 
   // Pinta un <select> de etapa con los colores de status-<Etapa> (igual a los chips del sheet)
   function setStatusClass(el, status) {
     PIPELINE_STAGES.forEach((s) => el.classList.remove("status-" + s));
     el.classList.add("status-" + status);
+  }
+
+  // Deja solo digitos y "+" -- un tel: href no debe llevar texto libre, y de
+  // paso evita que el numero rompa el atributo href si trae caracteres raros
+  function telHref(contacto) {
+    const digits = String(contacto || "").replace(/[^0-9+]/g, "");
+    return digits ? "tel:" + digits : "";
+  }
+
+  function logCallAttempt(c) {
+    c.callCount = (c.callCount || 0) + 1;
+    c.lastCallAt = Date.now();
+    persistClients();
+    logActivity(`Llamo a "${c.name}"`);
+  }
+
+  // ---- Tooltip flotante al dejar el mouse sobre una tarjeta ----
+  let tooltipTimer = null;
+  function showCardTooltipFor(card, c) {
+    clearTimeout(tooltipTimer);
+    tooltipTimer = setTimeout(() => {
+      const tip = document.getElementById("cardTooltip");
+      if (!tip) return;
+      const value = clientPipelineValue(c);
+      const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+      tip.innerHTML = `
+        <div><b>${escapeHtml(c.name)}</b></div>
+        ${c.contacto ? `<div>${escapeHtml(c.contacto)}</div>` : ""}
+        ${c.negocio ? `<div>${escapeHtml(c.negocio)}</div>` : ""}
+        ${c.ciudad || c.fuente ? `<div>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+        ${c.notas ? `<div style="margin-top:6px;">${escapeHtml(c.notas)}</div>` : ""}
+        ${c.downpayment ? `<div style="margin-top:6px;"><b>DP:</b> ${escapeHtml(c.downpayment)}</div>` : ""}
+        ${value > 0 ? `<div style="margin-top:6px;"><b>Valor:</b> ${formatMoney(value)}</div>` : ""}
+        <div style="margin-top:6px; opacity:.75;">${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}${c.callCount ? " · " + c.callCount + " llamada" + (c.callCount === 1 ? "" : "s") : ""}</div>
+      `;
+      const rect = card.getBoundingClientRect();
+      tip.style.left = Math.max(10, Math.min(rect.right + 10, window.innerWidth - 270)) + "px";
+      tip.style.top = Math.max(10, rect.top) + "px";
+      tip.classList.add("show");
+    }, 350);
+  }
+  function hideCardTooltip() {
+    clearTimeout(tooltipTimer);
+    const tip = document.getElementById("cardTooltip");
+    if (tip) tip.classList.remove("show");
+  }
+
+  // ---- Panel lateral: toda la info de un lead ----
+  function openLeadDrawer(c) {
+    hideCardTooltip();
+    const drawer = document.getElementById("leadDrawer");
+    const backdrop = document.getElementById("leadDrawerBackdrop");
+    if (!drawer || !backdrop) return;
+
+    document.getElementById("ldAvatar").textContent = clientInitials(c.name);
+    document.getElementById("ldName").textContent = c.name;
+    document.getElementById("ldNegocio").textContent = c.negocio || "";
+
+    const value = clientPipelineValue(c);
+    const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+    const needsFinancing = c.status === "Finance" || !!c.needsFinancing;
+    const href = telHref(c.contacto);
+
+    const body = document.getElementById("ldBody");
+    body.innerHTML = `
+      <div class="ld-row"><span class="ld-label">Etapa</span><span class="ld-value"><span class="status-pill status-${escapeHtml(c.status || "Cold")}" style="display:inline-block;">${escapeHtml(c.status || "Cold")}</span></span></div>
+      ${c.ciudad ? `<div class="ld-row"><span class="ld-label">Ciudad</span><span class="ld-value">${escapeHtml(c.ciudad)}</span></div>` : ""}
+      ${c.fuente ? `<div class="ld-row"><span class="ld-label">Fuente</span><span class="ld-value">${escapeHtml(c.fuente)}</span></div>` : ""}
+      ${c.contacto ? `<div class="ld-row"><span class="ld-label">Telefono / contacto</span><span class="ld-value">${escapeHtml(c.contacto)}</span></div>` : ""}
+      ${needsFinancing ? `<div class="ld-row"><span class="ld-label">Financiamiento</span><span class="ld-value">🏦 Si${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
+      ${value > 0 ? `<div class="ld-row"><span class="ld-label">Valor en pipeline</span><span class="ld-value">${formatMoney(value)}</span></div>` : ""}
+      <div class="ld-row"><span class="ld-label">Cotizaciones</span><span class="ld-value">${quoteCount}</span></div>
+      ${c.callCount ? `<div class="ld-row"><span class="ld-label">Llamadas</span><span class="ld-value">${c.callCount} intento${c.callCount === 1 ? "" : "s"}${c.lastCallAt ? " · ultima: " + new Date(c.lastCallAt).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }) : ""}</span></div>` : ""}
+      ${c.notas ? `<div class="ld-row"><span class="ld-label">Notas</span><span class="ld-value">${escapeHtml(c.notas)}</span></div>` : ""}
+      <div class="ld-actions">
+        ${href ? `<a href="${href}" class="ld-call">📞 Llamar</a>` : ""}
+        <button type="button" class="ld-edit">Editar cliente</button>
+      </div>
+    `;
+    if (href) {
+      body.querySelector(".ld-call").addEventListener("click", () => logCallAttempt(c));
+    }
+    body.querySelector(".ld-edit").addEventListener("click", () => {
+      closeLeadDrawer();
+      switchTab("clients");
+      startEditClient(c.id);
+    });
+
+    drawer.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    backdrop.classList.add("open");
+  }
+  function closeLeadDrawer() {
+    const drawer = document.getElementById("leadDrawer");
+    const backdrop = document.getElementById("leadDrawerBackdrop");
+    if (drawer) {
+      drawer.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+    }
+    if (backdrop) backdrop.classList.remove("open");
   }
 
   function buildPipelineCard(c) {
@@ -1166,8 +1267,10 @@
 
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+    const href = telHref(c.contacto);
 
     card.innerHTML = `
+      ${stacked ? `<span class="pc-finance-tag">+ Finance</span>` : ""}
       <div class="pc-top">
         <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
         <span class="pc-name">${escapeHtml(c.name)}</span>
@@ -1180,6 +1283,7 @@
       </div>
       <div class="pc-foot">
         <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
+        ${href ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>` : ""}
         <button type="button" class="pc-finance-toggle" title="Marcar/quitar que necesita financiamiento">🏦</button>
       </div>
       <div class="pc-actions-row">
@@ -1232,6 +1336,14 @@
       startEditClient(c.id);
     });
 
+    const callLink = card.querySelector(".pc-call");
+    if (callLink) {
+      callLink.addEventListener("click", (e) => {
+        e.stopPropagation();
+        logCallAttempt(c);
+      });
+    }
+
     card.addEventListener("dragstart", (e) => {
       dragSrcClientId = c.id;
       card.classList.add("dragging");
@@ -1240,6 +1352,13 @@
     card.addEventListener("dragend", () => {
       card.classList.remove("dragging");
       dragSrcClientId = null;
+    });
+
+    card.addEventListener("mouseenter", () => showCardTooltipFor(card, c));
+    card.addEventListener("mouseleave", hideCardTooltip);
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("select, input, button, a")) return;
+      openLeadDrawer(c);
     });
 
     return card;
@@ -1301,6 +1420,52 @@
       });
 
       board.appendChild(col);
+    });
+
+    renderPipelineList();
+  }
+
+  function renderPipelineList() {
+    const tbody = document.getElementById("pipelineListTable");
+    if (!tbody) return;
+    const q = (pipelineSearch.value || "").trim().toLowerCase();
+    const filtered = q
+      ? clients.filter((c) => [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q)))
+      : clients;
+    const sorted = filtered.slice().sort((a, b) => {
+      const ai = PIPELINE_STAGES.indexOf(a.status || "Cold");
+      const bi = PIPELINE_STAGES.indexOf(b.status || "Cold");
+      if (ai !== bi) return ai - bi;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    if (!sorted.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#7c8aa6;">Sin leads todavia</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = sorted
+      .map((c) => {
+        const value = clientPipelineValue(c);
+        const href = telHref(c.contacto);
+        return `
+        <tr data-client-id="${escapeHtml(c.id)}" class="pipeline-list-row">
+          <td>${escapeHtml(c.name)}</td>
+          <td>${href ? `<a href="${href}" class="pc-call">📞 ${escapeHtml(c.contacto)}</a>` : ""}</td>
+          <td>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</td>
+          <td><span class="status-pill status-${escapeHtml(c.status || "Cold")}" style="display:inline-block;">${escapeHtml(c.status || "Cold")}</span></td>
+          <td>${value > 0 ? formatMoney(value) : ""}</td>
+          <td>${escapeHtml(c.notas || "")}</td>
+        </tr>`;
+      })
+      .join("");
+
+    tbody.querySelectorAll(".pipeline-list-row").forEach((tr) => {
+      tr.addEventListener("click", (e) => {
+        if (e.target.closest("a, button, select, input")) return;
+        const c = clients.find((x) => x.id === tr.dataset.clientId);
+        if (c) openLeadDrawer(c);
+      });
     });
   }
 
@@ -2267,6 +2432,27 @@
   pipelineSearch.addEventListener("input", renderPipeline);
   quotesSearch.addEventListener("input", renderQuotesTable);
   invoicesSearch.addEventListener("input", renderInvoicesTable);
+
+  // ===== Toggle tablero / lista del Pipeline =====
+  document.querySelectorAll(".view-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pipelineView = btn.dataset.view;
+      document.querySelectorAll(".view-toggle-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      const board = document.getElementById("pipelineBoard");
+      const listWrap = document.getElementById("pipelineListWrap");
+      if (board) board.style.display = pipelineView === "board" ? "" : "none";
+      if (listWrap) listWrap.style.display = pipelineView === "list" ? "" : "none";
+    });
+  });
+
+  // ===== Panel lateral de un lead: cerrar con la X, el fondo, o Escape =====
+  const ldCloseBtn = document.getElementById("ldClose");
+  const ldBackdrop = document.getElementById("leadDrawerBackdrop");
+  if (ldCloseBtn) ldCloseBtn.addEventListener("click", closeLeadDrawer);
+  if (ldBackdrop) ldBackdrop.addEventListener("click", closeLeadDrawer);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeLeadDrawer();
+  });
 
   renderCatalog();
   renderDatalist();
