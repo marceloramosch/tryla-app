@@ -704,6 +704,9 @@
 })();
 
 // ===== CRM-specific auto-wiring (no-ops if this tab isn't on the page) =====
+// Mismo flujo de datos reales que index.html (geocode -> scoreForReal con un
+// cliente de Supabase ya logueado -> mapa real + insights reales), con caida
+// automatica al estimado ilustrativo si no hay cobertura para la zona.
 (function () {
   var HISTORY_KEY = "trylaLocationScores";
   var TLI = window.TrylaLocationIntel;
@@ -713,12 +716,21 @@
   var clientNameEl = document.getElementById("liClientName");
   var analyzeBtn = document.getElementById("liAnalyzeBtn");
   var resultPanel = document.getElementById("liResultPanel");
+  var dataBadge = document.getElementById("liDataBadge");
   var saveBtn = document.getElementById("liSaveBtn");
+  var opportunityBtn = document.getElementById("liOpportunityToggle");
   var historyBody = document.getElementById("liHistoryTable");
   var mapEl = document.getElementById("liMap");
-  if (!addressEl || !analyzeBtn) return; // this tab isn't on the page
+  if (!addressEl || !analyzeBtn) return; // this tab isn't on la pagina
 
   var lastResult = null;
+  var opportunityActive = false;
+
+  // El cliente de Supabase ya logueado (lo crea cloud-store.js) -- reusarlo
+  // en vez de crear uno nuevo evita que dos clientes se peleen por la sesion.
+  function getSbClient() {
+    return window.NovaCloud && window.NovaCloud.sb;
+  }
 
   function render(r, address, cuisine) {
     var t = TLI.tier(r.overall10);
@@ -733,9 +745,16 @@
     document.getElementById("liBarDemo").style.width = r.demo + "%";
     document.getElementById("liBarGap").style.width = r.gap + "%";
 
+    if (dataBadge) {
+      dataBadge.textContent = r.real
+        ? "Datos reales — " + (r.nearbyCount || 0) + " lugares cercanos analizados"
+        : "Estimado ilustrativo (sin cobertura de datos reales para esta zona todavia)";
+    }
+
     var insightsEl = document.getElementById("liInsights");
     insightsEl.innerHTML = "";
-    TLI.insightsFor(r, cuisine).forEach(function (text) {
+    var insightTexts = r.real ? TLI.insightsForReal(r) : TLI.insightsFor(r, cuisine);
+    insightTexts.forEach(function (text) {
       var div = document.createElement("div");
       div.className = "li-insight";
       div.textContent = text;
@@ -743,6 +762,85 @@
     });
 
     resultPanel.style.display = "block";
+  }
+
+  async function analyze(address, point) {
+    var cuisine = cuisineEl.value;
+    var r = null;
+    var sbClient = getSbClient();
+    if (point && sbClient) {
+      try {
+        r = await TLI.scoreForReal(sbClient, point, cuisine);
+      } catch (e) {
+        console.warn("Score real no disponible, uso estimado:", e);
+      }
+    }
+    if (!r) r = TLI.scoreFor(address, cuisine);
+    lastResult = { r: r, address: address, cuisine: cuisine, point: point };
+    render(r, address, cuisine);
+    resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    if (mapEl && point) {
+      try {
+        var mapInstance = await TLI.mountMap(mapEl, point, r, liOnMapPick);
+        if (r.real && r.nearby) TLI.plotNearby(mapInstance, r.nearby);
+      } catch (mapErr) {
+        console.warn("No se pudo cargar el mapa:", mapErr);
+      }
+    }
+  }
+
+  // Click directo en el mapa en vez de escribir una direccion
+  async function liOnMapPick(point) {
+    var label = await TLI.reverseGeocode(point.lat, point.lon);
+    var address = label || point.lat.toFixed(5) + ", " + point.lon.toFixed(5);
+    addressEl.value = address;
+    await analyze(address, point);
+  }
+
+  async function runOpportunityGrid() {
+    var mapInstance = TLI.getMap(mapEl);
+    if (!mapInstance || !opportunityBtn) return;
+    var sbClient = getSbClient();
+    if (!sbClient) {
+      alert("Necesitas estar conectado a la nube para ver zonas de oportunidad.");
+      return;
+    }
+    var cuisine = cuisineEl.value;
+    opportunityBtn.disabled = true;
+    var prevLabel = opportunityBtn.textContent;
+    opportunityBtn.textContent = "Calculando zonas...";
+    try {
+      var result = await TLI.plotOpportunityGrid(sbClient, mapInstance, cuisine);
+      if (result && result.cellsGreen === 0) alert("No se encontraron zonas 8-10 para esta cocina en el area visible del mapa.");
+    } catch (e) {
+      console.warn("No se pudo calcular la zona de oportunidad:", e);
+    } finally {
+      opportunityBtn.disabled = false;
+      opportunityBtn.textContent = opportunityActive
+        ? "Ocultar zonas de oportunidad"
+        : prevLabel;
+    }
+  }
+
+  if (opportunityBtn) {
+    opportunityBtn.addEventListener("click", function () {
+      var mapInstance = TLI.getMap(mapEl);
+      if (!mapInstance) return;
+      opportunityActive = !opportunityActive;
+      opportunityBtn.classList.toggle("active", opportunityActive);
+      opportunityBtn.textContent = opportunityActive
+        ? "Ocultar zonas de oportunidad"
+        : "Mostrar zonas de oportunidad (8-10) para esta cocina";
+      if (opportunityActive) {
+        runOpportunityGrid();
+      } else {
+        TLI.clearOpportunityGrid(mapInstance);
+      }
+    });
+    cuisineEl.addEventListener("change", function () {
+      if (opportunityActive) runOpportunityGrid();
+    });
   }
 
   function loadHistory() {
@@ -804,15 +902,8 @@
       addressEl.focus();
       return;
     }
-    var cuisine = cuisineEl.value;
-    var r = TLI.scoreFor(address, cuisine);
-    lastResult = { r: r, address: address, cuisine: cuisine };
-    render(r, address, cuisine);
-    resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    if (mapEl) {
-      var point = await TLI.geocode(address);
-      if (point) TLI.mountMap(mapEl, point, r);
-    }
+    var point = await TLI.geocode(address);
+    await analyze(address, point);
   });
 
   addressEl.addEventListener("keydown", function (e) {
@@ -839,4 +930,13 @@
   });
 
   renderHistory();
+
+  // Mapa clicable desde el inicio (centrado en Dallas), aun sin analizar nada.
+  // El panel puede estar oculto si el tab no esta activo todavia -- se arregla
+  // solo con el invalidateMap() que switchTab("intel") ya dispara en tryla-app.js.
+  if (mapEl) {
+    TLI.mountMap(mapEl, null, null, liOnMapPick).catch(function (e) {
+      console.warn("No se pudo cargar el mapa inicial:", e);
+    });
+  }
 })();

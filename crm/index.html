@@ -282,6 +282,15 @@
   .li-bar span{ display:block; height:100%; background:linear-gradient(90deg, var(--blue), #8B85FF); border-radius:999px; transition:width .5s cubic-bezier(.2,.7,.2,1); }
   .li-insights{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
   .li-insight{ background:var(--light); border-left:3px solid var(--blue); border-radius:6px; padding:8px 12px; font-size:12.5px; color:var(--dark); }
+  .li-radius-note{ text-align:center; margin-top:8px; }
+  .li-opportunity-toggle{
+    display:block; width:100%; margin-top:12px; padding:10px 14px; border-radius:8px;
+    border:2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700; font-size:13px; cursor:pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .li-opportunity-toggle:hover{ background:var(--blue); color:#fff; }
+  .li-opportunity-toggle.active{ background:var(--blue); color:#fff; }
+  .li-opportunity-toggle:disabled{ opacity:.6; cursor:default; }
 
   /* ===== Resumen / dashboard ===== */
   .dash-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:14px; }
@@ -951,7 +960,7 @@
   <div class="tab-panel" id="tab-intel">
     <div class="panel">
       <h2>Analizar una ubicaci&oacute;n</h2>
-      <div class="hint">Esta es una demo funcional: el score se calcula con una f&oacute;rmula ilustrativa a partir de la direcci&oacute;n y el tipo de cocina &mdash; todav&iacute;a no est&aacute; conectada a datos reales (censo, tr&aacute;fico, competencia). Cuando quieran pasar a producci&oacute;n, este mismo panel se conecta a APIs reales sin cambiar el resto de la plataforma.</div>
+      <div class="hint">Mismo motor de datos reales que la app del cliente: lugares reales cercanos (Supabase), censo real por tract, y mapa real de OpenStreetMap. Si no hay cobertura de datos para la zona, cae automaticamente a un estimado ilustrativo.</div>
       <div class="field-row" style="align-items:flex-end;">
         <div class="field" style="flex:2;">
           <label>Direcci&oacute;n o zona a evaluar</label>
@@ -983,6 +992,7 @@
     </div>
 
     <div class="panel" id="liResultPanel" style="display:none;">
+      <div class="hint" id="liDataBadge" style="margin:0 0 10px;"></div>
       <div class="li-result-layout">
         <div class="li-score-card">
           <div class="li-score-label">Opportunity Score</div>
@@ -1009,9 +1019,12 @@
         </div>
       </div>
       <div id="liMap" class="tli-map"></div>
+      <div class="hint li-radius-note">Radio de analisis: 1.5 millas (3 millas de diametro). Click en el mapa para elegir otro punto.</div>
+      <button type="button" class="li-opportunity-toggle" id="liOpportunityToggle">Mostrar zonas de oportunidad (8-10) para esta cocina</button>
       <div class="li-insights" id="liInsights"></div>
       <div class="actions" style="margin-top:14px;">
         <button class="primary" id="liSaveBtn" type="button">Guardar an&aacute;lisis</button>
+        <button type="button" id="liIncludeQuoteBtn">+ Incluir en cotizaci&oacute;n</button>
       </div>
     </div>
 

@@ -2587,6 +2587,11 @@
     });
     if (name === "dashboard") renderDashboard();
     if (name === "pipeline") renderPipeline();
+    if (name === "intel") {
+      requestAnimationFrame(() => {
+        if (window.TrylaLocationIntel) window.TrylaLocationIntel.invalidateMap(document.getElementById("liMap"));
+      });
+    }
   }
 
   // ===== Resumen / dashboard =====
@@ -2701,6 +2706,36 @@
   if (cardTooltipEl) {
     cardTooltipEl.addEventListener("mouseenter", () => clearTimeout(tooltipHideTimer));
     cardTooltipEl.addEventListener("mouseleave", hideCardTooltipSoon);
+  }
+
+  // ===== Location Intelligence: meter el analisis en la cotizacion =====
+  const liIncludeQuoteBtn = document.getElementById("liIncludeQuoteBtn");
+  if (liIncludeQuoteBtn) {
+    liIncludeQuoteBtn.addEventListener("click", () => {
+      const address = (document.getElementById("liAddress").value || "").trim();
+      const cuisine = document.getElementById("liCuisine").value;
+      const clientName = (document.getElementById("liClientName").value || "").trim();
+      const scoreText = document.getElementById("liScoreNum").textContent;
+      const tierText = document.getElementById("liScoreSub").textContent;
+      const traffic = document.getElementById("liMetricTraffic").textContent;
+      const space = document.getElementById("liMetricComp").textContent;
+      const demo = document.getElementById("liMetricDemo").textContent;
+      const gap = document.getElementById("liMetricGap").textContent;
+      const insights = Array.from(document.querySelectorAll("#liInsights .li-insight")).map((el) => "- " + el.textContent);
+
+      const block = [
+        `Analisis de ubicacion — ${address || "(sin direccion)"}`,
+        `Score: ${scoreText} (${tierText}) — ${cuisine}`,
+        `Trafico ${traffic} · Espacio ${space} · Demografia ${demo} · Gap ${gap}`,
+        ...insights,
+      ].join("\n");
+
+      switchTab("quote");
+      specsEl.value = specsEl.value.trim() ? specsEl.value.trim() + "\n\n" + block : block;
+      if (clientName && !fCliente.value.trim()) fCliente.value = clientName;
+      if (address && !fEntrega.value.trim()) fEntrega.value = address;
+      logActivity(`Incluyo el analisis de "${address}" en una cotizacion`);
+    });
   }
 
   renderCatalog();

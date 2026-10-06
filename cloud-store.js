@@ -50,6 +50,10 @@
 
   const sb = supabase.createClient(cfg.url, cfg.anonKey);
   window.NovaCloud.enabled = true;
+  // Mismo cliente autenticado, para que otros scripts de la pagina (p.ej.
+  // location-intel.js) lo reusen en vez de crear uno nuevo -- dos clientes
+  // Supabase en la misma pagina pueden pelearse por la sesion guardada.
+  window.NovaCloud.sb = sb;
 
   // ---- Empujar un blob a la nube (upsert por clave) ----
   let pushChain = Promise.resolve();
