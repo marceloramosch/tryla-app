@@ -1145,6 +1145,9 @@
   // reconstruir el board (no todas las que ya estaban ahi)
   let lastMovedClientId = null;
   let pipelineView = "board"; // "board" | "list"
+  // Id del cliente cuyo drawer esta abierto ahorita, o null -- para saber si
+  // hay que refrescar su historial de notas en vivo cuando cambia desde otro lado
+  let currentDrawerClientId = null;
 
   // Pinta un <select> de etapa con los colores de status-<Etapa> (igual a los chips del sheet)
   function setStatusClass(el, status) {
@@ -1166,33 +1169,139 @@
     logActivity(`Llamo a "${c.name}"`);
   }
 
+  // ---- Notas con fecha (historial, separado del campo "notas" de perfil) ----
+  function addNote(c, text) {
+    const trimmed = (text || "").trim();
+    if (!trimmed) return;
+    c.noteLog = c.noteLog || [];
+    c.noteLog.unshift({ text: trimmed, at: Date.now() });
+    persistClients();
+    logActivity(`Nota en "${c.name}": ${trimmed.slice(0, 60)}${trimmed.length > 60 ? "..." : ""}`);
+  }
+  function formatNoteDate(ts) {
+    return new Date(ts).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
+  }
+  function noteLogHtml(c) {
+    const noteLog = c.noteLog || [];
+    return noteLog.length
+      ? noteLog.map((n) => `<div class="ld-note-entry"><div class="ld-note-date">${formatNoteDate(n.at)}</div><div class="ld-note-text">${escapeHtml(n.text)}</div></div>`).join("")
+      : `<div style="font-size:12px; color:var(--text2);">Sin notas en el historial todavia</div>`;
+  }
+
+  // ---- Popover de resultado de llamada (sale al darle click a 📞) ----
+  let callOutcomeCloseHandler = null;
+  function showCallOutcomePopover(anchorEl, c) {
+    const pop = document.getElementById("callOutcomePopover");
+    if (!pop) return;
+    pop.innerHTML = `
+      <div class="cop-title">Resultado de la llamada</div>
+      <button type="button" class="cop-btn" data-outcome="Contestó">✅ Contestó</button>
+      <button type="button" class="cop-btn" data-outcome="No contestó">🔇 No contestó</button>
+      <button type="button" class="cop-btn" data-outcome="Buzón">📬 Buzón</button>
+      <button type="button" class="cop-btn" data-outcome="nota">📝 Dejar nota</button>
+    `;
+    pop.querySelectorAll(".cop-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.dataset.outcome === "nota") {
+          pop.innerHTML = `
+            <div class="cop-title">Nota de la llamada</div>
+            <textarea placeholder="Que paso en la llamada..."></textarea>
+            <button type="button" class="cop-save">Guardar</button>
+          `;
+          const ta = pop.querySelector("textarea");
+          ta.focus();
+          pop.querySelector(".cop-save").addEventListener("click", () => {
+            addNote(c, "Llamada: " + ta.value.trim());
+            hideCallOutcomePopover();
+            afterNoteOrCallChange(c);
+          });
+        } else {
+          addNote(c, "Llamada: " + btn.dataset.outcome);
+          hideCallOutcomePopover();
+          afterNoteOrCallChange(c);
+        }
+      });
+    });
+
+    const rect = anchorEl.getBoundingClientRect();
+    pop.style.left = Math.max(10, Math.min(rect.left, window.innerWidth - 220)) + "px";
+    pop.style.top = rect.bottom + 8 + "px";
+    pop.classList.add("show");
+
+    setTimeout(() => {
+      callOutcomeCloseHandler = (e) => {
+        if (!pop.contains(e.target) && e.target !== anchorEl) hideCallOutcomePopover();
+      };
+      document.addEventListener("click", callOutcomeCloseHandler);
+    }, 0);
+  }
+  function hideCallOutcomePopover() {
+    const pop = document.getElementById("callOutcomePopover");
+    if (pop) pop.classList.remove("show");
+    if (callOutcomeCloseHandler) {
+      document.removeEventListener("click", callOutcomeCloseHandler);
+      callOutcomeCloseHandler = null;
+    }
+  }
+
+  // Refresca el board y, si esta abierto, el historial de notas del drawer
+  // de este mismo cliente -- sin repintar todo el drawer (perderia lo que
+  // se este escribiendo en el campo de notas de perfil a medio editar)
+  function afterNoteOrCallChange(c) {
+    renderPipeline();
+    if (currentDrawerClientId === c.id) {
+      const logEl = document.querySelector("#leadDrawer .ld-notelog");
+      if (logEl) logEl.innerHTML = noteLogHtml(c);
+    }
+  }
+
   // ---- Tooltip flotante al dejar el mouse sobre una tarjeta ----
-  let tooltipTimer = null;
+  // Delay de "puente" al salir, para que de tiempo de mover el mouse
+  // de la tarjeta al tooltip (para poder escribir una nota ahi) sin que
+  // se cierre antes de llegar.
+  let tooltipShowTimer = null;
+  let tooltipHideTimer = null;
+  function renderCardTooltip(card, c) {
+    const tip = document.getElementById("cardTooltip");
+    if (!tip) return;
+    const value = clientPipelineValue(c);
+    const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+    tip.innerHTML = `
+      <div><b>${escapeHtml(c.name)}</b></div>
+      ${c.contacto ? `<div>${escapeHtml(c.contacto)}</div>` : ""}
+      ${c.negocio ? `<div>${escapeHtml(c.negocio)}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.notas ? `<div style="margin-top:6px;">${escapeHtml(c.notas)}</div>` : ""}
+      ${c.downpayment ? `<div style="margin-top:6px;"><b>DP:</b> ${escapeHtml(c.downpayment)}</div>` : ""}
+      ${value > 0 ? `<div style="margin-top:6px;"><b>Valor:</b> ${formatMoney(value)}</div>` : ""}
+      <div style="margin-top:6px; opacity:.75;">${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}${c.callCount ? " · " + c.callCount + " llamada" + (c.callCount === 1 ? "" : "s") : ""}${c.noteLog && c.noteLog.length ? " · " + c.noteLog.length + " nota" + (c.noteLog.length === 1 ? "" : "s") : ""}</div>
+      <textarea placeholder="Agregar nota rapida..."></textarea>
+      <button type="button" class="tip-note-save">Guardar nota</button>
+    `;
+    tip.querySelector(".tip-note-save").addEventListener("click", () => {
+      const ta = tip.querySelector("textarea");
+      addNote(c, ta.value);
+      ta.value = "";
+      renderPipeline();
+    });
+    const rect = card.getBoundingClientRect();
+    tip.style.left = Math.max(10, Math.min(rect.right + 10, window.innerWidth - 270)) + "px";
+    tip.style.top = Math.max(10, rect.top) + "px";
+    tip.classList.add("show");
+  }
   function showCardTooltipFor(card, c) {
-    clearTimeout(tooltipTimer);
-    tooltipTimer = setTimeout(() => {
-      const tip = document.getElementById("cardTooltip");
-      if (!tip) return;
-      const value = clientPipelineValue(c);
-      const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
-      tip.innerHTML = `
-        <div><b>${escapeHtml(c.name)}</b></div>
-        ${c.contacto ? `<div>${escapeHtml(c.contacto)}</div>` : ""}
-        ${c.negocio ? `<div>${escapeHtml(c.negocio)}</div>` : ""}
-        ${c.ciudad || c.fuente ? `<div>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
-        ${c.notas ? `<div style="margin-top:6px;">${escapeHtml(c.notas)}</div>` : ""}
-        ${c.downpayment ? `<div style="margin-top:6px;"><b>DP:</b> ${escapeHtml(c.downpayment)}</div>` : ""}
-        ${value > 0 ? `<div style="margin-top:6px;"><b>Valor:</b> ${formatMoney(value)}</div>` : ""}
-        <div style="margin-top:6px; opacity:.75;">${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}${c.callCount ? " · " + c.callCount + " llamada" + (c.callCount === 1 ? "" : "s") : ""}</div>
-      `;
-      const rect = card.getBoundingClientRect();
-      tip.style.left = Math.max(10, Math.min(rect.right + 10, window.innerWidth - 270)) + "px";
-      tip.style.top = Math.max(10, rect.top) + "px";
-      tip.classList.add("show");
-    }, 350);
+    clearTimeout(tooltipHideTimer);
+    clearTimeout(tooltipShowTimer);
+    tooltipShowTimer = setTimeout(() => renderCardTooltip(card, c), 350);
+  }
+  function hideCardTooltipSoon() {
+    clearTimeout(tooltipShowTimer);
+    clearTimeout(tooltipHideTimer);
+    tooltipHideTimer = setTimeout(hideCardTooltip, 150);
   }
   function hideCardTooltip() {
-    clearTimeout(tooltipTimer);
+    clearTimeout(tooltipShowTimer);
+    clearTimeout(tooltipHideTimer);
     const tip = document.getElementById("cardTooltip");
     if (tip) tip.classList.remove("show");
   }
@@ -1200,9 +1309,11 @@
   // ---- Panel lateral: toda la info de un lead ----
   function openLeadDrawer(c) {
     hideCardTooltip();
+    hideCallOutcomePopover();
     const drawer = document.getElementById("leadDrawer");
     const backdrop = document.getElementById("leadDrawerBackdrop");
     if (!drawer || !backdrop) return;
+    currentDrawerClientId = c.id;
 
     document.getElementById("ldAvatar").textContent = clientInitials(c.name);
     document.getElementById("ldName").textContent = c.name;
@@ -1222,16 +1333,54 @@
       ${needsFinancing ? `<div class="ld-row"><span class="ld-label">Financiamiento</span><span class="ld-value">🏦 Si${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
       ${value > 0 ? `<div class="ld-row"><span class="ld-label">Valor en pipeline</span><span class="ld-value">${formatMoney(value)}</span></div>` : ""}
       <div class="ld-row"><span class="ld-label">Cotizaciones</span><span class="ld-value">${quoteCount}</span></div>
-      ${c.callCount ? `<div class="ld-row"><span class="ld-label">Llamadas</span><span class="ld-value">${c.callCount} intento${c.callCount === 1 ? "" : "s"}${c.lastCallAt ? " · ultima: " + new Date(c.lastCallAt).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" }) : ""}</span></div>` : ""}
-      ${c.notas ? `<div class="ld-row"><span class="ld-label">Notas</span><span class="ld-value">${escapeHtml(c.notas)}</span></div>` : ""}
+      ${c.callCount ? `<div class="ld-row"><span class="ld-label">Llamadas</span><span class="ld-value">${c.callCount} intento${c.callCount === 1 ? "" : "s"}${c.lastCallAt ? " · ultima: " + formatNoteDate(c.lastCallAt) : ""}</span></div>` : ""}
+      <div class="ld-row">
+        <span class="ld-label">Notas de perfil</span>
+        <textarea id="ldNotasField" placeholder="Notas generales de este cliente...">${escapeHtml(c.notas || "")}</textarea>
+      </div>
+      <div class="ld-row">
+        <span class="ld-label">Historial de notas</span>
+        <div class="ld-notelog">${noteLogHtml(c)}</div>
+        <div class="ld-note-form">
+          <textarea id="ldNewNote" placeholder="Agregar una nota fechada..."></textarea>
+          <button type="button" id="ldAddNote">+ Agregar nota</button>
+        </div>
+      </div>
       <div class="ld-actions">
         ${href ? `<a href="${href}" class="ld-call">📞 Llamar</a>` : ""}
+        <button type="button" class="ld-quote">🧾 Hacer cotizacion</button>
         <button type="button" class="ld-edit">Editar cliente</button>
       </div>
     `;
+
+    const notasField = document.getElementById("ldNotasField");
+    notasField.addEventListener("change", () => {
+      c.notas = notasField.value.trim();
+      persistClients();
+    });
+
+    document.getElementById("ldAddNote").addEventListener("click", () => {
+      const ta = document.getElementById("ldNewNote");
+      if (!ta.value.trim()) return;
+      addNote(c, ta.value);
+      ta.value = "";
+      const logEl = body.querySelector(".ld-notelog");
+      if (logEl) logEl.innerHTML = noteLogHtml(c);
+      renderPipeline();
+    });
+
     if (href) {
-      body.querySelector(".ld-call").addEventListener("click", () => logCallAttempt(c));
+      body.querySelector(".ld-call").addEventListener("click", () => {
+        logCallAttempt(c);
+        showCallOutcomePopover(body.querySelector(".ld-call"), c);
+      });
     }
+    body.querySelector(".ld-quote").addEventListener("click", () => {
+      closeLeadDrawer();
+      switchTab("quote");
+      fClientSelect.value = c.id;
+      fClientSelect.dispatchEvent(new Event("change"));
+    });
     body.querySelector(".ld-edit").addEventListener("click", () => {
       closeLeadDrawer();
       switchTab("clients");
@@ -1243,6 +1392,7 @@
     backdrop.classList.add("open");
   }
   function closeLeadDrawer() {
+    currentDrawerClientId = null;
     const drawer = document.getElementById("leadDrawer");
     const backdrop = document.getElementById("leadDrawerBackdrop");
     if (drawer) {
@@ -1284,7 +1434,12 @@
       <div class="pc-foot">
         <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
         ${href ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>` : ""}
+        <button type="button" class="pc-note-btn" title="Agregar nota">📝${c.noteLog && c.noteLog.length ? ` <span class="pc-note-count">${c.noteLog.length}</span>` : ""}</button>
         <button type="button" class="pc-finance-toggle" title="Marcar/quitar que necesita financiamiento">🏦</button>
+      </div>
+      <div class="pc-note-form" style="display:none;">
+        <textarea placeholder="Nota rapida con fecha..."></textarea>
+        <button type="button">Guardar</button>
       </div>
       <div class="pc-actions-row">
         <select class="pc-move" aria-label="Mover a otra etapa"></select>
@@ -1341,8 +1496,26 @@
       callLink.addEventListener("click", (e) => {
         e.stopPropagation();
         logCallAttempt(c);
+        showCallOutcomePopover(callLink, c);
       });
     }
+
+    const noteBtn = card.querySelector(".pc-note-btn");
+    const noteForm = card.querySelector(".pc-note-form");
+    noteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const showing = noteForm.style.display !== "none";
+      noteForm.style.display = showing ? "none" : "flex";
+      if (!showing) noteForm.querySelector("textarea").focus();
+    });
+    noteForm.querySelector("textarea").addEventListener("click", (e) => e.stopPropagation());
+    noteForm.querySelector("button").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const ta = noteForm.querySelector("textarea");
+      if (!ta.value.trim()) return;
+      addNote(c, ta.value);
+      renderPipeline();
+    });
 
     card.addEventListener("dragstart", (e) => {
       dragSrcClientId = c.id;
@@ -1355,7 +1528,7 @@
     });
 
     card.addEventListener("mouseenter", () => showCardTooltipFor(card, c));
-    card.addEventListener("mouseleave", hideCardTooltip);
+    card.addEventListener("mouseleave", hideCardTooltipSoon);
     card.addEventListener("click", (e) => {
       if (e.target.closest("select, input, button, a")) return;
       openLeadDrawer(c);
@@ -2451,8 +2624,19 @@
   if (ldCloseBtn) ldCloseBtn.addEventListener("click", closeLeadDrawer);
   if (ldBackdrop) ldBackdrop.addEventListener("click", closeLeadDrawer);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeLeadDrawer();
+    if (e.key === "Escape") {
+      closeLeadDrawer();
+      hideCallOutcomePopover();
+    }
   });
+
+  // El tooltip mismo tambien pausa su cierre al pasarle el mouse encima,
+  // para poder llegar hasta su textarea y escribir una nota sin que se cierre
+  const cardTooltipEl = document.getElementById("cardTooltip");
+  if (cardTooltipEl) {
+    cardTooltipEl.addEventListener("mouseenter", () => clearTimeout(tooltipHideTimer));
+    cardTooltipEl.addEventListener("mouseleave", hideCardTooltipSoon);
+  }
 
   renderCatalog();
   renderDatalist();
