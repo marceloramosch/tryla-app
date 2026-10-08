@@ -150,6 +150,7 @@
   main{ max-width: 1300px; margin: 0 auto; padding: 24px; }
 
   /* ===== Tabs ===== */
+  .tabs-wrap{ position:relative; }
   .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
   .tab-btn{
     border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
@@ -159,6 +160,16 @@
   .tab-btn.active, .tab-btn:hover{ background:var(--blue); color:#fff; }
   .tab-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(91,84,255,.25); }
   .tab-btn:active{ transform:translateY(0); }
+  /* Degradados en los bordes que avisan que hay mas pestanas por ese lado
+     (solo se activan en movil, donde .tabs hace scroll horizontal) */
+  .tabs-wrap::before, .tabs-wrap::after{
+    content:""; position:absolute; top:0; bottom:6px; width:28px; pointer-events:none;
+    opacity:0; transition:opacity .15s ease; z-index:2;
+  }
+  .tabs-wrap::before{ left:0; background:linear-gradient(90deg, var(--bg) 0%, transparent 100%); }
+  .tabs-wrap::after{ right:0; background:linear-gradient(270deg, var(--bg) 0%, transparent 100%); }
+  .tabs-wrap.fade-left::before{ opacity:1; }
+  .tabs-wrap.fade-right::after{ opacity:1; }
   .tab-panel{ display:none; }
   @keyframes tabFadeIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
   .tab-panel.active{ display:block; animation:tabFadeIn .28s cubic-bezier(.22,.8,.3,1); }
@@ -681,11 +692,17 @@
     .catalog-item input.price, table.builder input.line-price, table.builder input.line-desc,
     table.crm select{ font-size:16px; }
 
-    /* Barra de pestanas: una sola fila con scroll horizontal, como un tab bar nativo */
+    /* Barra de pestanas: una sola fila con scroll horizontal, como un tab bar nativo.
+       scroll-snap hace que cada pestana "aterrice" limpio al soltar el dedo, en vez
+       de quedar a medias entre dos botones. */
     .tabs{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
-      margin-left:-14px; margin-right:-14px; padding:0 14px 6px; gap:6px; }
+      padding:0 14px 6px; gap:6px;
+      scroll-snap-type:x proximity; scroll-behavior:smooth; scroll-padding:0 14px; }
     .tabs::-webkit-scrollbar{ display:none; }
-    .tab-btn{ flex-shrink:0; padding:8px 12px; font-size:12px; }
+    .tab-btn{ flex-shrink:0; padding:8px 12px; font-size:12px; scroll-snap-align:center; min-height:38px; }
+    .tabs-wrap{ margin-left:-14px; margin-right:-14px; }
+    .tabs-wrap::before{ left:14px; }
+    .tabs-wrap::after{ right:14px; }
 
     /* Texto general un poco mas chico en movil, sin bajar de lo legible */
     .panel h2{ font-size:12.5px; }
@@ -753,7 +770,8 @@
 </header>
 
 <main>
-  <div class="tabs">
+  <div class="tabs-wrap">
+  <div class="tabs" id="tabsBar">
     <button class="tab-btn active" data-tab="quote">Cotizador</button>
     <button class="tab-btn" data-tab="clients">Clientes</button>
     <button class="tab-btn" data-tab="pipeline">Pipeline</button>
@@ -763,6 +781,7 @@
     <button class="tab-btn" data-tab="invoices">Invoices</button>
     <button class="tab-btn" data-tab="sites">Sitios Web</button>
     <button class="tab-btn" data-tab="dashboard">Resumen</button>
+  </div>
   </div>
 
   <!-- ===================== TAB: COTIZADOR ===================== -->

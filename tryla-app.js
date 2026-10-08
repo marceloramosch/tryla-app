@@ -2757,7 +2757,11 @@
   // ===== Tabs =====
   function switchTab(name) {
     document.querySelectorAll(".tab-btn").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.tab === name);
+      const isActive = btn.dataset.tab === name;
+      btn.classList.toggle("active", isActive);
+      // En el tab bar movil (scroll horizontal) deja la pestana activa visible,
+      // centrada si se puede, sin mover la pagina verticalmente.
+      if (isActive) btn.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     });
     document.querySelectorAll(".tab-panel").forEach((panel) => {
       panel.classList.toggle("active", panel.id === `tab-${name}`);
@@ -2828,6 +2832,23 @@
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
+
+  // Degradados a los lados del tab bar (solo se notan en movil, donde hace
+  // scroll horizontal) que avisan si hay mas pestanas ocultas de ese lado.
+  (function wireTabsScrollFade() {
+    const tabsBar = document.getElementById("tabsBar");
+    const wrap = tabsBar && tabsBar.closest(".tabs-wrap");
+    if (!tabsBar || !wrap) return;
+    function update() {
+      const atStart = tabsBar.scrollLeft <= 2;
+      const atEnd = tabsBar.scrollLeft + tabsBar.clientWidth >= tabsBar.scrollWidth - 2;
+      wrap.classList.toggle("fade-left", !atStart);
+      wrap.classList.toggle("fade-right", !atEnd);
+    }
+    tabsBar.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  })();
 
   // Fecha y numero de cotizacion por defecto
   fFecha.value = new Date().toISOString().slice(0, 10);
