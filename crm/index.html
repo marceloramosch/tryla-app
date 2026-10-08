@@ -441,6 +441,9 @@
   .pipeline-list-row{ cursor:pointer; transition: background .12s ease; }
   :root:not([data-theme="dark"]) .pipeline-list-row:hover{ background:var(--light); }
   :root[data-theme="dark"] .pipeline-list-row:hover{ background:var(--panel); }
+  .th-sortable{ cursor:pointer; user-select:none; white-space:nowrap; }
+  .th-sortable:hover{ color:var(--blue); }
+  .th-sortable .sort-arrow{ display:inline-block; width:10px; font-size:10px; opacity:.6; }
 
   /* ===== Panel lateral: info completa de un lead ===== */
   .lead-drawer-backdrop{
@@ -890,7 +893,7 @@
       <div class="table-scroll">
         <table class="crm">
           <thead>
-            <tr><th>Fecha</th><th>Nombre</th><th>Contacto</th><th>Negocio</th><th>Ciudad</th><th>Estatus</th><th>Notas</th><th>Cotizaciones</th><th></th></tr>
+            <tr><th id="clientsSortDate" class="th-sortable">Fecha <span class="sort-arrow"></span></th><th>Nombre</th><th>Contacto</th><th>Negocio</th><th>Ciudad</th><th>Estatus</th><th>Notas</th><th>Cotizaciones</th><th></th></tr>
           </thead>
           <tbody id="clientsTable"></tbody>
         </table>
@@ -930,7 +933,7 @@
       <div class="table-scroll">
         <table class="crm">
           <thead>
-            <tr><th>Fecha</th><th>Cliente</th><th>Telefono</th><th>Ciudad / Fuente</th><th>Etapa</th><th>Valor</th><th>Notas</th></tr>
+            <tr><th id="pipelineSortDate" class="th-sortable">Fecha <span class="sort-arrow"></span></th><th>Cliente</th><th>Telefono</th><th>Ciudad / Fuente</th><th>Etapa</th><th>Valor</th><th>Notas</th></tr>
           </thead>
           <tbody id="pipelineListTable"></tbody>
         </table>

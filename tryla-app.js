@@ -127,6 +127,8 @@
   const pipelineSearch = document.getElementById("pipelineSearch");
   const pipelineDateFrom = document.getElementById("pipelineDateFrom");
   const pipelineDateTo = document.getElementById("pipelineDateTo");
+  const clientsSortDateBtn = document.getElementById("clientsSortDate");
+  const pipelineSortDateBtn = document.getElementById("pipelineSortDate");
   const quotesSearch = document.getElementById("quotesSearch");
   const invoicesSearch = document.getElementById("invoicesSearch");
   const payTableWrap = document.getElementById("payTableWrap");
@@ -189,6 +191,19 @@
     if (fromStr && day < fromStr) return false;
     if (toStr && day > toStr) return false;
     return true;
+  }
+
+  // ---- Orden por fecha al hacer click en el encabezado "Fecha" -----------
+  // Esto es solo un orden de lo que ya se muestra (no filtra nada). En
+  // Clientes alterna mas-reciente/mas-antiguo; en Pipeline tambien puede
+  // volver al orden normal (agrupado por etapa).
+  let clientsDateSort = "desc"; // "desc" | "asc"
+  let pipelineDateSort = null; // null (orden por etapa) | "desc" | "asc"
+
+  function paintSortArrow(btn, dir) {
+    if (!btn) return;
+    const arrow = btn.querySelector(".sort-arrow");
+    if (arrow) arrow.textContent = dir === "asc" ? "▲" : dir === "desc" ? "▼" : "";
   }
 
   let quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || "[]");
@@ -971,6 +986,7 @@
   function renderClientsTable() {
     const tbody = document.getElementById("clientsTable");
     tbody.innerHTML = "";
+    paintSortArrow(clientsSortDateBtn, clientsDateSort);
     if (clients.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#7c8aa6;">Sin clientes todavia</td></tr>';
       return;
@@ -988,7 +1004,7 @@
     }
     filtered
       .slice()
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .sort((a, b) => (clientsDateSort === "asc" ? (a.createdAt || 0) - (b.createdAt || 0) : (b.createdAt || 0) - (a.createdAt || 0)))
       .forEach((c) => {
       const tr = document.createElement("tr");
       const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
@@ -1653,8 +1669,12 @@
   function renderPipelineList() {
     const tbody = document.getElementById("pipelineListTable");
     if (!tbody) return;
+    paintSortArrow(pipelineSortDateBtn, pipelineDateSort);
     const filtered = filterPipelineClients();
     const sorted = filtered.slice().sort((a, b) => {
+      if (pipelineDateSort) {
+        return pipelineDateSort === "asc" ? (a.createdAt || 0) - (b.createdAt || 0) : (b.createdAt || 0) - (a.createdAt || 0);
+      }
       const ai = PIPELINE_STAGES.indexOf(a.status || "Cold");
       const bi = PIPELINE_STAGES.indexOf(b.status || "Cold");
       if (ai !== bi) return ai - bi;
@@ -2665,6 +2685,12 @@
     clientsDateTo.value = "";
     renderClientsTable();
   });
+  if (clientsSortDateBtn) {
+    clientsSortDateBtn.addEventListener("click", () => {
+      clientsDateSort = clientsDateSort === "desc" ? "asc" : "desc";
+      renderClientsTable();
+    });
+  }
   pipelineSearch.addEventListener("input", renderPipeline);
   pipelineDateFrom.addEventListener("change", renderPipeline);
   pipelineDateTo.addEventListener("change", renderPipeline);
@@ -2673,6 +2699,13 @@
     pipelineDateTo.value = "";
     renderPipeline();
   });
+  if (pipelineSortDateBtn) {
+    pipelineSortDateBtn.addEventListener("click", () => {
+      // Cicla: orden normal (por etapa) -> mas reciente -> mas antiguo -> normal
+      pipelineDateSort = pipelineDateSort === null ? "desc" : pipelineDateSort === "desc" ? "asc" : null;
+      renderPipelineList();
+    });
+  }
   quotesSearch.addEventListener("input", renderQuotesTable);
   invoicesSearch.addEventListener("input", renderInvoicesTable);
 
