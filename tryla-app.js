@@ -129,6 +129,8 @@
   const pipelineDateTo = document.getElementById("pipelineDateTo");
   const clientsSortDateBtn = document.getElementById("clientsSortDate");
   const pipelineSortDateBtn = document.getElementById("pipelineSortDate");
+  const clientsFilterToggle = document.getElementById("clientsFilterToggle");
+  const pipelineFilterToggle = document.getElementById("pipelineFilterToggle");
   const clientsFilterName = document.getElementById("clientsFilterName");
   const clientsFilterContacto = document.getElementById("clientsFilterContacto");
   const clientsFilterNegocio = document.getElementById("clientsFilterNegocio");
@@ -2880,6 +2882,20 @@
     pipelineFilterCliente, pipelineFilterTelefono, pipelineFilterCiudad, pipelineFilterNotas,
   ].forEach((el) => el && el.addEventListener("input", renderPipelineList));
   if (pipelineFilterEtapa) pipelineFilterEtapa.addEventListener("change", renderPipelineList);
+
+  // Boton "Filtros": muestra/oculta la fila de filtros por columna, para no
+  // tener un cuadro de busqueda permanente en cada encabezado.
+  function wireFilterToggle(btn, rowSelector) {
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const row = document.querySelector(rowSelector);
+      if (!row) return;
+      const open = row.classList.toggle("open");
+      btn.classList.toggle("active", open);
+    });
+  }
+  wireFilterToggle(clientsFilterToggle, "#tab-clients .filter-row");
+  wireFilterToggle(pipelineFilterToggle, "#tab-pipeline .filter-row");
 
   quotesSearch.addEventListener("input", renderQuotesTable);
   invoicesSearch.addEventListener("input", renderInvoicesTable);

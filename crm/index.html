@@ -306,9 +306,10 @@
   table.crm th{
     background: var(--dark); color:#fff; text-align:left; padding:8px 10px; font-size:11px; letter-spacing:0.5px;
   }
-  table.crm td{ padding:7px 10px; border-bottom:1px solid var(--silver); font-size:12.5px; vertical-align: middle; }
+  table.crm td{ padding:7px 10px; border-bottom:1px solid var(--silver); font-size:12.5px; vertical-align: top; }
   table.crm select{ padding:4px 6px; border:1px solid var(--silver); border-radius:4px; font-size:12px; }
-  table.crm .actions-cell{ display:flex; gap:6px; flex-wrap:wrap; }
+  table.crm .actions-cell{ display:flex; gap:5px; flex-wrap:nowrap; align-items:flex-start; white-space:nowrap; }
+  table.crm .actions-cell .btn-small{ padding:4px 9px; font-size:11px; }
   .status-pill{
     display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;
   }
@@ -445,13 +446,19 @@
   .th-sortable:hover{ color:var(--blue); }
   .th-sortable .sort-arrow{ display:inline-block; width:10px; font-size:10px; opacity:.6; }
 
-  /* ===== Filtro por columna (fila bajo el encabezado) ===== */
-  .filter-row th{ background:var(--panel); padding:5px 6px; }
+  /* ===== Filtro por columna (fila bajo el encabezado, oculta hasta que se ====
+     abre con el boton "Filtros" de junto al buscador) ===== */
+  .filter-row{ display:none; }
+  .filter-row.open{ display:table-row; }
+  .filter-row th{ background:var(--panel); padding:6px; }
   .col-filter{
     width:100%; box-sizing:border-box; padding:5px 7px; border:1px solid var(--silver); border-radius:5px;
     font-size:11.5px; font-family:inherit; background:var(--panel); color:var(--text);
   }
   .col-filter:focus{ outline:none; border-color:var(--blue); }
+  .filter-toggle-btn.active{ background:var(--blue); color:#fff; }
+  .filter-toggle-btn .filter-toggle-caret{ display:inline-block; transition:transform .15s ease; }
+  .filter-toggle-btn.active .filter-toggle-caret{ transform:rotate(180deg); }
 
   /* ===== Edicion rapida: click en una celda para editarla ===== */
   .editable-cell{ cursor:text; position:relative; border-radius:4px; transition:background .12s ease; }
@@ -702,9 +709,11 @@
     .status-pill{ font-size:10px; padding:2px 6px; }
     table.crm .actions-cell{ flex-wrap:wrap; gap:4px; }
     table.crm .actions-cell button, table.crm .actions-cell .btn-small{
-      flex:0 0 auto; width:68px; padding:5px 3px; font-size:10px; text-align:center; white-space:normal; line-height:1.2;
+      flex:0 0 auto; width:68px; min-height:34px; padding:7px 3px; font-size:10px; text-align:center; white-space:normal; line-height:1.2;
     }
     .table-scroll table{ min-width:560px; }
+    .col-filter, .cell-edit-input, .cell-edit-select{ font-size:16px; padding:7px; } /* evita el zoom automatico de iOS al enfocar un input */
+    .filter-toggle-btn{ min-height:38px; }
   }
 </style>
 <script>
@@ -904,6 +913,10 @@
         <div class="field" style="max-width:320px; flex:1;">
           <input id="clientsSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad, contacto...">
         </div>
+        <div class="field" style="max-width:130px;">
+          <label>&nbsp;</label>
+          <button type="button" id="clientsFilterToggle" class="btn-small filter-toggle-btn" style="width:100%;">Filtros <span class="filter-toggle-caret">&#9662;</span></button>
+        </div>
         <div class="field" style="max-width:150px;">
           <label>Desde</label>
           <input id="clientsDateFrom" type="date">
@@ -947,6 +960,10 @@
       <div class="field-row" style="align-items:flex-end;">
         <div class="field" style="max-width:260px; flex:1;">
           <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
+        </div>
+        <div class="field" style="max-width:130px;">
+          <label>&nbsp;</label>
+          <button type="button" id="pipelineFilterToggle" class="btn-small filter-toggle-btn" style="width:100%;">Filtros <span class="filter-toggle-caret">&#9662;</span></button>
         </div>
         <div class="field" style="max-width:150px;">
           <label>Desde</label>
