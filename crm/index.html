@@ -445,6 +445,33 @@
   .th-sortable:hover{ color:var(--blue); }
   .th-sortable .sort-arrow{ display:inline-block; width:10px; font-size:10px; opacity:.6; }
 
+  /* ===== Filtro por columna (fila bajo el encabezado) ===== */
+  .filter-row th{ background:var(--panel); padding:5px 6px; }
+  .col-filter{
+    width:100%; box-sizing:border-box; padding:5px 7px; border:1px solid var(--silver); border-radius:5px;
+    font-size:11.5px; font-family:inherit; background:var(--panel); color:var(--text);
+  }
+  .col-filter:focus{ outline:none; border-color:var(--blue); }
+
+  /* ===== Edicion rapida: click en una celda para editarla ===== */
+  .editable-cell{ cursor:text; position:relative; border-radius:4px; transition:background .12s ease; }
+  .editable-cell:hover{ background:rgba(91,84,255,.1); box-shadow:inset 0 0 0 1px rgba(91,84,255,.25); }
+  .editable-cell:hover::after{
+    content:"✎"; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    font-size:10px; opacity:.5;
+  }
+  .cell-edit-input{
+    width:100%; box-sizing:border-box; padding:3px 5px; border:1.5px solid var(--blue); border-radius:4px;
+    font-size:12.5px; font-family:inherit; background:var(--panel); color:var(--text);
+  }
+  .cell-edit-select{
+    width:100%; box-sizing:border-box; padding:3px 5px; border:1.5px solid var(--blue); border-radius:4px;
+    font-size:12px; font-family:inherit; background:var(--panel); color:var(--text);
+  }
+  .pc-call-wrap{ display:inline-flex; align-items:center; gap:6px; }
+  .pc-call-wrap .pc-call{ flex-shrink:0; }
+  .pc-call-wrap .cell-text{ flex:1; }
+
   /* ===== Panel lateral: info completa de un lead ===== */
   .lead-drawer-backdrop{
     position:fixed; inset:0; background:rgba(10,8,40,.35); z-index:9100; opacity:0; pointer-events:none;
@@ -894,6 +921,17 @@
         <table class="crm">
           <thead>
             <tr><th id="clientsSortDate" class="th-sortable">Fecha <span class="sort-arrow"></span></th><th>Nombre</th><th>Contacto</th><th>Negocio</th><th>Ciudad</th><th>Estatus</th><th>Notas</th><th>Cotizaciones</th><th></th></tr>
+            <tr class="filter-row">
+              <th></th>
+              <th><input type="text" id="clientsFilterName" class="col-filter" placeholder="Filtrar..."></th>
+              <th><input type="text" id="clientsFilterContacto" class="col-filter" placeholder="Filtrar..."></th>
+              <th><input type="text" id="clientsFilterNegocio" class="col-filter" placeholder="Filtrar..."></th>
+              <th><input type="text" id="clientsFilterCiudad" class="col-filter" placeholder="Filtrar..."></th>
+              <th><select id="clientsFilterEstatus" class="col-filter"><option value="">Todos</option></select></th>
+              <th><input type="text" id="clientsFilterNotas" class="col-filter" placeholder="Filtrar..."></th>
+              <th></th>
+              <th></th>
+            </tr>
           </thead>
           <tbody id="clientsTable"></tbody>
         </table>
@@ -934,6 +972,15 @@
         <table class="crm">
           <thead>
             <tr><th id="pipelineSortDate" class="th-sortable">Fecha <span class="sort-arrow"></span></th><th>Cliente</th><th>Telefono</th><th>Ciudad / Fuente</th><th>Etapa</th><th>Valor</th><th>Notas</th></tr>
+            <tr class="filter-row">
+              <th></th>
+              <th><input type="text" id="pipelineFilterCliente" class="col-filter" placeholder="Filtrar..."></th>
+              <th><input type="text" id="pipelineFilterTelefono" class="col-filter" placeholder="Filtrar..."></th>
+              <th><input type="text" id="pipelineFilterCiudad" class="col-filter" placeholder="Filtrar..."></th>
+              <th><select id="pipelineFilterEtapa" class="col-filter"><option value="">Todas</option></select></th>
+              <th></th>
+              <th><input type="text" id="pipelineFilterNotas" class="col-filter" placeholder="Filtrar..."></th>
+            </tr>
           </thead>
           <tbody id="pipelineListTable"></tbody>
         </table>

@@ -129,6 +129,17 @@
   const pipelineDateTo = document.getElementById("pipelineDateTo");
   const clientsSortDateBtn = document.getElementById("clientsSortDate");
   const pipelineSortDateBtn = document.getElementById("pipelineSortDate");
+  const clientsFilterName = document.getElementById("clientsFilterName");
+  const clientsFilterContacto = document.getElementById("clientsFilterContacto");
+  const clientsFilterNegocio = document.getElementById("clientsFilterNegocio");
+  const clientsFilterCiudad = document.getElementById("clientsFilterCiudad");
+  const clientsFilterEstatus = document.getElementById("clientsFilterEstatus");
+  const clientsFilterNotas = document.getElementById("clientsFilterNotas");
+  const pipelineFilterCliente = document.getElementById("pipelineFilterCliente");
+  const pipelineFilterTelefono = document.getElementById("pipelineFilterTelefono");
+  const pipelineFilterCiudad = document.getElementById("pipelineFilterCiudad");
+  const pipelineFilterEtapa = document.getElementById("pipelineFilterEtapa");
+  const pipelineFilterNotas = document.getElementById("pipelineFilterNotas");
   const quotesSearch = document.getElementById("quotesSearch");
   const invoicesSearch = document.getElementById("invoicesSearch");
   const payTableWrap = document.getElementById("payTableWrap");
@@ -204,6 +215,43 @@
     if (!btn) return;
     const arrow = btn.querySelector(".sort-arrow");
     if (arrow) arrow.textContent = dir === "asc" ? "▲" : dir === "desc" ? "▼" : "";
+  }
+
+  // ---- Edicion rapida: click en una celda de texto para editarla ---------
+  // Convierte el <td> en un <input>, guarda al perder el foco o con Enter,
+  // y descarta el cambio con Escape (vuelve a pintar la tabla tal cual estaba).
+  function makeEditableText(td, currentValue, onSave, onCancel) {
+    td.classList.add("editable-cell");
+    td.title = "Click para editar";
+    td.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (td.querySelector("input")) return; // ya esta en edicion
+      td.classList.remove("editable-cell");
+      td.innerHTML = "";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "cell-edit-input";
+      input.value = currentValue || "";
+      td.appendChild(input);
+      input.focus();
+      input.select();
+      let done = false;
+      input.addEventListener("blur", () => {
+        if (done) return;
+        done = true;
+        onSave(input.value.trim());
+      });
+      input.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          input.blur();
+        } else if (ev.key === "Escape") {
+          ev.preventDefault();
+          done = true;
+          onCancel();
+        }
+      });
+    });
   }
 
   let quotes = JSON.parse(localStorage.getItem(QUOTES_KEY) || "[]");
@@ -994,9 +1042,22 @@
     const q = (clientsSearch.value || "").trim().toLowerCase();
     const fromStr = clientsDateFrom.value;
     const toStr = clientsDateTo.value;
+    const fName = (clientsFilterName.value || "").trim().toLowerCase();
+    const fContacto = (clientsFilterContacto.value || "").trim().toLowerCase();
+    const fNegocio = (clientsFilterNegocio.value || "").trim().toLowerCase();
+    const fCiudad = (clientsFilterCiudad.value || "").trim().toLowerCase();
+    const fEstatus = clientsFilterEstatus.value;
+    const fNotas = (clientsFilterNotas.value || "").trim().toLowerCase();
     const filtered = clients.filter((c) => {
       const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
-      return matchesSearch && clientInDateRange(c, fromStr, toStr);
+      if (!matchesSearch || !clientInDateRange(c, fromStr, toStr)) return false;
+      if (fName && !(c.name || "").toLowerCase().includes(fName)) return false;
+      if (fContacto && !(c.contacto || "").toLowerCase().includes(fContacto)) return false;
+      if (fNegocio && !(c.negocio || "").toLowerCase().includes(fNegocio)) return false;
+      if (fCiudad && !(c.ciudad || "").toLowerCase().includes(fCiudad)) return false;
+      if (fEstatus && (c.status || "Cold") !== fEstatus) return false;
+      if (fNotas && !(c.notas || "").toLowerCase().includes(fNotas)) return false;
+      return true;
     });
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#7c8aa6;">Sin resultados para tu busqueda</td></tr>';
@@ -1019,6 +1080,39 @@
         <td>${quoteCount}</td>
         <td class="actions-cell"></td>
       `;
+
+      makeEditableText(tr.children[1], c.name, (val) => {
+        c.name = val || c.name; // el nombre no puede quedar vacio
+        persistClients();
+        renderClientsTable();
+        renderPipeline();
+        renderClientSelect();
+      }, renderClientsTable);
+      makeEditableText(tr.children[2], c.contacto || "", (val) => {
+        c.contacto = val;
+        persistClients();
+        renderClientsTable();
+        renderPipeline();
+      }, renderClientsTable);
+      makeEditableText(tr.children[3], c.negocio || "", (val) => {
+        c.negocio = val;
+        persistClients();
+        renderClientsTable();
+        renderPipeline();
+      }, renderClientsTable);
+      makeEditableText(tr.children[4], c.ciudad || "", (val) => {
+        c.ciudad = val;
+        persistClients();
+        renderClientsTable();
+        renderPipeline();
+      }, renderClientsTable);
+      makeEditableText(tr.children[6], c.notas || "", (val) => {
+        c.notas = val;
+        persistClients();
+        renderClientsTable();
+        renderPipeline();
+      }, renderClientsTable);
+
       const statusTd = tr.children[5];
       const statusSelect = document.createElement("select");
       PIPELINE_STAGES.forEach((s) => {
@@ -1619,6 +1713,24 @@
     });
   }
 
+  // Filtros por columna de la vista de lista (no aplican al tablero: ahi las
+  // etapas ya estan separadas por columna, filtrar por etapa no tendria caso).
+  function filterPipelineClientsForList() {
+    const fCliente = (pipelineFilterCliente.value || "").trim().toLowerCase();
+    const fTelefono = (pipelineFilterTelefono.value || "").trim().toLowerCase();
+    const fCiudad = (pipelineFilterCiudad.value || "").trim().toLowerCase();
+    const fEtapa = pipelineFilterEtapa.value;
+    const fNotas = (pipelineFilterNotas.value || "").trim().toLowerCase();
+    return filterPipelineClients().filter((c) => {
+      if (fCliente && !(c.name || "").toLowerCase().includes(fCliente)) return false;
+      if (fTelefono && !(c.contacto || "").toLowerCase().includes(fTelefono)) return false;
+      if (fCiudad && !(c.ciudad || "").toLowerCase().includes(fCiudad) && !(c.fuente || "").toLowerCase().includes(fCiudad)) return false;
+      if (fEtapa && (c.status || "Cold") !== fEtapa) return false;
+      if (fNotas && !(c.notas || "").toLowerCase().includes(fNotas)) return false;
+      return true;
+    });
+  }
+
   function renderPipeline() {
     const board = document.getElementById("pipelineBoard");
     if (!board) return;
@@ -1670,7 +1782,7 @@
     const tbody = document.getElementById("pipelineListTable");
     if (!tbody) return;
     paintSortArrow(pipelineSortDateBtn, pipelineDateSort);
-    const filtered = filterPipelineClients();
+    const filtered = filterPipelineClientsForList();
     const sorted = filtered.slice().sort((a, b) => {
       if (pipelineDateSort) {
         return pipelineDateSort === "asc" ? (a.createdAt || 0) - (b.createdAt || 0) : (b.createdAt || 0) - (a.createdAt || 0);
@@ -1686,22 +1798,65 @@
       return;
     }
 
-    tbody.innerHTML = sorted
-      .map((c) => {
-        const value = clientPipelineValue(c);
-        const href = telHref(c.contacto);
-        return `
-        <tr data-client-id="${escapeHtml(c.id)}" class="pipeline-list-row">
-          <td style="white-space:nowrap; color:var(--text2); font-size:11.5px;">${formatClientDate(c)}</td>
-          <td>${escapeHtml(c.name)}</td>
-          <td>${href ? `<a href="${href}" class="pc-call">📞 ${escapeHtml(c.contacto)}</a>` : ""}</td>
-          <td>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</td>
-          <td><span class="status-pill status-${escapeHtml(c.status || "Cold")}" style="display:inline-block;">${escapeHtml(c.status || "Cold")}</span></td>
-          <td>${value > 0 ? formatMoney(value) : ""}</td>
-          <td>${escapeHtml(c.notas || "")}</td>
-        </tr>`;
-      })
-      .join("");
+    tbody.innerHTML = "";
+    sorted.forEach((c) => {
+      const value = clientPipelineValue(c);
+      const href = telHref(c.contacto);
+      const tr = document.createElement("tr");
+      tr.dataset.clientId = c.id;
+      tr.className = "pipeline-list-row";
+      tr.innerHTML = `
+        <td style="white-space:nowrap; color:var(--text2); font-size:11.5px;">${formatClientDate(c)}</td>
+        <td>${escapeHtml(c.name)}</td>
+        <td><span class="pc-call-wrap">${href ? `<a href="${href}" class="pc-call" title="Llamar">📞</a>` : ""}<span class="cell-text">${escapeHtml(c.contacto || "")}</span></span></td>
+        <td>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</td>
+        <td></td>
+        <td>${value > 0 ? formatMoney(value) : ""}</td>
+        <td>${escapeHtml(c.notas || "")}</td>
+      `;
+
+      makeEditableText(tr.children[1], c.name, (val) => {
+        c.name = val || c.name;
+        persistClients();
+        renderPipeline();
+        renderClientsTable();
+        renderClientSelect();
+      }, renderPipelineList);
+      makeEditableText(tr.children[2].querySelector(".cell-text"), c.contacto || "", (val) => {
+        c.contacto = val;
+        persistClients();
+        renderPipeline();
+        renderClientsTable();
+      }, renderPipelineList);
+      makeEditableText(tr.children[3], c.ciudad || "", (val) => {
+        c.ciudad = val;
+        persistClients();
+        renderPipeline();
+        renderClientsTable();
+      }, renderPipelineList);
+      makeEditableText(tr.children[6], c.notas || "", (val) => {
+        c.notas = val;
+        persistClients();
+        renderPipeline();
+        renderClientsTable();
+      }, renderPipelineList);
+
+      const etapaTd = tr.children[4];
+      const etapaSelect = document.createElement("select");
+      PIPELINE_STAGES.forEach((s) => {
+        const o = document.createElement("option");
+        o.value = s;
+        o.textContent = s;
+        if (s === (c.status || "Cold")) o.selected = true;
+        etapaSelect.appendChild(o);
+      });
+      setStatusClass(etapaSelect, c.status || "Cold");
+      etapaSelect.addEventListener("click", (e) => e.stopPropagation());
+      etapaSelect.addEventListener("change", () => moveClientToStage(c.id, etapaSelect.value));
+      etapaTd.appendChild(etapaSelect);
+
+      tbody.appendChild(tr);
+    });
 
     tbody.querySelectorAll(".pipeline-list-row").forEach((tr) => {
       tr.addEventListener("click", (e) => {
@@ -2706,6 +2861,26 @@
       renderPipelineList();
     });
   }
+
+  // ---- Filtros por columna (fila bajo el encabezado, Clientes y Pipeline) ----
+  [clientsFilterEstatus, pipelineFilterEtapa].forEach((sel) => {
+    if (!sel) return;
+    PIPELINE_STAGES.forEach((s) => {
+      const o = document.createElement("option");
+      o.value = s;
+      o.textContent = s;
+      sel.appendChild(o);
+    });
+  });
+  [
+    clientsFilterName, clientsFilterContacto, clientsFilterNegocio, clientsFilterCiudad, clientsFilterEstatus, clientsFilterNotas,
+  ].forEach((el) => el && el.addEventListener("input", renderClientsTable));
+  if (clientsFilterEstatus) clientsFilterEstatus.addEventListener("change", renderClientsTable);
+  [
+    pipelineFilterCliente, pipelineFilterTelefono, pipelineFilterCiudad, pipelineFilterNotas,
+  ].forEach((el) => el && el.addEventListener("input", renderPipelineList));
+  if (pipelineFilterEtapa) pipelineFilterEtapa.addEventListener("change", renderPipelineList);
+
   quotesSearch.addEventListener("input", renderQuotesTable);
   invoicesSearch.addEventListener("input", renderInvoicesTable);
 
