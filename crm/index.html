@@ -10,6 +10,14 @@
 <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="512x512" href="../assets/favicon-512.png">
+<!-- PWA: se puede instalar en el celular como app, con icono y sin la barra del navegador -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#5B54FF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0C14" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tryla CRM">
 <link rel="stylesheet" href="../location-intel.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -676,6 +684,58 @@
     border-top:1px solid var(--silver); margin-top: 24px;
   }
   footer b{ color:var(--text); }
+
+  /* ===== Tab bar inferior tipo app nativa (solo movil) ===== */
+  .bottom-nav{ display:none; }
+  .bn-sheet-backdrop, .bn-sheet{ display:none; }
+  @media (max-width:600px){
+    .bottom-nav{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:40;
+      background:rgba(255,255,255,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+      border-top:1px solid var(--border);
+      padding-bottom:env(safe-area-inset-bottom);
+      box-shadow:0 -2px 16px rgba(6,3,141,.08);
+    }
+    :root[data-theme="dark"] .bottom-nav{ background:rgba(23,25,39,.92); }
+    .bn-item{
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+      border:none; background:transparent; color:var(--text2); cursor:pointer;
+      padding:7px 2px 8px; min-height:56px; font-family:inherit;
+      transition:color .15s ease, transform .12s ease;
+    }
+    .bn-item svg{ width:21px; height:21px; flex-shrink:0; }
+    .bn-item span{ font-size:9.5px; font-weight:700; letter-spacing:.2px; line-height:1; white-space:nowrap; }
+    .bn-item.active{ color:var(--blue); }
+    .bn-item:active{ transform:scale(.93); }
+
+    .bn-sheet-backdrop{
+      display:block; position:fixed; inset:0; background:rgba(5,3,20,.4); z-index:49;
+      opacity:0; pointer-events:none; transition:opacity .2s ease;
+    }
+    .bn-sheet-backdrop.open{ opacity:1; pointer-events:auto; }
+    .bn-sheet{
+      display:block; position:fixed; left:0; right:0; bottom:0; z-index:50;
+      background:var(--panel); border-radius:18px 18px 0 0; padding:8px 10px calc(16px + env(safe-area-inset-bottom));
+      box-shadow:0 -8px 30px rgba(6,3,141,.2);
+      transform:translateY(102%); transition:transform .3s cubic-bezier(.32,.9,.3,1);
+    }
+    .bn-sheet.open{ transform:translateY(0); }
+    .bn-sheet-handle{ width:36px; height:4px; border-radius:999px; background:var(--border); margin:6px auto 10px; }
+    .bn-sheet-item{
+      display:flex; align-items:center; gap:12px; width:100%; border:none; background:transparent;
+      color:var(--text); font-family:inherit; font-size:14px; font-weight:600; text-align:left;
+      padding:13px 10px; border-radius:10px; cursor:pointer; min-height:46px;
+    }
+    .bn-sheet-item svg{ width:19px; height:19px; flex-shrink:0; color:var(--blue); }
+    .bn-sheet-item.active{ background:var(--light); color:var(--blue); }
+    :root[data-theme="dark"] .bn-sheet-item.active{ background:#232542; }
+    .bn-sheet-item:active{ background:var(--light); }
+    :root[data-theme="dark"] .bn-sheet-item:active{ background:#232542; }
+
+    /* La tab bar de arriba (scroll horizontal) queda reemplazada por la de abajo */
+    .tabs-wrap{ display:none; }
+    body{ padding-bottom:calc(58px + env(safe-area-inset-bottom)); }
+  }
 
   @media (max-width: 600px){
     main{ padding:14px; }
@@ -1433,6 +1493,55 @@
   </div>
 </main>
 
+<!-- Tab bar inferior tipo app nativa (solo visible en movil, reemplaza las pestanas de arriba) -->
+<nav class="bottom-nav" id="bottomNav" aria-label="Navegacion principal">
+  <button class="bn-item active" data-tab="quote" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    <span>Cotizador</span>
+  </button>
+  <button class="bn-item" data-tab="pipeline" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="10"/><rect x="14" y="7" width="3" height="6"/></svg>
+    <span>Pipeline</span>
+  </button>
+  <button class="bn-item" data-tab="clients" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span>Clientes</span>
+  </button>
+  <button class="bn-item" data-tab="dashboard" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Resumen</span>
+  </button>
+  <button class="bn-item" id="bnMoreBtn" type="button" aria-haspopup="true" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+    <span>Más</span>
+  </button>
+</nav>
+
+<div class="bn-sheet-backdrop" id="bnSheetBackdrop"></div>
+<div class="bn-sheet" id="bnSheet" role="dialog" aria-modal="true" aria-label="Más secciones">
+  <div class="bn-sheet-handle"></div>
+  <button class="bn-sheet-item" data-tab="quotes" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    <span>Cotizaciones guardadas</span>
+  </button>
+  <button class="bn-sheet-item" data-tab="intel" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <span>Location Intelligence</span>
+  </button>
+  <button class="bn-sheet-item" data-tab="finance" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <span>Financiamiento</span>
+  </button>
+  <button class="bn-sheet-item" data-tab="invoices" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <span>Invoices</span>
+  </button>
+  <button class="bn-sheet-item" data-tab="sites" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <span>Sitios Web</span>
+  </button>
+</div>
+
 <!-- Panel lateral: info completa de un lead (se abre al hacer click en su tarjeta) -->
 <div id="leadDrawerBackdrop" class="lead-drawer-backdrop"></div>
 <aside id="leadDrawer" class="lead-drawer" aria-hidden="true">
@@ -1468,5 +1577,14 @@
 <script src="../tryla-app.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../location-intel.js"></script>
+<script>
+  // Registra el service worker para que el CRM se pueda instalar como app
+  // (icono en pantalla de inicio, abre sin barra del navegador, carga al instante).
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+</script>
 </body>
 </html>
