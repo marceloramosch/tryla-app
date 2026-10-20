@@ -158,7 +158,7 @@
   const ACTIVITY_MAX = 200;
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
-  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed"];
+  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
@@ -2766,6 +2766,19 @@
     document.querySelectorAll(".tab-panel").forEach((panel) => {
       panel.classList.toggle("active", panel.id === `tab-${name}`);
     });
+
+    // Tab bar inferior tipo app (movil): resalta el item si es uno de los
+    // principales, o el boton "Mas" si la seccion vive dentro de esa hoja.
+    const BOTTOM_NAV_PRIMARY = ["quote", "pipeline", "clients", "dashboard"];
+    document.querySelectorAll(".bn-item[data-tab]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tab === name);
+    });
+    const bnMoreBtn = document.getElementById("bnMoreBtn");
+    if (bnMoreBtn) bnMoreBtn.classList.toggle("active", !BOTTOM_NAV_PRIMARY.includes(name));
+    document.querySelectorAll(".bn-sheet-item").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.tab === name);
+    });
+
     if (name === "dashboard") renderDashboard();
     if (name === "pipeline") renderPipeline();
     if (name === "intel") {
@@ -2832,6 +2845,43 @@
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
+
+  // ===== Tab bar inferior tipo app (movil) y hoja "Mas" =====
+  (function wireBottomNav() {
+    const bnSheet = document.getElementById("bnSheet");
+    const bnSheetBackdrop = document.getElementById("bnSheetBackdrop");
+    const bnMoreBtn = document.getElementById("bnMoreBtn");
+    if (!bnSheet || !bnSheetBackdrop || !bnMoreBtn) return;
+
+    function openSheet() {
+      bnSheet.classList.add("open");
+      bnSheetBackdrop.classList.add("open");
+      bnMoreBtn.setAttribute("aria-expanded", "true");
+    }
+    function closeSheet() {
+      bnSheet.classList.remove("open");
+      bnSheetBackdrop.classList.remove("open");
+      bnMoreBtn.setAttribute("aria-expanded", "false");
+    }
+
+    document.querySelectorAll(".bn-item[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+    document.querySelectorAll(".bn-sheet-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        switchTab(btn.dataset.tab);
+        closeSheet();
+      });
+    });
+    bnMoreBtn.addEventListener("click", () => {
+      if (bnSheet.classList.contains("open")) closeSheet();
+      else openSheet();
+    });
+    bnSheetBackdrop.addEventListener("click", closeSheet);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeSheet();
+    });
+  })();
 
   // Degradados a los lados del tab bar (solo se notan en movil, donde hace
   // scroll horizontal) que avisan si hay mas pestanas ocultas de ese lado.
