@@ -158,7 +158,7 @@
   const ACTIVITY_MAX = 200;
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
-  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed"];
+  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");

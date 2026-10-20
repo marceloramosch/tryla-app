@@ -38,7 +38,7 @@ const sb = createClient(
 const INGEST_LEAD_SECRET = Deno.env.get("INGEST_LEAD_SECRET") ?? "";
 
 // Debe quedar igual a PIPELINE_STAGES en tryla-app.js
-const VALID_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed"];
+const VALID_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
 
 type IncomingLead = {
   rowId?: string | number;
