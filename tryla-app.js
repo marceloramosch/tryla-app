@@ -1318,10 +1318,21 @@
     if (days >= 3) return "warn";
     return "ok";
   }
+  function relativeDayStr(days) {
+    return days === 0 ? "hoy" : days === 1 ? "hace 1 dia" : `hace ${days} dias`;
+  }
   function priorityDotTitle(days, label) {
     if (days === null) return "Sin actividad registrada";
-    const dayStr = days === 0 ? "hoy" : days === 1 ? "hace 1 dia" : `hace ${days} dias`;
-    return `Ultima actividad: ${label} · ${dayStr}`;
+    return `Ultima actividad: ${label} · ${relativeDayStr(days)}`;
+  }
+  // Linea corta y siempre visible en la tarjeta (no solo al pasar el mouse)
+  function lastActivityLineHtml(c) {
+    const inactiveDays = daysInactive(c);
+    const { label } = lastActivity(c);
+    const priority = priorityLevel(inactiveDays);
+    const dotHtml = priority !== "none" ? `<span class="pc-priority-dot pc-priority-${priority}"></span>` : `<span class="pc-priority-dot pc-priority-unknown"></span>`;
+    const text = inactiveDays === null ? "Sin actividad" : `${escapeHtml(label)} · ${relativeDayStr(inactiveDays)}`;
+    return `<div class="pc-last-activity pc-last-activity-${priority}">${dotHtml}${text}</div>`;
   }
 
   function clientInitials(name) {
@@ -1612,19 +1623,16 @@
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
     const href = telHref(c.contacto);
-    const inactiveDays = daysInactive(c);
-    const { label: lastActLabel } = lastActivity(c);
-    const priority = priorityLevel(inactiveDays);
 
     card.innerHTML = `
       ${stacked ? `<span class="pc-finance-tag">+ Finance</span>` : ""}
       <div class="pc-top">
         <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
         <span class="pc-name">${escapeHtml(c.name)}</span>
-        ${priority !== "none" ? `<span class="pc-priority-dot pc-priority-${priority}" title="${escapeHtml(priorityDotTitle(inactiveDays, lastActLabel))}"></span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${lastActivityLineHtml(c)}
       ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       <div class="pc-finance" style="display:none;">
@@ -1923,18 +1931,15 @@
 
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
-    const inactiveDays = daysInactive(c);
-    const { label: lastActLabel } = lastActivity(c);
-    const priority = priorityLevel(inactiveDays);
 
     card.innerHTML = `
       <div class="pc-top">
         <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
         <span class="pc-name">${escapeHtml(c.name)}</span>
-        ${priority !== "none" ? `<span class="pc-priority-dot pc-priority-${priority}" title="${escapeHtml(priorityDotTitle(inactiveDays, lastActLabel))}"></span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${lastActivityLineHtml(c)}
       ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       ${needsFinancing ? `<div class="pc-finance"><span class="pc-finance-label">🏦 Financiamiento${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
