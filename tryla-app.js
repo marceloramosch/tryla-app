@@ -1542,7 +1542,7 @@
         </div>
       </div>
       <div class="ld-actions">
-        ${href ? `<a href="${href}" class="ld-call">📞 Llamar</a>` : ""}
+        ${href ? `<a href="${href}" class="ld-call">📞 Llamar</a>` : `<button type="button" class="ld-call ld-call-logonly">📞 Registrar llamada</button>`}
         <button type="button" class="ld-quote">🧾 Hacer cotizacion</button>
         <button type="button" class="ld-edit">Editar cliente</button>
       </div>
@@ -1564,12 +1564,11 @@
       renderPipeline();
     });
 
-    if (href) {
-      body.querySelector(".ld-call").addEventListener("click", () => {
-        logCallAttempt(c);
-        showCallOutcomePopover(body.querySelector(".ld-call"), c);
-      });
-    }
+    body.querySelector(".ld-call").addEventListener("click", (e) => {
+      if (!href) e.preventDefault();
+      logCallAttempt(c);
+      showCallOutcomePopover(body.querySelector(".ld-call"), c);
+    });
     body.querySelector(".ld-quote").addEventListener("click", () => {
       closeLeadDrawer();
       switchTab("quote");
@@ -1633,7 +1632,9 @@
       </div>
       <div class="pc-foot">
         <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
-        ${href ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>` : ""}
+        ${href
+          ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>`
+          : `<button type="button" class="pc-call pc-call-logonly" title="Registrar llamada">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</button>`}
         <button type="button" class="pc-note-btn" title="Agregar nota">📝${c.noteLog && c.noteLog.length ? ` <span class="pc-note-count">${c.noteLog.length}</span>` : ""}</button>
         <button type="button" class="pc-finance-toggle" title="Marcar/quitar que necesita financiamiento">🏦</button>
       </div>
