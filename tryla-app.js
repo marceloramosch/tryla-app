@@ -1290,6 +1290,40 @@
       .reduce((s, q) => s + quoteTotals(q).subtotal, 0);
   }
 
+  // ---- Prioridad por inactividad: ultima vez que paso algo con este cliente ----
+  // Toma lo mas reciente entre: nota en el historial, llamada, o creacion del lead.
+  function lastActivity(c) {
+    let at = c.createdAt || 0;
+    let label = "Lead creado";
+    if (c.lastCallAt && c.lastCallAt > at) {
+      at = c.lastCallAt;
+      label = "Llamada";
+    }
+    const note = (c.noteLog || [])[0];
+    if (note && note.at > at) {
+      at = note.at;
+      label = "Nota";
+    }
+    return { at, label };
+  }
+  function daysInactive(c) {
+    const { at } = lastActivity(c);
+    if (!at) return null;
+    return Math.max(0, Math.floor((Date.now() - at) / 86400000));
+  }
+  // ok: movimiento reciente -- warn: se esta enfriando -- danger: lleva mucho sin tocarse
+  function priorityLevel(days) {
+    if (days === null) return "none";
+    if (days >= 7) return "danger";
+    if (days >= 3) return "warn";
+    return "ok";
+  }
+  function priorityDotTitle(days, label) {
+    if (days === null) return "Sin actividad registrada";
+    const dayStr = days === 0 ? "hoy" : days === 1 ? "hace 1 dia" : `hace ${days} dias`;
+    return `Ultima actividad: ${label} · ${dayStr}`;
+  }
+
   function clientInitials(name) {
     const parts = (name || "?").trim().split(/\s+/).filter(Boolean).slice(0, 2);
     return (parts.map((p) => p[0]).join("") || "?").toUpperCase();
@@ -1421,8 +1455,13 @@
     if (!tip) return;
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+    const inactiveDays = daysInactive(c);
+    const { label: lastActLabel } = lastActivity(c);
+    const priority = priorityLevel(inactiveDays);
+    const recentNotes = (c.noteLog || []).slice(0, 3);
     tip.innerHTML = `
       <div><b>${escapeHtml(c.name)}</b></div>
+      ${priority !== "none" ? `<div class="tip-activity tip-activity-${priority}"><span class="pc-priority-dot pc-priority-${priority}"></span>${escapeHtml(priorityDotTitle(inactiveDays, lastActLabel))}</div>` : ""}
       ${c.contacto ? `<div>${escapeHtml(c.contacto)}</div>` : ""}
       ${c.negocio ? `<div>${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div>${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
@@ -1430,6 +1469,7 @@
       ${c.downpayment ? `<div style="margin-top:6px;"><b>DP:</b> ${escapeHtml(c.downpayment)}</div>` : ""}
       ${value > 0 ? `<div style="margin-top:6px;"><b>Valor:</b> ${formatMoney(value)}</div>` : ""}
       <div style="margin-top:6px; opacity:.75;">${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}${c.callCount ? " · " + c.callCount + " llamada" + (c.callCount === 1 ? "" : "s") : ""}${c.noteLog && c.noteLog.length ? " · " + c.noteLog.length + " nota" + (c.noteLog.length === 1 ? "" : "s") : ""}</div>
+      ${recentNotes.length ? `<div class="tip-recent-activity">${recentNotes.map((n) => `<div class="tip-recent-entry"><span class="tip-recent-date">${formatNoteDate(n.at)}</span>${escapeHtml(n.text.slice(0, 80))}${n.text.length > 80 ? "..." : ""}</div>`).join("")}</div>` : ""}
       <textarea placeholder="Agregar nota rapida..."></textarea>
       <button type="button" class="tip-note-save">Guardar nota</button>
     `;
@@ -1573,12 +1613,16 @@
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
     const href = telHref(c.contacto);
+    const inactiveDays = daysInactive(c);
+    const { label: lastActLabel } = lastActivity(c);
+    const priority = priorityLevel(inactiveDays);
 
     card.innerHTML = `
       ${stacked ? `<span class="pc-finance-tag">+ Finance</span>` : ""}
       <div class="pc-top">
         <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
         <span class="pc-name">${escapeHtml(c.name)}</span>
+        ${priority !== "none" ? `<span class="pc-priority-dot pc-priority-${priority}" title="${escapeHtml(priorityDotTitle(inactiveDays, lastActLabel))}"></span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
@@ -1878,11 +1922,15 @@
 
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
+    const inactiveDays = daysInactive(c);
+    const { label: lastActLabel } = lastActivity(c);
+    const priority = priorityLevel(inactiveDays);
 
     card.innerHTML = `
       <div class="pc-top">
         <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
         <span class="pc-name">${escapeHtml(c.name)}</span>
+        ${priority !== "none" ? `<span class="pc-priority-dot pc-priority-${priority}" title="${escapeHtml(priorityDotTitle(inactiveDays, lastActLabel))}"></span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
