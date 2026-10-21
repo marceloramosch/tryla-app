@@ -1304,6 +1304,10 @@
       at = note.at;
       label = "Nota";
     }
+    if (c.movedAt && c.movedAt > at) {
+      at = c.movedAt;
+      label = "Movido";
+    }
     return { at, label };
   }
   function daysInactive(c) {
@@ -1746,12 +1750,17 @@
     return card;
   }
 
+  // clientId, stage -- se llama tanto al cambiar de etapa (select o soltar en otra
+  // columna) como al soltar en la MISMA columna (reordenar) -- en ambos casos cuenta
+  // como actividad y la tarjeta sube al tope de su columna.
   function moveClientToStage(clientId, stage) {
     const c = clients.find((x) => x.id === clientId);
-    if (!c || c.status === stage) return;
+    if (!c) return;
+    const stageChanged = c.status !== stage;
     c.status = stage;
+    c.movedAt = Date.now();
     persistClients();
-    logActivity(`Movio a "${c.name}" a la etapa "${stage}"`);
+    if (stageChanged) logActivity(`Movio a "${c.name}" a la etapa "${stage}"`);
     lastMovedClientId = clientId;
     renderPipeline();
     renderClientsTable();
@@ -1793,7 +1802,10 @@
 
     board.innerHTML = "";
     PIPELINE_STAGES.forEach((stage) => {
-      const stageClients = filtered.filter((c) => (c.status || "Cold") === stage);
+      // Mas reciente (nota, llamada, o arrastrada) arriba de la columna
+      const stageClients = filtered
+        .filter((c) => (c.status || "Cold") === stage)
+        .sort((a, b) => lastActivity(b).at - lastActivity(a).at);
       const stageValue = stageClients.reduce((s, c) => s + clientPipelineValue(c), 0);
 
       const col = document.createElement("div");
