@@ -11,7 +11,7 @@
 // ============================================================
 (function () {
   const cfg = window.NOVA_SUPABASE || {};
-  const KEYS = ["novaCatalogPrices", "novaClients", "novaQuotes", "novaActivityLog", "novaCustomFields"];
+  const KEYS = ["novaCatalogPrices", "novaClients", "novaQuotes", "novaActivityLog", "novaCustomFields", "novaSequences"];
 
   const configured =
     cfg.url && cfg.anonKey &&

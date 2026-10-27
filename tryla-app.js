@@ -160,6 +160,7 @@
   const ACTIVITY_KEY = "novaActivityLog";
   const ACTIVITY_MAX = 200;
   const CUSTOM_FIELDS_KEY = "novaCustomFields";
+  const SEQUENCES_KEY = "novaSequences";
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
   const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
@@ -169,6 +170,25 @@
   let customFieldDefs = JSON.parse(localStorage.getItem(CUSTOM_FIELDS_KEY) || "[]");
   function persistCustomFieldDefs() {
     syncSet(CUSTOM_FIELDS_KEY, JSON.stringify(customFieldDefs), true);
+  }
+
+  let sequenceTemplates = JSON.parse(
+    localStorage.getItem(SEQUENCES_KEY) ||
+      JSON.stringify([
+        {
+          id: "seq_estandar",
+          name: "Seguimiento estandar",
+          steps: [
+            { text: "Llamar para presentarse y entender la necesidad", days: 0 },
+            { text: "Enviar cotizacion por correo", days: 1 },
+            { text: "Llamar de seguimiento", days: 3 },
+            { text: "Revisar estatus / ultima llamada", days: 7 },
+          ],
+        },
+      ])
+  );
+  function persistSequenceTemplates() {
+    syncSet(SEQUENCES_KEY, JSON.stringify(sequenceTemplates), true);
   }
 
   // Migra clientes guardados con el esquema de etapas anterior (Lead/Contactado/Cotizado/
@@ -1243,6 +1263,103 @@
   renderCustomFieldsManager();
   renderCustomFieldInputs();
 
+  // ===== Secuencias de seguimiento (manager + constructor de pasos) =====
+  function renderSequencesManager() {
+    const list = document.getElementById("sequencesManagerList");
+    if (!list) return;
+    list.innerHTML = sequenceTemplates.length
+      ? sequenceTemplates
+          .map(
+            (t) => `
+      <div class="seq-manager-row" data-id="${escapeHtml(t.id)}">
+        <div class="seq-manager-head">
+          <span class="seq-name">${escapeHtml(t.name)}</span>
+          <button type="button" class="seq-del" data-id="${escapeHtml(t.id)}">Eliminar</button>
+        </div>
+        <div class="seq-manager-steps">
+          ${t.steps.map((s) => `<div class="seq-step-view">Dia ${s.days}: ${escapeHtml(s.text)}</div>`).join("")}
+        </div>
+      </div>`
+          )
+          .join("")
+      : `<div style="font-size:12px; color:var(--text2);">Sin secuencias guardadas todavia</div>`;
+    list.querySelectorAll(".seq-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const tpl = sequenceTemplates.find((t) => t.id === id);
+        if (!tpl) return;
+        if (!confirm(`Eliminar la secuencia "${tpl.name}"? Las tareas ya creadas con ella no se borran.`)) return;
+        sequenceTemplates = sequenceTemplates.filter((t) => t.id !== id);
+        persistSequenceTemplates();
+        renderSequencesManager();
+      });
+    });
+  }
+
+  let newSeqSteps = [{ text: "", days: 0 }];
+  function renderSeqStepsBuilder() {
+    const wrap = document.getElementById("seqNewSteps");
+    if (!wrap) return;
+    wrap.innerHTML = newSeqSteps
+      .map(
+        (s, i) => `
+      <div class="seq-step-row" data-idx="${i}">
+        <input type="text" class="seq-step-text" placeholder="Ej. Llamar para seguimiento" value="${escapeHtml(s.text)}">
+        <input type="number" class="seq-step-days" min="0" value="${s.days}">
+        <span>dias</span>
+        <button type="button" class="seq-step-del">&times;</button>
+      </div>`
+      )
+      .join("");
+    wrap.querySelectorAll(".seq-step-text").forEach((inp, i) => {
+      inp.addEventListener("input", () => { newSeqSteps[i].text = inp.value; });
+    });
+    wrap.querySelectorAll(".seq-step-days").forEach((inp, i) => {
+      inp.addEventListener("input", () => { newSeqSteps[i].days = parseInt(inp.value, 10) || 0; });
+    });
+    wrap.querySelectorAll(".seq-step-del").forEach((btn, i) => {
+      btn.addEventListener("click", () => {
+        newSeqSteps.splice(i, 1);
+        if (!newSeqSteps.length) newSeqSteps.push({ text: "", days: 0 });
+        renderSeqStepsBuilder();
+      });
+    });
+  }
+
+  const seqAddStepBtn = document.getElementById("seqAddStepBtn");
+  if (seqAddStepBtn) {
+    seqAddStepBtn.addEventListener("click", () => {
+      newSeqSteps.push({ text: "", days: 0 });
+      renderSeqStepsBuilder();
+    });
+  }
+
+  const seqSaveBtn = document.getElementById("seqSaveBtn");
+  if (seqSaveBtn) {
+    seqSaveBtn.addEventListener("click", () => {
+      const nameInput = document.getElementById("seqNewName");
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Escribe el nombre de la secuencia");
+        return;
+      }
+      const steps = newSeqSteps.filter((s) => s.text.trim()).map((s) => ({ text: s.text.trim(), days: s.days || 0 }));
+      if (!steps.length) {
+        alert("Agrega al menos un paso con texto");
+        return;
+      }
+      sequenceTemplates.push({ id: "seq" + Date.now(), name, steps });
+      persistSequenceTemplates();
+      nameInput.value = "";
+      newSeqSteps = [{ text: "", days: 0 }];
+      renderSeqStepsBuilder();
+      renderSequencesManager();
+    });
+  }
+
+  renderSequencesManager();
+  renderSeqStepsBuilder();
+
   let editingClientId = null;
   const btnAddClient = document.getElementById("btnAddClient");
   const btnCancelEditClient = document.getElementById("btnCancelEditClient");
@@ -1666,6 +1783,19 @@
     c.tasks = (c.tasks || []).filter((x) => x.id !== taskId);
     persistClients();
   }
+
+  // ---- Secuencias de seguimiento: crea un lote de tareas con fecha a partir de una plantilla ----
+  function applySequenceToClient(c, templateId) {
+    const tpl = sequenceTemplates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const today = new Date();
+    tpl.steps.forEach((step) => {
+      const due = new Date(today);
+      due.setDate(due.getDate() + (parseInt(step.days, 10) || 0));
+      addTask(c, step.text, due.toISOString().slice(0, 10));
+    });
+    logActivity(`Aplico la secuencia "${tpl.name}" a "${c.name}"`);
+  }
   function openTasksOf(c) {
     return (c.tasks || []).filter((t) => !t.done);
   }
@@ -1946,6 +2076,13 @@
           <input type="date" id="ldNewTaskDate">
           <button type="button" id="ldAddTask">+ Agregar tarea</button>
         </div>
+        <div class="ld-seq-apply">
+          <select id="ldSeqSelect">
+            <option value="">Aplicar secuencia...</option>
+            ${sequenceTemplates.map((t) => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join("")}
+          </select>
+          <button type="button" id="ldSeqApplyBtn">Aplicar</button>
+        </div>
       </div>
       <div class="ld-row">
         <span class="ld-label">Historial de notas</span>
@@ -1992,6 +2129,13 @@
       addTask(c, textEl.value, dateEl.value || null);
       textEl.value = "";
       dateEl.value = "";
+      refreshTaskList();
+    });
+    document.getElementById("ldSeqApplyBtn").addEventListener("click", () => {
+      const sel = document.getElementById("ldSeqSelect");
+      if (!sel.value) return;
+      applySequenceToClient(c, sel.value);
+      sel.value = "";
       refreshTaskList();
     });
     body.querySelector(".ld-tasklist").addEventListener("click", (e) => {

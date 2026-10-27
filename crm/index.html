@@ -333,6 +333,32 @@
   .cf-manager-row .cf-type{ color:var(--text2); font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
   .cf-manager-row .cf-del{ background:none; border:0; color:#DC2626; cursor:pointer; font-size:12.5px; font-weight:700; padding:2px 6px; }
   .cf-manager-row .cf-del:hover{ text-decoration:underline; }
+  .seq-manager-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .seq-manager-row{ padding:10px 12px; background:var(--light); border-radius:8px; }
+  .seq-manager-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+  .seq-manager-head .seq-name{ font-weight:700; font-size:13.5px; }
+  .seq-manager-head .seq-del{ background:none; border:0; color:#DC2626; cursor:pointer; font-size:12.5px; font-weight:700; padding:2px 6px; }
+  .seq-manager-head .seq-del:hover{ text-decoration:underline; }
+  .seq-manager-steps{ display:flex; flex-direction:column; gap:2px; }
+  .seq-step-view{ font-size:12px; color:var(--text2); }
+  .seq-steps-builder{ display:flex; flex-direction:column; gap:8px; margin:10px 0; }
+  .seq-step-row{ display:flex; align-items:center; gap:8px; }
+  .seq-step-row input{
+    padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:13px;
+    font-family: Arial, sans-serif; background:var(--panel); color:var(--text);
+  }
+  .seq-step-row .seq-step-text{ flex:1; }
+  .seq-step-row .seq-step-days{ width:64px; }
+  .seq-step-row .seq-step-del{ background:none; border:0; color:#DC2626; cursor:pointer; font-size:18px; font-weight:700; padding:0 6px; }
+  .ld-seq-apply{ display:flex; gap:6px; margin-top:8px; }
+  .ld-seq-apply select{
+    flex:1; font-size:12.5px; padding:7px 9px; border-radius:7px; border:1px solid var(--border);
+    background:var(--panel); color:var(--text); font-family:inherit;
+  }
+  .ld-seq-apply button{
+    border:none; background:var(--blue); color:#fff; font-weight:700; font-size:11.5px;
+    padding:6px 12px; border-radius:7px; cursor:pointer; flex-shrink:0;
+  }
 
   /* ===== CRM / quotes tables ===== */
   table.crm{ width:100%; border-collapse:collapse; }
@@ -1128,6 +1154,20 @@
         <div class="field" style="max-width:170px; align-self:flex-end;">
           <button id="cfAddBtn" type="button">+ Agregar campo</button>
         </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Secuencias de seguimiento</h2>
+      <div class="hint">Plantillas de tareas encadenadas (ej. llamar el dia 0, correo el dia 2, llamar de nuevo el dia 5...) que puedes aplicar a cualquier cliente desde su ficha -- crean tareas con fecha, no envian nada automaticamente.</div>
+      <div id="sequencesManagerList" class="seq-manager-list"></div>
+      <div class="field-row">
+        <div class="field" style="flex:2;"><label>Nombre de la secuencia</label><input id="seqNewName" type="text" placeholder="Ej. Seguimiento estandar"></div>
+      </div>
+      <div id="seqNewSteps" class="seq-steps-builder"></div>
+      <div class="actions">
+        <button type="button" id="seqAddStepBtn">+ Agregar paso</button>
+        <button type="button" class="primary" id="seqSaveBtn">Guardar secuencia</button>
       </div>
     </div>
 
