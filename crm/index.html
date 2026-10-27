@@ -320,6 +320,12 @@
   .dash-card.accent{ background:var(--dark); border-color:var(--dark); }
   .dash-card.accent .n{ color:#fff; }
   .dash-card.accent .l{ color:var(--silver); }
+  .funnel-list{ display:flex; flex-direction:column; gap:10px; }
+  .funnel-row{ display:flex; align-items:center; gap:10px; }
+  .funnel-label{ width:78px; font-size:12.5px; color:var(--text2); flex-shrink:0; }
+  .funnel-bar-bg{ flex:1; height:16px; background:var(--light); border-radius:8px; overflow:hidden; }
+  .funnel-bar{ height:100%; background:var(--blue); border-radius:8px; min-width:2px; transition:width .25s ease; }
+  .funnel-pct{ width:92px; text-align:right; font-size:12.5px; color:var(--text2); flex-shrink:0; }
 
   /* ===== CRM / quotes tables ===== */
   table.crm{ width:100%; border-collapse:collapse; }
@@ -1589,6 +1595,37 @@
     <div class="panel">
       <h2>Clientes por estatus</h2>
       <div class="dash-grid" id="dashClientStatus"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Embudo de conversion</h2>
+      <div class="hint">Porcentaje de clientes que ha llegado a cada etapa del pipeline.</div>
+      <div class="funnel-list" id="dashFunnel"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Tiempo promedio por etapa</h2>
+      <div class="hint">Dias promedio que un cliente permanece en cada etapa antes de avanzar (o desde que entro, si sigue ahi).</div>
+      <div class="table-scroll">
+        <table class="crm">
+          <thead>
+            <tr><th>Etapa</th><th>Dias promedio</th><th>Clientes</th></tr>
+          </thead>
+          <tbody id="dashAvgTime"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Leads por fuente</h2>
+      <div class="table-scroll">
+        <table class="crm">
+          <thead>
+            <tr><th>Fuente</th><th>Clientes</th><th>%</th></tr>
+          </thead>
+          <tbody id="dashBySource"></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="panel">

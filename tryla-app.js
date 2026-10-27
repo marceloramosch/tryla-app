@@ -1283,6 +1283,7 @@
         assignedTo: document.getElementById("cAsignado").value.trim() || ((window.NovaCloud && window.NovaCloud.email !== "local" && window.NovaCloud.email) || ""),
         notas: document.getElementById("cNotas").value.trim(),
         createdAt: Date.now(),
+        stageHistory: [{ stage: document.getElementById("cEstatus").value, at: Date.now() }],
       });
       logActivity(`Creo el cliente "${name}"`);
     }
@@ -1305,6 +1306,7 @@
         status: "HOT",
         notas: "",
         createdAt: Date.now(),
+        stageHistory: [{ stage: "HOT", at: Date.now() }],
       };
       clients.push(client);
     } else {
@@ -1997,6 +1999,10 @@
     const stageChanged = c.status !== stage;
     c.status = stage;
     c.movedAt = Date.now();
+    if (stageChanged) {
+      c.stageHistory = c.stageHistory || [];
+      c.stageHistory.push({ stage, at: Date.now() });
+    }
     persistClients();
     if (stageChanged) logActivity(`Movio a "${c.name}" a la etapa "${stage}"`);
     lastMovedClientId = clientId;
@@ -3108,6 +3114,57 @@
   }
 
   // ===== Resumen / dashboard =====
+  function computeStageReports() {
+    const funnelCounts = {};
+    const stageDurations = {};
+    PIPELINE_STAGES.forEach((s) => {
+      funnelCounts[s] = 0;
+      stageDurations[s] = [];
+    });
+
+    clients.forEach((c) => {
+      const hist = c.stageHistory && c.stageHistory.length
+        ? c.stageHistory
+        : [{ stage: c.status, at: c.createdAt || Date.now() }];
+      const reached = new Set(hist.map((h) => h.stage));
+      reached.add(c.status);
+      reached.forEach((s) => {
+        if (funnelCounts[s] !== undefined) funnelCounts[s]++;
+      });
+      for (let i = 0; i < hist.length; i++) {
+        const entry = hist[i];
+        const next = hist[i + 1];
+        const endAt = next ? next.at : Date.now();
+        const dur = endAt - entry.at;
+        if (dur >= 0 && stageDurations[entry.stage]) stageDurations[entry.stage].push(dur);
+      }
+    });
+
+    const totalClients = clients.length || 1;
+    const funnel = PIPELINE_STAGES.map((s) => ({
+      stage: s,
+      count: funnelCounts[s],
+      pct: Math.round((funnelCounts[s] / totalClients) * 100),
+    }));
+
+    const avgTime = PIPELINE_STAGES.map((s) => {
+      const arr = stageDurations[s];
+      const avgMs = arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+      return { stage: s, avgDays: arr.length ? Math.round((avgMs / 86400000) * 10) / 10 : 0, n: arr.length };
+    });
+
+    const bySourceMap = {};
+    clients.forEach((c) => {
+      const src = c.fuente && c.fuente.trim() ? c.fuente.trim() : "Sin fuente";
+      bySourceMap[src] = (bySourceMap[src] || 0) + 1;
+    });
+    const bySource = Object.entries(bySourceMap)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return { funnel, avgTime, bySource };
+  }
+
   function renderDashboard() {
     const nonInvoiced = quotes.filter((q) => !isInvoice(q));
     const invoiced = quotes.filter(isInvoice);
@@ -3137,6 +3194,50 @@
     document.getElementById("dashClientStatus").innerHTML = statusOrder
       .map((s) => `<div class="dash-card"><div class="n">${counts[s] || 0}</div><div class="l">${escapeHtml(s)}</div></div>`)
       .join("");
+
+    const { funnel, avgTime, bySource } = computeStageReports();
+    const dashFunnelEl = document.getElementById("dashFunnel");
+    if (dashFunnelEl) {
+      dashFunnelEl.innerHTML = funnel
+        .map(
+          ({ stage, count, pct }) => `
+        <div class="funnel-row">
+          <div class="funnel-label">${escapeHtml(stage)}</div>
+          <div class="funnel-bar-bg"><div class="funnel-bar" style="width:${pct}%"></div></div>
+          <div class="funnel-pct">${pct}% (${count})</div>
+        </div>`
+        )
+        .join("");
+    }
+    const dashAvgTimeEl = document.getElementById("dashAvgTime");
+    if (dashAvgTimeEl) {
+      dashAvgTimeEl.innerHTML = avgTime
+        .map(
+          ({ stage, avgDays, n }) => `
+        <tr>
+          <td>${escapeHtml(stage)}</td>
+          <td>${n ? avgDays + " dias" : "-"}</td>
+          <td>${n}</td>
+        </tr>`
+        )
+        .join("");
+    }
+    const dashBySourceEl = document.getElementById("dashBySource");
+    if (dashBySourceEl) {
+      const totalLeads = clients.length || 1;
+      dashBySourceEl.innerHTML = bySource.length
+        ? bySource
+            .map(
+              ({ source, count }) => `
+        <tr>
+          <td>${escapeHtml(source)}</td>
+          <td>${count}</td>
+          <td>${Math.round((count / totalLeads) * 100)}%</td>
+        </tr>`
+            )
+            .join("")
+        : '<tr><td colspan="3" style="text-align:center; color:#7c8aa6;">Sin datos</td></tr>';
+    }
 
     const topBalances = balances
       .filter((b) => b.saldo > 0)
