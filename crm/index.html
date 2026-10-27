@@ -447,6 +447,12 @@
     padding:3px 8px; border-radius:5px; cursor:pointer; font-size:10.5px; flex-shrink:0;
   }
   .pc-edit:hover{ background:var(--blue); color:#fff; }
+  .pc-delete{
+    border:1px solid var(--border); background:var(--panel); color:var(--text2); font-weight:700;
+    padding:3px 8px; border-radius:5px; cursor:pointer; font-size:11px; flex-shrink:0; line-height:1;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .pc-delete:hover{ background:#FBE4E4; border-color:#E5484D; color:#C0392E; }
   @media(max-width:600px){
     .pipeline-col{ flex-basis:200px; width:200px; }
     .pipeline-col-body{ max-height:420px; }
