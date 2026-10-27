@@ -1657,6 +1657,7 @@
       <div class="pc-actions-row">
         <select class="pc-move" aria-label="Mover a otra etapa"></select>
         <button type="button" class="pc-edit">Editar</button>
+        <button type="button" class="pc-delete" title="Eliminar cliente">🗑</button>
       </div>
     `;
 
@@ -1702,6 +1703,18 @@
     card.querySelector(".pc-edit").addEventListener("click", () => {
       switchTab("clients");
       startEditClient(c.id);
+    });
+
+    card.querySelector(".pc-delete").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!confirm(`Eliminar al cliente "${c.name}"? Esto no se puede deshacer.`)) return;
+      clients = clients.filter((x) => x.id !== c.id);
+      persistClients();
+      if (editingClientId === c.id) cancelEditClient();
+      if (currentDrawerClientId === c.id) closeLeadDrawer();
+      renderPipeline();
+      renderClientsTable();
+      renderClientSelect();
     });
 
     const callLink = card.querySelector(".pc-call");
