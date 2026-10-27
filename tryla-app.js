@@ -159,12 +159,17 @@
   const QUOTES_KEY = "novaQuotes";
   const ACTIVITY_KEY = "novaActivityLog";
   const ACTIVITY_MAX = 200;
+  const CUSTOM_FIELDS_KEY = "novaCustomFields";
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
   const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
+  let customFieldDefs = JSON.parse(localStorage.getItem(CUSTOM_FIELDS_KEY) || "[]");
+  function persistCustomFieldDefs() {
+    syncSet(CUSTOM_FIELDS_KEY, JSON.stringify(customFieldDefs), true);
+  }
 
   // Migra clientes guardados con el esquema de etapas anterior (Lead/Contactado/Cotizado/
   // Negociacion/Aceptado/Perdido) al nuevo (Cold/Warm/HOT/Finance/Cash/Closed), una sola vez.
@@ -1161,6 +1166,83 @@
     });
   }
 
+  // ===== Campos personalizados (custom fields por cliente) =====
+  function slugifyFieldLabel(label) {
+    const base = label
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    let id = base || "campo";
+    let n = 1;
+    while (customFieldDefs.some((f) => f.id === id)) id = `${base}_${++n}`;
+    return id;
+  }
+
+  function renderCustomFieldsManager() {
+    const list = document.getElementById("customFieldsManagerList");
+    if (!list) return;
+    const typeLabels = { text: "Texto", number: "Numero", date: "Fecha" };
+    list.innerHTML = customFieldDefs
+      .map(
+        (f) => `
+      <div class="cf-manager-row" data-id="${escapeHtml(f.id)}">
+        <span class="cf-label">${escapeHtml(f.label)}</span>
+        <span class="cf-type">${typeLabels[f.type] || "Texto"}</span>
+        <button type="button" class="cf-del" data-id="${escapeHtml(f.id)}">Eliminar</button>
+      </div>`
+      )
+      .join("");
+    list.querySelectorAll(".cf-del").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const def = customFieldDefs.find((f) => f.id === id);
+        if (!def) return;
+        if (!confirm(`Eliminar el campo "${def.label}"? Los valores ya guardados en clientes no se borran, solo dejara de mostrarse.`)) return;
+        customFieldDefs = customFieldDefs.filter((f) => f.id !== id);
+        persistCustomFieldDefs();
+        renderCustomFieldsManager();
+        renderCustomFieldInputs();
+      });
+    });
+  }
+
+  function renderCustomFieldInputs() {
+    const row = document.getElementById("newClientCustomFields");
+    if (!row) return;
+    row.innerHTML = customFieldDefs
+      .map(
+        (f) => `
+      <div class="field">
+        <label>${escapeHtml(f.label)}</label>
+        <input type="${f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}" id="cf_${escapeHtml(f.id)}" data-cf-id="${escapeHtml(f.id)}">
+      </div>`
+      )
+      .join("");
+  }
+
+  const cfAddBtn = document.getElementById("cfAddBtn");
+  if (cfAddBtn) {
+    cfAddBtn.addEventListener("click", () => {
+      const labelInput = document.getElementById("cfNewLabel");
+      const label = labelInput.value.trim();
+      if (!label) {
+        alert("Escribe el nombre del campo");
+        return;
+      }
+      const type = document.getElementById("cfNewType").value;
+      customFieldDefs.push({ id: slugifyFieldLabel(label), label, type });
+      persistCustomFieldDefs();
+      labelInput.value = "";
+      renderCustomFieldsManager();
+      renderCustomFieldInputs();
+    });
+  }
+
+  renderCustomFieldsManager();
+  renderCustomFieldInputs();
+
   let editingClientId = null;
   const btnAddClient = document.getElementById("btnAddClient");
   const btnCancelEditClient = document.getElementById("btnCancelEditClient");
@@ -1176,6 +1258,10 @@
     document.getElementById("cEstatus").value = c.status || "Cold";
     document.getElementById("cAsignado").value = c.assignedTo || "";
     document.getElementById("cNotas").value = c.notas || "";
+    customFieldDefs.forEach((f) => {
+      const input = document.getElementById(`cf_${f.id}`);
+      if (input) input.value = (c.customFields && c.customFields[f.id]) || "";
+    });
     btnAddClient.textContent = "Guardar cambios";
     btnCancelEditClient.style.display = "inline-block";
     document.getElementById("cNombre").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1190,6 +1276,10 @@
     document.getElementById("cEstatus").value = "Cold";
     document.getElementById("cAsignado").value = "";
     document.getElementById("cNotas").value = "";
+    customFieldDefs.forEach((f) => {
+      const input = document.getElementById(`cf_${f.id}`);
+      if (input) input.value = "";
+    });
     btnAddClient.textContent = "+ Agregar cliente";
     btnCancelEditClient.style.display = "none";
   }
@@ -1223,14 +1313,14 @@
   }
   function exportClientsCsv() {
     const rows = clients;
-    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Asignado a", "Fuente", "Notas", "Fecha creacion"];
+    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Asignado a", "Fuente", "Notas", "Fecha creacion"].concat(
+      customFieldDefs.map((f) => f.label)
+    );
     const lines = [header.join(",")];
     rows.forEach((c) => {
-      lines.push(
-        [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""]
-          .map(csvEscape)
-          .join(",")
-      );
+      const base = [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""];
+      const custom = customFieldDefs.map((f) => (c.customFields && c.customFields[f.id]) || "");
+      lines.push(base.concat(custom).map(csvEscape).join(","));
     });
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -1241,6 +1331,15 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  }
+
+  function readCustomFieldsFromForm() {
+    const out = {};
+    customFieldDefs.forEach((f) => {
+      const input = document.getElementById(`cf_${f.id}`);
+      if (input && input.value.trim()) out[f.id] = input.value.trim();
+    });
+    return out;
   }
 
   btnAddClient.addEventListener("click", () => {
@@ -1270,6 +1369,7 @@
         c.status = document.getElementById("cEstatus").value;
         c.assignedTo = document.getElementById("cAsignado").value.trim();
         c.notas = document.getElementById("cNotas").value.trim();
+        c.customFields = readCustomFieldsFromForm();
       }
       logActivity(`Edito el cliente "${name}"`);
     } else {
@@ -1284,6 +1384,7 @@
         notas: document.getElementById("cNotas").value.trim(),
         createdAt: Date.now(),
         stageHistory: [{ stage: document.getElementById("cEstatus").value, at: Date.now() }],
+        customFields: readCustomFieldsFromForm(),
       });
       logActivity(`Creo el cliente "${name}"`);
     }
@@ -1718,6 +1819,10 @@
       ${needsFinancing ? `<div class="ld-row"><span class="ld-label">Financiamiento</span><span class="ld-value">🏦 Si${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
       ${value > 0 ? `<div class="ld-row"><span class="ld-label">Valor en pipeline</span><span class="ld-value">${formatMoney(value)}</span></div>` : ""}
       <div class="ld-row"><span class="ld-label">Cotizaciones</span><span class="ld-value">${quoteCount}</span></div>
+      ${customFieldDefs
+        .filter((f) => c.customFields && c.customFields[f.id])
+        .map((f) => `<div class="ld-row"><span class="ld-label">${escapeHtml(f.label)}</span><span class="ld-value">${escapeHtml(c.customFields[f.id])}</span></div>`)
+        .join("")}
       ${c.callCount ? `<div class="ld-row"><span class="ld-label">Llamadas</span><span class="ld-value">${c.callCount} intento${c.callCount === 1 ? "" : "s"}${c.lastCallAt ? " · ultima: " + formatNoteDate(c.lastCallAt) : ""}</span></div>` : ""}
       <div class="ld-row">
         <span class="ld-label">Notas de perfil</span>
