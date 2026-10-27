@@ -127,6 +127,9 @@
   const pipelineSearch = document.getElementById("pipelineSearch");
   const pipelineDateFrom = document.getElementById("pipelineDateFrom");
   const pipelineDateTo = document.getElementById("pipelineDateTo");
+  const pipelineAssigneeFilter = document.getElementById("pipelineAssigneeFilter");
+  const pipelineMyLeadsBtn = document.getElementById("pipelineMyLeads");
+  let pipelineMyLeadsOnly = false;
   const clientsSortDateBtn = document.getElementById("clientsSortDate");
   const pipelineSortDateBtn = document.getElementById("pipelineSortDate");
   const clientsFilterToggle = document.getElementById("clientsFilterToggle");
@@ -1171,6 +1174,7 @@
     document.getElementById("cNegocio").value = c.negocio || "";
     document.getElementById("cCiudad").value = c.ciudad || "";
     document.getElementById("cEstatus").value = c.status || "Cold";
+    document.getElementById("cAsignado").value = c.assignedTo || "";
     document.getElementById("cNotas").value = c.notas || "";
     btnAddClient.textContent = "Guardar cambios";
     btnCancelEditClient.style.display = "inline-block";
@@ -1184,6 +1188,7 @@
     document.getElementById("cNegocio").value = "";
     document.getElementById("cCiudad").value = "";
     document.getElementById("cEstatus").value = "Cold";
+    document.getElementById("cAsignado").value = "";
     document.getElementById("cNotas").value = "";
     btnAddClient.textContent = "+ Agregar cliente";
     btnCancelEditClient.style.display = "none";
@@ -1211,6 +1216,33 @@
     );
   }
 
+  // Descarga todos los clientes visibles como CSV (respeta busqueda y fechas activas)
+  function csvEscape(v) {
+    const s = String(v == null ? "" : v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  function exportClientsCsv() {
+    const rows = clients;
+    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Asignado a", "Fuente", "Notas", "Fecha creacion"];
+    const lines = [header.join(",")];
+    rows.forEach((c) => {
+      lines.push(
+        [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""]
+          .map(csvEscape)
+          .join(",")
+      );
+    });
+    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tryla-clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   btnAddClient.addEventListener("click", () => {
     const name = document.getElementById("cNombre").value.trim();
     if (!name) {
@@ -1236,6 +1268,7 @@
         c.negocio = document.getElementById("cNegocio").value.trim();
         c.ciudad = document.getElementById("cCiudad").value.trim();
         c.status = document.getElementById("cEstatus").value;
+        c.assignedTo = document.getElementById("cAsignado").value.trim();
         c.notas = document.getElementById("cNotas").value.trim();
       }
       logActivity(`Edito el cliente "${name}"`);
@@ -1247,6 +1280,7 @@
         negocio: document.getElementById("cNegocio").value.trim(),
         ciudad: document.getElementById("cCiudad").value.trim(),
         status: document.getElementById("cEstatus").value,
+        assignedTo: document.getElementById("cAsignado").value.trim() || ((window.NovaCloud && window.NovaCloud.email !== "local" && window.NovaCloud.email) || ""),
         notas: document.getElementById("cNotas").value.trim(),
         createdAt: Date.now(),
       });
@@ -1344,6 +1378,14 @@
     return (parts.map((p) => p[0]).join("") || "?").toUpperCase();
   }
 
+  // Iniciales de 1-2 letras para el chip de "asignado a" -- a partir del correo
+  // (toma lo de antes de la @, separado por . o _)
+  function assigneeInitials(email) {
+    const local = (email || "").split("@")[0];
+    const parts = local.split(/[._-]+/).filter(Boolean).slice(0, 2);
+    return (parts.map((p) => p[0]).join("") || "?").toUpperCase();
+  }
+
   let dragSrcClientId = null;
   // Id del cliente que se acaba de mover, para animar solo esa tarjeta al
   // reconstruir el board (no todas las que ya estaban ahi)
@@ -1390,6 +1432,137 @@
     return noteLog.length
       ? noteLog.map((n) => `<div class="ld-note-entry"><div class="ld-note-date">${formatNoteDate(n.at)}</div><div class="ld-note-text">${escapeHtml(n.text)}</div></div>`).join("")
       : `<div style="font-size:12px; color:var(--text2);">Sin notas en el historial todavia</div>`;
+  }
+
+  // ---- Tareas y recordatorios ----
+  function addTask(c, text, dueAt) {
+    const trimmed = (text || "").trim();
+    if (!trimmed) return;
+    c.tasks = c.tasks || [];
+    c.tasks.push({ id: "t" + Date.now() + Math.random().toString(36).slice(2, 6), text: trimmed, dueAt: dueAt || null, done: false, createdAt: Date.now() });
+    persistClients();
+    logActivity(`Tarea para "${c.name}": ${trimmed.slice(0, 60)}${trimmed.length > 60 ? "..." : ""}`);
+  }
+  function toggleTask(c, taskId) {
+    const t = (c.tasks || []).find((x) => x.id === taskId);
+    if (!t) return;
+    t.done = !t.done;
+    t.completedAt = t.done ? Date.now() : null;
+    persistClients();
+  }
+  function deleteTask(c, taskId) {
+    c.tasks = (c.tasks || []).filter((x) => x.id !== taskId);
+    persistClients();
+  }
+  function openTasksOf(c) {
+    return (c.tasks || []).filter((t) => !t.done);
+  }
+  function taskDueLabel(dueAt) {
+    if (!dueAt) return { text: "Sin fecha", overdue: false, today: false };
+    const due = new Date(dueAt + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((due - today) / 86400000);
+    const dateStr = due.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+    if (diffDays < 0) return { text: `Vencida · ${dateStr}`, overdue: true, today: false };
+    if (diffDays === 0) return { text: `Hoy`, overdue: false, today: true };
+    if (diffDays === 1) return { text: `Manana`, overdue: false, today: false };
+    return { text: dateStr, overdue: false, today: false };
+  }
+  // Todas las tareas abiertas de todos los clientes, ordenadas por fecha limite
+  // (sin fecha al final; entre las con fecha, las mas vencidas primero)
+  function allOpenTasks() {
+    const out = [];
+    clients.forEach((c) => {
+      openTasksOf(c).forEach((t) => out.push({ client: c, task: t }));
+    });
+    out.sort((a, b) => {
+      if (!a.task.dueAt && !b.task.dueAt) return b.task.createdAt - a.task.createdAt;
+      if (!a.task.dueAt) return 1;
+      if (!b.task.dueAt) return -1;
+      return a.task.dueAt < b.task.dueAt ? -1 : a.task.dueAt > b.task.dueAt ? 1 : 0;
+    });
+    return out;
+  }
+  function taskListHtml(c) {
+    const tasks = (c.tasks || []).slice().sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (!a.dueAt && !b.dueAt) return b.createdAt - a.createdAt;
+      if (!a.dueAt) return 1;
+      if (!b.dueAt) return -1;
+      return a.dueAt < b.dueAt ? -1 : 1;
+    });
+    if (!tasks.length) return `<div style="font-size:12px; color:var(--text2);">Sin tareas todavia</div>`;
+    return tasks
+      .map((t) => {
+        const due = taskDueLabel(t.dueAt);
+        const dueClass = t.done ? "" : due.overdue ? "ld-task-overdue" : due.today ? "ld-task-today" : "";
+        return `<div class="ld-task-entry ${t.done ? "ld-task-done" : ""}" data-task-id="${t.id}">
+          <input type="checkbox" class="ld-task-check" ${t.done ? "checked" : ""}>
+          <span class="ld-task-text">${escapeHtml(t.text)}</span>
+          <span class="ld-task-due ${dueClass}">${t.dueAt ? escapeHtml(due.text) : ""}</span>
+          <button type="button" class="ld-task-del" title="Eliminar tarea">&times;</button>
+        </div>`;
+      })
+      .join("");
+  }
+
+  // ---- Tab global de Tareas: todas las tareas de todos los clientes ----
+  let tasksShowDone = false;
+  function renderTasksTab() {
+    const listEl = document.getElementById("tasksList");
+    if (!listEl) return;
+    const q = ((document.getElementById("tasksSearch") || {}).value || "").trim().toLowerCase();
+
+    let rows = [];
+    clients.forEach((c) => {
+      (c.tasks || []).forEach((t) => {
+        if (!tasksShowDone && t.done) return;
+        rows.push({ client: c, task: t });
+      });
+    });
+    if (q) {
+      rows = rows.filter(({ client, task }) => (client.name || "").toLowerCase().includes(q) || (task.text || "").toLowerCase().includes(q));
+    }
+    rows.sort((a, b) => {
+      if (a.task.done !== b.task.done) return a.task.done ? 1 : -1;
+      if (!a.task.dueAt && !b.task.dueAt) return b.task.createdAt - a.task.createdAt;
+      if (!a.task.dueAt) return 1;
+      if (!b.task.dueAt) return -1;
+      return a.task.dueAt < b.task.dueAt ? -1 : 1;
+    });
+
+    if (!rows.length) {
+      listEl.innerHTML = `<div style="font-size:13px; color:var(--text2); padding:16px 0;">${tasksShowDone ? "No hay tareas." : "No hay tareas pendientes. 🎉"}</div>`;
+      return;
+    }
+
+    listEl.innerHTML = rows
+      .map(({ client, task }) => {
+        const due = taskDueLabel(task.dueAt);
+        const dueClass = task.done ? "" : due.overdue ? "ld-task-overdue" : due.today ? "ld-task-today" : "";
+        return `<div class="task-row ${task.done ? "ld-task-done" : ""}" data-client-id="${client.id}" data-task-id="${task.id}">
+          <input type="checkbox" class="ld-task-check" ${task.done ? "checked" : ""}>
+          <span class="task-row-client">${escapeHtml(client.name)}</span>
+          <span class="ld-task-text">${escapeHtml(task.text)}</span>
+          <span class="ld-task-due ${dueClass}">${task.dueAt ? escapeHtml(due.text) : "Sin fecha"}</span>
+        </div>`;
+      })
+      .join("");
+
+    listEl.querySelectorAll(".task-row").forEach((row) => {
+      const clientId = row.dataset.clientId;
+      const taskId = row.dataset.taskId;
+      const c = clients.find((x) => x.id === clientId);
+      if (!c) return;
+      row.querySelector(".ld-task-check").addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleTask(c, taskId);
+        renderTasksTab();
+        renderPipeline();
+      });
+      row.querySelector(".task-row-client").addEventListener("click", () => openLeadDrawer(c));
+    });
   }
 
   // ---- Popover de resultado de llamada (sale al darle click a 📞) ----
@@ -1549,6 +1722,15 @@
         <textarea id="ldNotasField" placeholder="Notas generales de este cliente...">${escapeHtml(c.notas || "")}</textarea>
       </div>
       <div class="ld-row">
+        <span class="ld-label">Tareas y recordatorios</span>
+        <div class="ld-tasklist">${taskListHtml(c)}</div>
+        <div class="ld-task-form">
+          <input type="text" id="ldNewTaskText" placeholder="Ej. Llamar para seguimiento...">
+          <input type="date" id="ldNewTaskDate">
+          <button type="button" id="ldAddTask">+ Agregar tarea</button>
+        </div>
+      </div>
+      <div class="ld-row">
         <span class="ld-label">Historial de notas</span>
         <div class="ld-notelog">${noteLogHtml(c)}</div>
         <div class="ld-note-form">
@@ -1577,6 +1759,34 @@
       const logEl = body.querySelector(".ld-notelog");
       if (logEl) logEl.innerHTML = noteLogHtml(c);
       renderPipeline();
+    });
+
+    function refreshTaskList() {
+      const listEl = body.querySelector(".ld-tasklist");
+      if (listEl) listEl.innerHTML = taskListHtml(c);
+      renderPipeline();
+      if (document.getElementById("tab-tasks") && document.getElementById("tab-tasks").classList.contains("active")) renderTasksTab();
+    }
+    document.getElementById("ldAddTask").addEventListener("click", () => {
+      const textEl = document.getElementById("ldNewTaskText");
+      const dateEl = document.getElementById("ldNewTaskDate");
+      if (!textEl.value.trim()) return;
+      addTask(c, textEl.value, dateEl.value || null);
+      textEl.value = "";
+      dateEl.value = "";
+      refreshTaskList();
+    });
+    body.querySelector(".ld-tasklist").addEventListener("click", (e) => {
+      const entry = e.target.closest(".ld-task-entry");
+      if (!entry) return;
+      const taskId = entry.dataset.taskId;
+      if (e.target.classList.contains("ld-task-check")) {
+        toggleTask(c, taskId);
+        refreshTaskList();
+      } else if (e.target.classList.contains("ld-task-del")) {
+        deleteTask(c, taskId);
+        refreshTaskList();
+      }
     });
 
     body.querySelector(".ld-call").addEventListener("click", (e) => {
@@ -1633,6 +1843,7 @@
       <div class="pc-top">
         <span class="pc-avatar">${escapeHtml(clientInitials(c.name))}</span>
         <span class="pc-name">${escapeHtml(c.name)}</span>
+        ${c.assignedTo ? `<span class="pc-assignee" title="Asignado a ${escapeHtml(c.assignedTo)}">${escapeHtml(assigneeInitials(c.assignedTo))}</span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
@@ -1648,6 +1859,12 @@
           ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>`
           : `<button type="button" class="pc-call pc-call-logonly" title="Registrar llamada">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</button>`}
         <button type="button" class="pc-note-btn" title="Agregar nota">📝${c.noteLog && c.noteLog.length ? ` <span class="pc-note-count">${c.noteLog.length}</span>` : ""}</button>
+        ${(() => {
+          const open = openTasksOf(c);
+          if (!open.length) return "";
+          const hasOverdue = open.some((t) => t.dueAt && taskDueLabel(t.dueAt).overdue);
+          return `<button type="button" class="pc-task-btn${hasOverdue ? " pc-task-overdue" : ""}" title="${open.length} tarea${open.length === 1 ? "" : "s"} pendiente${open.length === 1 ? "" : "s"}">✅ <span class="pc-task-count">${open.length}</span></button>`;
+        })()}
         <button type="button" class="pc-finance-toggle" title="Marcar/quitar que necesita financiamiento">🏦</button>
       </div>
       <div class="pc-note-form" style="display:none;">
@@ -1726,6 +1943,14 @@
       });
     }
 
+    const taskBtn = card.querySelector(".pc-task-btn");
+    if (taskBtn) {
+      taskBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openLeadDrawer(c);
+      });
+    }
+
     const noteBtn = card.querySelector(".pc-note-btn");
     const noteForm = card.querySelector(".pc-note-form");
     noteBtn.addEventListener("click", (e) => {
@@ -1784,10 +2009,23 @@
     const q = (pipelineSearch.value || "").trim().toLowerCase();
     const fromStr = pipelineDateFrom.value;
     const toStr = pipelineDateTo.value;
+    const assignee = pipelineAssigneeFilter ? pipelineAssigneeFilter.value : "";
+    const myEmail = (window.NovaCloud && window.NovaCloud.email !== "local" && window.NovaCloud.email) || "";
     return clients.filter((c) => {
       const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
-      return matchesSearch && clientInDateRange(c, fromStr, toStr);
+      const matchesAssignee = !assignee || c.assignedTo === assignee;
+      const matchesMine = !pipelineMyLeadsOnly || (myEmail && c.assignedTo === myEmail);
+      return matchesSearch && clientInDateRange(c, fromStr, toStr) && matchesAssignee && matchesMine;
     });
+  }
+
+  // Llena el <select> de "Asignado a" con los correos que ya aparecen en los clientes
+  function renderAssigneeFilterOptions() {
+    if (!pipelineAssigneeFilter) return;
+    const current = pipelineAssigneeFilter.value;
+    const assignees = Array.from(new Set(clients.map((c) => (c.assignedTo || "").trim()).filter(Boolean))).sort();
+    pipelineAssigneeFilter.innerHTML = '<option value="">Todos</option>' + assignees.map((a) => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join("");
+    if (assignees.includes(current)) pipelineAssigneeFilter.value = current;
   }
 
   // Filtros por columna de la vista de lista (no aplican al tablero: ahi las
@@ -1811,6 +2049,7 @@
   function renderPipeline() {
     const board = document.getElementById("pipelineBoard");
     if (!board) return;
+    renderAssigneeFilterOptions();
     const filtered = filterPipelineClients();
 
     board.innerHTML = "";
@@ -2860,6 +3099,7 @@
 
     if (name === "dashboard") renderDashboard();
     if (name === "pipeline") renderPipeline();
+    if (name === "tasks") renderTasksTab();
     if (name === "intel") {
       requestAnimationFrame(() => {
         if (window.TrylaLocationIntel) window.TrylaLocationIntel.invalidateMap(document.getElementById("liMap"));
@@ -2992,6 +3232,8 @@
     clientsDateTo.value = "";
     renderClientsTable();
   });
+  const clientsExportCsvBtn = document.getElementById("clientsExportCsv");
+  if (clientsExportCsvBtn) clientsExportCsvBtn.addEventListener("click", exportClientsCsv);
   if (clientsSortDateBtn) {
     clientsSortDateBtn.addEventListener("click", () => {
       clientsDateSort = clientsDateSort === "desc" ? "asc" : "desc";
@@ -3001,6 +3243,25 @@
   pipelineSearch.addEventListener("input", renderPipeline);
   pipelineDateFrom.addEventListener("change", renderPipeline);
   pipelineDateTo.addEventListener("change", renderPipeline);
+  if (pipelineAssigneeFilter) pipelineAssigneeFilter.addEventListener("change", renderPipeline);
+  const tasksSearchEl = document.getElementById("tasksSearch");
+  const tasksShowDoneBtn = document.getElementById("tasksShowDone");
+  if (tasksSearchEl) tasksSearchEl.addEventListener("input", renderTasksTab);
+  if (tasksShowDoneBtn) {
+    tasksShowDoneBtn.addEventListener("click", () => {
+      tasksShowDone = !tasksShowDone;
+      tasksShowDoneBtn.classList.toggle("active", tasksShowDone);
+      tasksShowDoneBtn.textContent = tasksShowDone ? "Ocultar completadas" : "Ver completadas";
+      renderTasksTab();
+    });
+  }
+  if (pipelineMyLeadsBtn) {
+    pipelineMyLeadsBtn.addEventListener("click", () => {
+      pipelineMyLeadsOnly = !pipelineMyLeadsOnly;
+      pipelineMyLeadsBtn.classList.toggle("active", pipelineMyLeadsOnly);
+      renderPipeline();
+    });
+  }
   document.getElementById("pipelineDateClear").addEventListener("click", () => {
     pipelineDateFrom.value = "";
     pipelineDateTo.value = "";
