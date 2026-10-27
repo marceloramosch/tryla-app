@@ -326,6 +326,13 @@
   .funnel-bar-bg{ flex:1; height:16px; background:var(--light); border-radius:8px; overflow:hidden; }
   .funnel-bar{ height:100%; background:var(--blue); border-radius:8px; min-width:2px; transition:width .25s ease; }
   .funnel-pct{ width:92px; text-align:right; font-size:12.5px; color:var(--text2); flex-shrink:0; }
+  .cf-manager-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:4px; }
+  .cf-manager-list:empty{ margin-bottom:0; }
+  .cf-manager-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--light); border-radius:8px; font-size:13px; }
+  .cf-manager-row .cf-label{ font-weight:700; flex:1; }
+  .cf-manager-row .cf-type{ color:var(--text2); font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; }
+  .cf-manager-row .cf-del{ background:none; border:0; color:#DC2626; cursor:pointer; font-size:12.5px; font-weight:700; padding:2px 6px; }
+  .cf-manager-row .cf-del:hover{ text-decoration:underline; }
 
   /* ===== CRM / quotes tables ===== */
   table.crm{ width:100%; border-collapse:collapse; }
@@ -1089,10 +1096,31 @@
         </div>
         <div class="field"><label>Asignado a</label><input id="cAsignado" type="text" placeholder="correo del vendedor"></div>
       </div>
+      <div class="field-row" id="newClientCustomFields"></div>
       <div class="field"><label>Notas</label><textarea id="cNotas" rows="2" placeholder="Notas sobre el cliente, tamano de interes, etc."></textarea></div>
       <div class="actions">
         <button class="primary" id="btnAddClient" type="button">+ Agregar cliente</button>
         <button id="btnCancelEditClient" type="button" style="display:none;">Cancelar edicion</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Campos personalizados</h2>
+      <div class="hint">Agrega campos extra que necesites guardar por cliente, ej. "Presupuesto estimado" o "Tamano de trailer".</div>
+      <div id="customFieldsManagerList" class="cf-manager-list"></div>
+      <div class="field-row">
+        <div class="field" style="flex:2;"><label>Nombre del campo</label><input id="cfNewLabel" type="text" placeholder="Ej. Presupuesto estimado"></div>
+        <div class="field" style="max-width:150px;">
+          <label>Tipo</label>
+          <select id="cfNewType">
+            <option value="text">Texto</option>
+            <option value="number">Numero</option>
+            <option value="date">Fecha</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:170px; align-self:flex-end;">
+          <button id="cfAddBtn" type="button">+ Agregar campo</button>
+        </div>
       </div>
     </div>
 
