@@ -1333,6 +1333,96 @@
     URL.revokeObjectURL(url);
   }
 
+  // Parser CSV minimo (RFC4180: comillas, comas y saltos de linea dentro de campos)
+  function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let inQuotes = false;
+    let i = 0;
+    const len = text.length;
+    while (i < len) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += ch; i++; continue;
+      }
+      if (ch === '"') { inQuotes = true; i++; continue; }
+      if (ch === ",") { row.push(field); field = ""; i++; continue; }
+      if (ch === "\r") { i++; continue; }
+      if (ch === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+      field += ch; i++;
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter((r) => !(r.length === 1 && r[0].trim() === ""));
+  }
+
+  // Importa clientes desde un CSV (mismo formato que exportClientsCsv).
+  // Omite filas cuyo nombre ya coincida con un cliente existente (ver findSimilarClient).
+  function importClientsCsv(text) {
+    const rows = parseCsv(text.replace(/^﻿/, ""));
+    if (!rows.length) {
+      alert("El archivo esta vacio.");
+      return;
+    }
+    const header = rows[0].map((h) => h.trim());
+    const idx = (label) => header.indexOf(label);
+    const iName = idx("Nombre");
+    if (iName === -1) {
+      alert("El CSV debe tener una columna 'Nombre' (usa el mismo formato que 'Exportar CSV').");
+      return;
+    }
+    const iContacto = idx("Contacto");
+    const iNegocio = idx("Negocio");
+    const iCiudad = idx("Ciudad");
+    const iEstatus = idx("Estatus");
+    const iAsignado = idx("Asignado a");
+    const iFuente = idx("Fuente");
+    const iNotas = idx("Notas");
+    const customIdx = customFieldDefs.map((f) => ({ f, idx: idx(f.label) }));
+
+    let created = 0;
+    let skipped = 0;
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      const name = (row[iName] || "").trim();
+      if (!name) continue;
+      if (findSimilarClient(name)) {
+        skipped++;
+        continue;
+      }
+      const status = iEstatus !== -1 && PIPELINE_STAGES.indexOf(row[iEstatus]) !== -1 ? row[iEstatus] : "Cold";
+      const customFields = {};
+      customIdx.forEach(({ f, idx }) => {
+        if (idx !== -1 && row[idx]) customFields[f.id] = row[idx].trim();
+      });
+      clients.push({
+        id: "cimp" + Date.now() + "_" + r,
+        name,
+        contacto: iContacto !== -1 ? (row[iContacto] || "").trim() : "",
+        negocio: iNegocio !== -1 ? (row[iNegocio] || "").trim() : "",
+        ciudad: iCiudad !== -1 ? (row[iCiudad] || "").trim() : "",
+        status,
+        assignedTo: iAsignado !== -1 ? (row[iAsignado] || "").trim() : "",
+        fuente: iFuente !== -1 ? (row[iFuente] || "").trim() : "",
+        notas: iNotas !== -1 ? (row[iNotas] || "").trim() : "",
+        createdAt: Date.now(),
+        stageHistory: [{ stage: status, at: Date.now() }],
+        customFields,
+      });
+      created++;
+    }
+    persistClients();
+    renderClientsTable();
+    renderClientSelect();
+    renderPipeline();
+    logActivity(`Importo ${created} cliente(s) desde CSV${skipped ? ` (${skipped} omitidos por duplicado)` : ""}`);
+    alert(`Importacion completa.\n\nCreados: ${created}\nOmitidos (ya existian): ${skipped}`);
+  }
+
   function readCustomFieldsFromForm() {
     const out = {};
     customFieldDefs.forEach((f) => {
@@ -3440,6 +3530,21 @@
   });
   const clientsExportCsvBtn = document.getElementById("clientsExportCsv");
   if (clientsExportCsvBtn) clientsExportCsvBtn.addEventListener("click", exportClientsCsv);
+  const clientsImportCsvBtn = document.getElementById("clientsImportCsv");
+  const clientsImportCsvFile = document.getElementById("clientsImportCsvFile");
+  if (clientsImportCsvBtn && clientsImportCsvFile) {
+    clientsImportCsvBtn.addEventListener("click", () => clientsImportCsvFile.click());
+    clientsImportCsvFile.addEventListener("change", () => {
+      const file = clientsImportCsvFile.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        importClientsCsv(String(reader.result));
+        clientsImportCsvFile.value = "";
+      };
+      reader.readAsText(file);
+    });
+  }
   if (clientsSortDateBtn) {
     clientsSortDateBtn.addEventListener("click", () => {
       clientsDateSort = clientsDateSort === "desc" ? "asc" : "desc";
