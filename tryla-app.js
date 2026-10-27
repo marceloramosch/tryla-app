@@ -1529,7 +1529,7 @@
     const note = (c.noteLog || [])[0];
     if (note && note.at > at) {
       at = note.at;
-      label = "Nota";
+      label = note.type === "email" ? "Correo" : "Nota";
     }
     if (c.movedAt && c.movedAt > at) {
       at = c.movedAt;
@@ -1617,13 +1617,32 @@
     persistClients();
     logActivity(`Nota en "${c.name}": ${trimmed.slice(0, 60)}${trimmed.length > 60 ? "..." : ""}`);
   }
+
+  // ---- Actividad de correo (bitacora manual -- no hay API de envio conectada) ----
+  function logEmailActivity(c, subject) {
+    c.emailCount = (c.emailCount || 0) + 1;
+    c.lastEmailAt = Date.now();
+    c.noteLog = c.noteLog || [];
+    const trimmedSubject = (subject || "").trim();
+    c.noteLog.unshift({ text: trimmedSubject ? `Correo: ${trimmedSubject}` : "Correo enviado", at: Date.now(), type: "email" });
+    persistClients();
+    logActivity(`Registro un correo a "${c.name}"${trimmedSubject ? ": " + trimmedSubject : ""}`);
+  }
+
   function formatNoteDate(ts) {
     return new Date(ts).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" });
   }
   function noteLogHtml(c) {
     const noteLog = c.noteLog || [];
     return noteLog.length
-      ? noteLog.map((n) => `<div class="ld-note-entry"><div class="ld-note-date">${formatNoteDate(n.at)}</div><div class="ld-note-text">${escapeHtml(n.text)}</div></div>`).join("")
+      ? noteLog
+          .map(
+            (n) => `<div class="ld-note-entry">
+        <div class="ld-note-date">${n.type === "email" ? "✉️ " : "📝 "}${formatNoteDate(n.at)}</div>
+        <div class="ld-note-text">${escapeHtml(n.text)}</div>
+      </div>`
+          )
+          .join("")
       : `<div style="font-size:12px; color:var(--text2);">Sin notas en el historial todavia</div>`;
   }
 
@@ -1914,6 +1933,7 @@
         .map((f) => `<div class="ld-row"><span class="ld-label">${escapeHtml(f.label)}</span><span class="ld-value">${escapeHtml(c.customFields[f.id])}</span></div>`)
         .join("")}
       ${c.callCount ? `<div class="ld-row"><span class="ld-label">Llamadas</span><span class="ld-value">${c.callCount} intento${c.callCount === 1 ? "" : "s"}${c.lastCallAt ? " · ultima: " + formatNoteDate(c.lastCallAt) : ""}</span></div>` : ""}
+      ${c.emailCount ? `<div class="ld-row"><span class="ld-label">Correos</span><span class="ld-value">${c.emailCount} registrado${c.emailCount === 1 ? "" : "s"}${c.lastEmailAt ? " · ultimo: " + formatNoteDate(c.lastEmailAt) : ""}</span></div>` : ""}
       <div class="ld-row">
         <span class="ld-label">Notas de perfil</span>
         <textarea id="ldNotasField" placeholder="Notas generales de este cliente...">${escapeHtml(c.notas || "")}</textarea>
@@ -1937,6 +1957,7 @@
       </div>
       <div class="ld-actions">
         ${href ? `<a href="${href}" class="ld-call">📞 Llamar</a>` : `<button type="button" class="ld-call ld-call-logonly">📞 Registrar llamada</button>`}
+        <button type="button" class="ld-email">✉️ Registrar correo</button>
         <button type="button" class="ld-quote">🧾 Hacer cotizacion</button>
         <button type="button" class="ld-edit">Editar cliente</button>
       </div>
@@ -1990,6 +2011,14 @@
       if (!href) e.preventDefault();
       logCallAttempt(c);
       showCallOutcomePopover(body.querySelector(".ld-call"), c);
+    });
+    body.querySelector(".ld-email").addEventListener("click", () => {
+      const subject = prompt(`Asunto del correo enviado a "${c.name}" (opcional):`, "");
+      if (subject === null) return;
+      logEmailActivity(c, subject);
+      const logEl = body.querySelector(".ld-notelog");
+      if (logEl) logEl.innerHTML = noteLogHtml(c);
+      renderPipeline();
     });
     body.querySelector(".ld-quote").addEventListener("click", () => {
       closeLeadDrawer();
@@ -2056,6 +2085,7 @@
           ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>`
           : `<button type="button" class="pc-call pc-call-logonly" title="Registrar llamada">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</button>`}
         <button type="button" class="pc-note-btn" title="Agregar nota">📝${c.noteLog && c.noteLog.length ? ` <span class="pc-note-count">${c.noteLog.length}</span>` : ""}</button>
+        <button type="button" class="pc-email-btn" title="Registrar correo">✉️${c.emailCount ? ` <span class="pc-email-count">${c.emailCount}</span>` : ""}</button>
         ${(() => {
           const open = openTasksOf(c);
           if (!open.length) return "";
@@ -2164,6 +2194,17 @@
       addNote(c, ta.value);
       renderPipeline();
     });
+
+    const emailBtn = card.querySelector(".pc-email-btn");
+    if (emailBtn) {
+      emailBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const subject = prompt(`Asunto del correo enviado a "${c.name}" (opcional):`, "");
+        if (subject === null) return;
+        logEmailActivity(c, subject);
+        renderPipeline();
+      });
+    }
 
     card.addEventListener("dragstart", (e) => {
       dragSrcClientId = c.id;
