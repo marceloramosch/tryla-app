@@ -61,13 +61,13 @@ const EQUIPMENT_I18N = {
   "Fregadero 2 tarjas + lavamanos": "2-compartment sink + handwash",
   "Fregadero 3 tarjas + lavamanos": "3-compartment sink + handwash",
   "Tanque aguas residuales con bomba automatica": "Wastewater tank with automatic pump",
-  "Tanque aguas residuales 30 gal con bomba automatica": "30 gal wastewater tank with automatic pump",
-  "Tanque aguas residuales 35 gal con bomba automatica": "35 gal wastewater tank with automatic pump",
-  "Tanque aguas residuales 40 gal con bomba automatica": "40 gal wastewater tank with automatic pump",
+  "Tanque de aguas residuales 30/55 gal con bomba automatica": "30/55 gal wastewater tank with automatic pump",
   "Calentador de agua electrico 110V": "110V electric water heater",
 
   // ===== Estructura y sistemas =====
   "Aislamiento en paredes": "Wall insulation",
+  "Campana + Extractor": "Hood + Extractor",
+  "Sistema contra incendios": "Fire Suppression System",
   "Luces LED interiores": "Interior LED lights",
   "Unidad AC y calefaccion 110V": "110V AC & heating unit",
   "Gabinetes superiores e inferiores acero inoxidable": "Upper & lower stainless steel cabinets",
@@ -89,8 +89,9 @@ const EQUIPMENT_I18N = {
 
   // ===== Extras / rotulacion =====
   "Wrapping / Rotulacion completa": "Full wrap / signage",
-  "Rotulacion completa": "Full signage",
+  "Wrapping + Design": "Wrapping + Design",
   "Rotulacion parcial": "Partial signage",
+  "Website": "Website",
 
   // ===== Specs varios (trailers.js) =====
   "3 ejes con frenos, capacidad 3,500 lb cada uno": "3 axles with brakes, 3,500 lb capacity each",
