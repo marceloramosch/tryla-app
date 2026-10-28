@@ -47,6 +47,7 @@ const EQUIPMENT_I18N = {
   "Mesa de vapor 4 espacios con tapas": "4-well steam table with lids",
   "Mesa de vapor 6 espacios con tapas": "6-well steam table with lids",
   "Mesa de vapor 8 espacios con tapas": "8-well steam table with lids",
+  "Warmer": "Warmer",
 
   // ===== Refrigeracion / Hielo =====
   "Refrigerador comercial 1 puerta": "1-door commercial refrigerator",
