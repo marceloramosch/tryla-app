@@ -116,14 +116,17 @@ const TRAILER_SIZES = [
     axles: 2,
     axleCapacity: 3500,
     porch: 0,
-    serviceWindows: 1,
+    serviceWindows: 2,
     equipment: {
       back: [
         { name: "Plancha 36\" acero inoxidable", ft: 3, hood: true },
-        { name: "Freidora doble canasta 40 lb", ft: 2, hood: true },
-        { name: "Estufa 2 quemadores", ft: 1.5, hood: true },
-        { name: "Warmer", ft: 1.5, hood: true },
+        { name: "Parrilla 24\" acero inoxidable", ft: 2, hood: true },
+        { name: "Freidora doble canasta 50 lb", ft: 2, hood: true },
+        { name: "Estufa 4 quemadores con horno", ft: 2.5, hood: true },
         { name: "Fregadero 3 tarjas + lavamanos", ft: 3 },
+        { name: "Refrigerador comercial 1 puerta x2", ft: 4 },
+        { name: "Congelador 1 puerta", ft: 2 },
+        { name: "Mesa fria (prep table)", ft: 2.5 },
       ],
     },
     specs: [
