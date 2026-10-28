@@ -1,44 +1,41 @@
 // ============================================================
 //  ingest-lead
-//  Recibe leads nuevos del Google Sheet de captura (columna STATUS
-//  ya usa Cold/Warm/HOT/Finance/Cash/Closed, igual que el Pipeline)
-//  y los agrega a novaClients en nova_store, para que aparezcan
-//  directo en la pestaña Pipeline del CRM sin captura manual.
+//  Recibe leads nuevos del Google Sheet de captura y los manda a
+//  Cimiento, que es donde vive el pipeline de ventas desde
+//  octubre 2026. Entran en «Interesado»: la columna STATUS del
+//  Sheet ya no decide etapa, porque ahi arranca la automatizacion
+//  de contacto.
 //
 //  Quien llama esto es un Apps Script del Sheet, no un usuario
-//  logueado del CRM -- por eso se protege con un secret compartido
-//  en vez de JWT de Supabase (como si usan census-lookup/sync-places).
+//  logueado -- por eso se protege con un secret compartido en vez
+//  de JWT de Supabase (como si usan census-lookup/sync-places).
 //
-//  Una vez que un lead ya entro al CRM (mismo rowId), no se vuelve
-//  a tocar -- el Sheet solo alimenta leads nuevos, el pipeline manda
-//  despues de eso (si alguien arrastra la tarjeta a otra etapa en el
-//  CRM, un resync del Sheet no la regresa).
+//  Un lead que ya entro (mismo rowId) no se vuelve a crear; si la
+//  persona ya estaba en Cimiento por telefono, se le suma una nota.
 //
 //  Deploy:  Dashboard -> Edge Functions -> ingest-lead -> Via Editor
-//  Secret nuevo requerido: INGEST_LEAD_SECRET (cualquier cadena larga
-//  que tu elijas -- el mismo valor va tambien en el Apps Script del
-//  Sheet). Se configura en Edge Functions -> Secrets.
+//  Secrets (Edge Functions -> Secrets):
+//    INGEST_LEAD_SECRET    el mismo valor que tiene el Apps Script
+//    CIMIENTO_LEADS_TOKEN  el mismo valor que TRYLA_LEADS_TOKEN en Cimiento
+//    CIMIENTO_LEADS_URL    opcional; por omision la de produccion
 //
 //  Body esperado:
 //  { secret, leads: [{ rowId, nombre, ciudad, phone, status, notas, fuente }] }
 //  Responde { inserted: [rowId,...], skipped: [rowId,...] }
+//  inserted = quedaron en Cimiento (nuevos, o nota a alguien que ya estaba)
+//  skipped  = ya habian entrado antes o les falta nombre/telefono
 // ============================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const sb = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-);
-
 const INGEST_LEAD_SECRET = Deno.env.get("INGEST_LEAD_SECRET") ?? "";
-
-// Debe quedar igual a PIPELINE_STAGES en tryla-app.js
-const VALID_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
+const CIMIENTO_LEADS_URL =
+  Deno.env.get("CIMIENTO_LEADS_URL") ??
+  "https://cimiento-mx-construccion.lovable.app/api/public/tryla/leads";
+const CIMIENTO_LEADS_TOKEN = Deno.env.get("CIMIENTO_LEADS_TOKEN") ?? "";
 
 type IncomingLead = {
   rowId?: string | number;
@@ -50,24 +47,15 @@ type IncomingLead = {
   fuente?: string;
 };
 
-type Client = {
-  id: string;
-  name: string;
-  contacto: string;
-  negocio: string;
-  ciudad: string;
-  status: string;
-  notas: string;
-  fuente?: string;
-  createdAt?: number;
-};
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     if (!INGEST_LEAD_SECRET) {
       return json({ error: "Falta configurar el secret INGEST_LEAD_SECRET en Edge Functions." }, 500);
+    }
+    if (!CIMIENTO_LEADS_TOKEN) {
+      return json({ error: "Falta configurar el secret CIMIENTO_LEADS_TOKEN en Edge Functions." }, 500);
     }
 
     const body = await req.json();
@@ -78,52 +66,41 @@ Deno.serve(async (req) => {
     const incoming: IncomingLead[] = Array.isArray(body.leads) ? body.leads : [];
     if (!incoming.length) return json({ inserted: [], skipped: [] });
 
-    const { data: row, error: readError } = await sb
-      .from("nova_store")
-      .select("value")
-      .eq("key", "novaClients")
-      .maybeSingle();
-    if (readError) throw readError;
+    const skipped: (string | number)[] = [];
+    const conRow = incoming.filter((lead) => {
+      if (lead.rowId === undefined || lead.rowId === null || !lead.nombre) {
+        skipped.push(lead.rowId ?? "?");
+        return false;
+      }
+      return true;
+    });
 
-    const clients: Client[] = Array.isArray(row?.value) ? (row!.value as Client[]) : [];
-    const existingIds = new Set(clients.map((c) => c.id));
+    // Mismo prefijo que usaba el CRM viejo: un lead del Sheet que ya se
+    // importo a Cimiento con ese id no se duplica.
+    const refDe = (lead: IncomingLead) => "sheet-" + lead.rowId;
+    const res = await fetch(CIMIENTO_LEADS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + CIMIENTO_LEADS_TOKEN },
+      body: JSON.stringify({
+        leads: conRow.map((lead) => ({
+          ref: refDe(lead),
+          canal: "sheet",
+          nombre: lead.nombre,
+          phone: lead.phone,
+          ciudad: lead.ciudad,
+          notas: lead.notas,
+          fuente: lead.fuente,
+        })),
+      }),
+    });
+    if (!res.ok) throw new Error("Cimiento respondio " + res.status + ": " + (await res.text()).slice(0, 200));
+    const respuesta = await res.json();
 
     const inserted: (string | number)[] = [];
-    const skipped: (string | number)[] = [];
-
-    for (const lead of incoming) {
-      const rowId = lead.rowId;
-      if (rowId === undefined || rowId === null || !lead.nombre) {
-        skipped.push(rowId ?? "?");
-        continue;
-      }
-      const id = "sheet-" + rowId;
-      if (existingIds.has(id)) {
-        skipped.push(rowId);
-        continue;
-      }
-
-      const status = VALID_STAGES.includes(lead.status || "") ? (lead.status as string) : "Cold";
-      clients.push({
-        id,
-        name: String(lead.nombre).trim(),
-        contacto: (lead.phone || "").trim(),
-        negocio: "",
-        ciudad: (lead.ciudad || "").trim(),
-        status,
-        notas: (lead.notas || "").trim(),
-        fuente: (lead.fuente || "").trim(),
-        createdAt: Date.now(),
-      });
-      existingIds.add(id);
-      inserted.push(rowId);
-    }
-
-    if (inserted.length) {
-      const { error: writeError } = await sb
-        .from("nova_store")
-        .upsert({ key: "novaClients", value: clients, updated_at: new Date().toISOString() });
-      if (writeError) throw writeError;
+    for (const lead of conRow) {
+      const estado = respuesta.porRef?.[refDe(lead)]?.estado;
+      if (estado === "nuevo" || estado === "ya_estaba") inserted.push(lead.rowId!);
+      else skipped.push(lead.rowId!);
     }
 
     return json({ inserted, skipped });
