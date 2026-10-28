@@ -42,6 +42,7 @@ const COMPONENT_CATALOG = [
       { name: "Mesa de vapor 4 espacios con tapas", price: 0 },
       { name: "Mesa de vapor 6 espacios con tapas", price: 0 },
       { name: "Mesa de vapor 8 espacios con tapas", price: 0 },
+      { name: "Warmer", price: 0 },
     ],
   },
   {
