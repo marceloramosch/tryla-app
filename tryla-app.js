@@ -2225,11 +2225,8 @@
       </div>
       <div class="pc-foot">
         <span>${quoteCount} cotizaci${quoteCount === 1 ? "on" : "ones"}</span>
-        ${href
-          ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>`
-          : `<button type="button" class="pc-call pc-call-logonly" title="Registrar llamada">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</button>`}
+        ${href ? `<a href="${href}" class="pc-call" title="Llamar">📞${c.callCount ? ` <span class="pc-call-count">${c.callCount}x</span>` : ""}</a>` : ""}
         <button type="button" class="pc-note-btn" title="Agregar nota">📝${c.noteLog && c.noteLog.length ? ` <span class="pc-note-count">${c.noteLog.length}</span>` : ""}</button>
-        <button type="button" class="pc-email-btn" title="Registrar correo">✉️${c.emailCount ? ` <span class="pc-email-count">${c.emailCount}</span>` : ""}</button>
         ${(() => {
           const open = openTasksOf(c);
           if (!open.length) return "";
@@ -2339,16 +2336,6 @@
       renderPipeline();
     });
 
-    const emailBtn = card.querySelector(".pc-email-btn");
-    if (emailBtn) {
-      emailBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const subject = prompt(`Asunto del correo enviado a "${c.name}" (opcional):`, "");
-        if (subject === null) return;
-        logEmailActivity(c, subject);
-        renderPipeline();
-      });
-    }
 
     card.addEventListener("dragstart", (e) => {
       dragSrcClientId = c.id;
