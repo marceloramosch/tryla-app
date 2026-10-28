@@ -248,6 +248,11 @@
     width: 90px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; text-align:right;
     background:var(--panel); color:var(--text);
   }
+  table.builder input.line-qty{
+    width: 56px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; text-align:right;
+    background:var(--panel); color:var(--text);
+  }
+  table.builder td.line-subtotal{ font-weight:700; white-space:nowrap; }
   table.builder input.line-desc{ width:100%; border:1px solid transparent; padding:4px 6px; border-radius:4px; background:var(--panel); color:var(--text); }
   table.builder input.line-desc:focus{ border-color: var(--border); }
   table.builder button.remove{
@@ -889,7 +894,7 @@
     .field-row .field{ min-width:130px; flex:1 1 130px; }
     /* Evita que Safari en iPhone haga zoom automatico al enfocar un input */
     .field input, .field textarea, .field select,
-    .catalog-item input.price, table.builder input.line-price, table.builder input.line-desc,
+    .catalog-item input.price, table.builder input.line-price, table.builder input.line-qty, table.builder input.line-desc,
     table.crm select{ font-size:16px; }
 
     /* Barra de pestanas: una sola fila con scroll horizontal, como un tab bar nativo.
@@ -1060,7 +1065,7 @@
           <div class="table-scroll">
             <table class="builder">
               <thead>
-                <tr><th class="drag"></th><th>Descripcion</th><th class="num">Precio</th><th></th></tr>
+                <tr><th class="drag"></th><th>Descripcion</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th><th></th></tr>
               </thead>
               <tbody id="lineItems"></tbody>
             </table>
