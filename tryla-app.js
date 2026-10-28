@@ -464,6 +464,7 @@
     addLineItem(trEquip(`8' x ${size.length}' Food Trailer - Unidad base`), size.price);
     size.specs.forEach((s) => addLineItem(trEquip(s), 0));
     size.equipment.back.forEach((i) => addLineItem(trEquip(i.name), 0));
+    addLineItem(trEquip("Sistema contra incendios"), 3500);
     sizePresetEl.value = "";
   });
 

@@ -72,7 +72,7 @@ const COMPONENT_CATALOG = [
       { name: "Gabinetes superiores e inferiores acero inoxidable", price: 0 },
       { name: "Mostrador de trabajo acero inoxidable", price: 0 },
       { name: "Mostrador exterior plegable acero inoxidable", price: 0 },
-      { name: "Fire Suppression System (sistema contra incendios)", price: 3000 },
+      { name: "Sistema contra incendios", price: 3500 },
       { name: "Porch trasero con ventanas y doble puerta", price: 0 },
       { name: "Eje adicional con frenos, 3,500 lb", price: 0 },
     ],
