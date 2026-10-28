@@ -330,7 +330,7 @@
 
   // Totales derivados de un objeto cotizacion (no del formulario del Cotizador)
   function quoteTotals(q) {
-    const subtotal = (q.lineItems || []).reduce((s, l) => s + (parseFloat(l.price) || 0), 0);
+    const subtotal = (q.lineItems || []).reduce((s, l) => s + (parseFloat(l.price) || 0) * (parseFloat(l.qty) || 1), 0);
     const deposito = parseFloat(q.deposito) || 0;
     return { subtotal, deposito, saldo: subtotal - deposito };
   }
@@ -469,8 +469,8 @@
   });
 
   // ===== Lineas de la cotizacion =====
-  function addLineItem(desc, price) {
-    lineItems.push({ desc, price });
+  function addLineItem(desc, price, qty) {
+    lineItems.push({ desc, price, qty: qty || 1 });
     renderLineItems();
   }
 
@@ -523,6 +523,21 @@
       });
       tdDesc.appendChild(descInput);
 
+      const tdQty = document.createElement("td");
+      tdQty.className = "num";
+      const qtyInput = document.createElement("input");
+      qtyInput.type = "number";
+      qtyInput.className = "line-qty";
+      qtyInput.min = "1";
+      qtyInput.step = "1";
+      qtyInput.value = line.qty || 1;
+      qtyInput.addEventListener("input", () => {
+        lineItems[idx].qty = parseFloat(qtyInput.value) || 1;
+        tdSubtotal.textContent = formatMoney((parseFloat(lineItems[idx].price) || 0) * (parseFloat(lineItems[idx].qty) || 1));
+        updateTotals();
+      });
+      tdQty.appendChild(qtyInput);
+
       const tdPrice = document.createElement("td");
       tdPrice.className = "num";
       const priceInput = document.createElement("input");
@@ -533,9 +548,14 @@
       priceInput.value = line.price;
       priceInput.addEventListener("input", () => {
         lineItems[idx].price = parseFloat(priceInput.value) || 0;
+        tdSubtotal.textContent = formatMoney((parseFloat(lineItems[idx].price) || 0) * (parseFloat(lineItems[idx].qty) || 1));
         updateTotals();
       });
       tdPrice.appendChild(priceInput);
+
+      const tdSubtotal = document.createElement("td");
+      tdSubtotal.className = "num line-subtotal";
+      tdSubtotal.textContent = formatMoney((parseFloat(line.price) || 0) * (parseFloat(line.qty) || 1));
 
       const tdRemove = document.createElement("td");
       const removeBtn = document.createElement("button");
@@ -549,7 +569,9 @@
       tdRemove.appendChild(removeBtn);
 
       tr.appendChild(tdDesc);
+      tr.appendChild(tdQty);
       tr.appendChild(tdPrice);
+      tr.appendChild(tdSubtotal);
       tr.appendChild(tdRemove);
       lineItemsEl.appendChild(tr);
     });
@@ -557,7 +579,7 @@
   }
 
   function updateTotals() {
-    const subtotal = lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0), 0);
+    const subtotal = lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0) * (parseFloat(l.qty) || 1), 0);
     const deposito = loadedDeposito || 0;
     const saldo = subtotal - deposito;
     tSubtotal.textContent = formatMoney(subtotal);
@@ -2648,7 +2670,7 @@
       .slice()
       .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
       .forEach((q) => {
-        const subtotal = q.lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0), 0);
+        const subtotal = q.lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0) * (parseFloat(l.qty) || 1), 0);
         const saldo = subtotal - (parseFloat(q.deposito) || 0);
 
         const tr = document.createElement("tr");
@@ -3241,8 +3263,10 @@
     while (i < filtered.length) {
       const l = filtered[i];
       const descLower = l.desc.toLowerCase();
+      const qty = parseFloat(l.qty) || 1;
+      const unitPrice = parseFloat(l.price) || 0;
       const priceCells = showPrice
-        ? `<td class="num">${formatMoney(l.price)}</td><td class="num">${formatMoney(l.price)}</td>`
+        ? `<td class="num">${formatMoney(unitPrice)}</td><td class="num">${formatMoney(unitPrice * qty)}</td>`
         : "";
       if (descLower.includes("unidad base") || descLower.includes("base unit")) {
         const included = [];
@@ -3256,7 +3280,7 @@
           : "";
         rows.push(`
         <tr>
-          <td>1</td>
+          <td>${qty}</td>
           <td>${escapeHtml(l.desc)}${subList}</td>
           ${priceCells}
         </tr>`);
@@ -3264,7 +3288,7 @@
       } else {
         rows.push(`
         <tr>
-          <td>1</td>
+          <td>${qty}</td>
           <td>${escapeHtml(l.desc)}</td>
           ${priceCells}
         </tr>`);
