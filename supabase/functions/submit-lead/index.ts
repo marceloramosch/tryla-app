@@ -1,53 +1,41 @@
 // ============================================================
 //  submit-lead
 //  Recibe los leads del formulario de contacto publico en
-//  thetryla.com y los agrega a novaClients en nova_store, para
-//  que aparezcan directo en la pestana Pipeline del CRM -- igual
-//  que ingest-lead, pero esta SI esta pensada para que la llame
-//  cualquier visitante del sitio (no un Apps Script de confianza),
-//  por eso no usa INGEST_LEAD_SECRET: la llave real (service role)
-//  nunca sale de esta funcion, y el sitio solo manda datos de
-//  contacto, no credenciales.
+//  thetryla.com y los manda a Cimiento, que es donde vive el
+//  pipeline de ventas desde octubre 2026. Aqui ya no se guarda
+//  nada: el lead entra a Cimiento en la etapa «Interesado».
+//
+//  La llaman los visitantes del sitio, asi que el token de
+//  Cimiento nunca sale de esta funcion: el sitio solo manda
+//  datos de contacto.
 //
 //  Anti-spam minimo: honeypot ("website" debe venir vacio) + rate
 //  limit simple por IP (ver RATE_LIMIT_MAX / RATE_LIMIT_WINDOW_MS).
 //  Si crece el spam, subir esto a algo real (Turnstile/hCaptcha).
 //
 //  Deploy:  Dashboard -> Edge Functions -> submit-lead -> Via Editor
-//  No requiere secrets nuevos (usa los mismos SUPABASE_URL /
-//  SUPABASE_SERVICE_ROLE_KEY que ya configuran las otras funciones).
+//  Secrets requeridos (Edge Functions -> Secrets):
+//    CIMIENTO_LEADS_TOKEN  el mismo valor que TRYLA_LEADS_TOKEN en Cimiento
+//    CIMIENTO_LEADS_URL    opcional; por omision la de produccion
 //
 //  Body esperado:
-//  { name, phone?, email?, size?, message?, website? (honeypot) }
+//  { name, phone?, email?, size?, message?, city?, website? (honeypot) }
 //  Responde { ok: true, id } o { ok:false, error }
 // ============================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const sb = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-);
+const CIMIENTO_LEADS_URL =
+  Deno.env.get("CIMIENTO_LEADS_URL") ??
+  "https://cimiento-mx-construccion.lovable.app/api/public/tryla/leads";
+const CIMIENTO_LEADS_TOKEN = Deno.env.get("CIMIENTO_LEADS_TOKEN") ?? "";
 
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 min
 const hits = new Map<string, number[]>();
-
-type Client = {
-  id: string;
-  name: string;
-  contacto: string;
-  negocio: string;
-  ciudad: string;
-  status: string;
-  notas: string;
-  fuente?: string;
-  createdAt?: number;
-};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -64,55 +52,45 @@ Deno.serve(async (req) => {
     const name = String(body.name || "").trim();
     const phone = String(body.phone || "").trim();
     const email = String(body.email || "").trim();
-    const size = String(body.size || "").trim();
-    const message = String(body.message || "").trim();
 
     if (!name || (!phone && !email)) {
       return json({ ok: false, error: "Falta nombre y un telefono o correo." }, 400);
     }
+    if (!CIMIENTO_LEADS_TOKEN) {
+      throw new Error("Falta configurar el secret CIMIENTO_LEADS_TOKEN en Edge Functions.");
+    }
 
-    const { data: row, error: readError } = await sb
-      .from("nova_store")
-      .select("value")
-      .eq("key", "novaClients")
-      .maybeSingle();
-    if (readError) throw readError;
-
-    const clients: Client[] = Array.isArray(row?.value) ? (row!.value as Client[]) : [];
-
-    const notas = [
-      size ? "Tamano de interes: " + size : "",
-      message ? "Mensaje: " + message : "",
-      email ? "Email: " + email : "",
-    ].filter(Boolean).join("\n");
-
-    const id = "site-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
-    clients.push({
-      id,
-      name,
-      contacto: phone || email,
-      negocio: "",
-      ciudad: "",
-      status: "Cold",
-      notas,
-      fuente: "Website contact form",
-      createdAt: Date.now(),
+    // El ref hace que un reintento del mismo envio no abra dos leads.
+    const ref = "site-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+    const res = await fetch(CIMIENTO_LEADS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + CIMIENTO_LEADS_TOKEN },
+      body: JSON.stringify({
+        leads: [
+          {
+            ref,
+            canal: "web",
+            name,
+            phone,
+            email,
+            size: String(body.size || "").trim(),
+            message: String(body.message || "").trim(),
+            ciudad: String(body.city || "").trim(),
+            fuente: "Website contact form",
+          },
+        ],
+      }),
     });
+    if (!res.ok) throw new Error("Cimiento respondio " + res.status + ": " + (await res.text()).slice(0, 200));
+    const respuesta = await res.json();
 
-    const { error: writeError } = await sb
-      .from("nova_store")
-      .upsert({ key: "novaClients", value: clients, updated_at: new Date().toISOString() });
-    if (writeError) throw writeError;
-
-    // TODO: notificacion por correo al equipo cuando entra un lead con email.
-    // Requiere una API de email (ej. Resend) + su API key como secret nuevo
-    // (RESEND_API_KEY) en Edge Functions -> Secrets. Sin eso, el lead solo
-    // queda registrado en el CRM.
-
-    return json({ ok: true, id });
+    if (respuesta.invalidos?.length) {
+      return json({ ok: false, error: "Revisa el telefono o el correo." }, 400);
+    }
+    return json({ ok: true, id: respuesta.porRef?.[ref]?.id ?? ref });
   } catch (e) {
     console.error("[submit-lead]", e);
-    return json({ ok: false, error: e instanceof Error ? e.message : "Error inesperado." }, 500);
+    return json({ ok: false, error: "No pudimos recibir tus datos, intenta de nuevo." }, 500);
   }
 });
 
