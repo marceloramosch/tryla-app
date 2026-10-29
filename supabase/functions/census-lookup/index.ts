@@ -45,7 +45,13 @@ async function requireAuth(req: Request): Promise<string | null> {
   if (!jwt) return null;
   const { data, error } = await sb.auth.getUser(jwt);
   if (error || !data.user) return null;
-  return data.user.id;
+  // Solo staff (igual que sync-places): evita que cualquier usuario registrado gaste la cuota del Census API.
+  const { data: staff } = await sb
+    .from("staff_users")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+  return staff ? data.user.id : null;
 }
 
 // El Census Geocoder y la API de ACS a veces tardan mucho o se quedan sin
@@ -116,11 +122,24 @@ Deno.serve(async (req) => {
     }
 
     const userId = await requireAuth(req);
-    if (!userId) return json({ error: "Necesitas una sesion activa." }, 403);
+    if (!userId) return json({ error: "Necesitas una sesion de staff activa." }, 403);
 
-    const { lat, lon } = await req.json();
-    if (typeof lat !== "number" || typeof lon !== "number") {
-      return json({ error: "Faltan datos (lat, lon)." }, 400);
+    const raw = await req.text();
+    if (raw.length > 2048) return json({ error: "Solicitud demasiado grande." }, 413);
+    let parsed: { lat?: unknown; lon?: unknown } = {};
+    try {
+      parsed = JSON.parse(raw) ?? {};
+    } catch (_) {
+      return json({ error: "Solicitud invalida." }, 400);
+    }
+    const lat = parsed.lat;
+    const lon = parsed.lon;
+    if (
+      typeof lat !== "number" || typeof lon !== "number" ||
+      !Number.isFinite(lat) || !Number.isFinite(lon) ||
+      lat < -90 || lat > 90 || lon < -180 || lon > 180
+    ) {
+      return json({ error: "Faltan datos validos (lat, lon)." }, 400);
     }
 
     const tract = await geocodeTract(lat, lon);
@@ -146,7 +165,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("[census-lookup]", e);
-    return json({ error: e instanceof Error ? e.message : "Error inesperado." }, 500);
+    return json({ error: "Error inesperado al consultar Census." }, 500);
   }
 });
 

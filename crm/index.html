@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tryla CRM">
 <link rel="stylesheet" href="../location-intel.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
 <style>
   @font-face{font-family:'Unbounded';src:url('../fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
   @font-face{font-family:'Sora';src:url('../fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
@@ -1582,12 +1582,12 @@
         <div class="field">
           <label>Logo</label>
           <input id="sLogoFile" type="file" accept="image/*">
-          <div id="sLogoPreviewWrap" class="hint" style="display:none;">Logo actual: <a id="sLogoPreview" href="#" target="_blank">ver</a></div>
+          <div id="sLogoPreviewWrap" class="hint" style="display:none;">Logo actual: <a id="sLogoPreview" href="#" target="_blank" rel="noopener noreferrer">ver</a></div>
         </div>
         <div class="field">
           <label>Foto principal (hero)</label>
           <input id="sHeroFile" type="file" accept="image/*">
-          <div id="sHeroPreviewWrap" class="hint" style="display:none;">Foto actual: <a id="sHeroPreview" href="#" target="_blank">ver</a></div>
+          <div id="sHeroPreviewWrap" class="hint" style="display:none;">Foto actual: <a id="sHeroPreview" href="#" target="_blank" rel="noopener noreferrer">ver</a></div>
         </div>
       </div>
       <div class="field">
@@ -1820,7 +1820,7 @@
   <b>Tryla</b> &middot; 1111 Ellenwood St, Dallas, TX 75217 &middot; Marcelo Ramos Schiaffino &middot; +1 (645) 235-3186 &middot; marcelo.ramos@thetryla.com
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
 <script src="../supabase-config.js"></script>
 <script src="../cloud-store.js"></script>
 <script src="../sites-store.js"></script>
@@ -1831,7 +1831,7 @@
 <script src="../data/components.js"></script>
 <script src="../data/equipment-i18n.js"></script>
 <script src="../tryla-app.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
 <script src="../location-intel.js"></script>
 <script>
   // Registra el service worker para que el CRM se pueda instalar como app

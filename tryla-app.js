@@ -1478,8 +1478,14 @@
 
   // Descarga todos los clientes visibles como CSV (respeta busqueda y fechas activas)
   function csvEscape(v) {
-    const s = String(v == null ? "" : v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    let s = String(v == null ? "" : v);
+    // Evita inyeccion de formulas en Excel/Sheets: celdas que empiezan con = + - @ se prefijan con '
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  // Inverso de la proteccion anterior al importar un CSV exportado por nosotros
+  function csvUnguard(v) {
+    return typeof v === "string" ? v.replace(/^'(?=[=+\-@\t\r])/, "") : v;
   }
   function exportClientsCsv() {
     const rows = clients;
@@ -1533,7 +1539,7 @@
   // Importa clientes desde un CSV (mismo formato que exportClientsCsv).
   // Omite filas cuyo nombre ya coincida con un cliente existente (ver findSimilarClient).
   function importClientsCsv(text) {
-    const rows = parseCsv(text.replace(/^﻿/, ""));
+    const rows = parseCsv(text.replace(/^﻿/, "")).map((r) => r.map(csvUnguard));
     if (!rows.length) {
       alert("El archivo esta vacio.");
       return;
@@ -2996,7 +3002,7 @@
       finAdjustTitle: "Ajuste por redondeo",
       finAdjustText: (month, amt) => `El pago del mes ${month} se ajusta en ${amt} para saldar el capital exactamente en cero, por el redondeo acumulado de los pagos mensuales.`,
       finConfidential: "Documento privado y confidencial",
-      finPageLabel: (name) => `Pagina 1 de 1 — Tabla de Amortizacion (${name || "Cliente"})`,
+      finPageLabel: (name) => `Pagina 1 de 1 — Tabla de Amortizacion (${escapeHtml(name || "Cliente")})`,
       invoiceDocTitle: "ESTADO DE CUENTA / INVOICE",
       invLabelFor: "Cuenta de",
       invDate: "FECHA",
@@ -3012,7 +3018,7 @@
       invTotalPaid: "Total pagado",
       invBalance: "SALDO RESTANTE",
       invNoPayments: "Sin pagos registrados",
-      invPageLabel: (name) => `Estado de cuenta — ${name || "Cliente"}`,
+      invPageLabel: (name) => `Estado de cuenta — ${escapeHtml(name || "Cliente")}`,
     },
     en: {
       locale: "en-US",
@@ -3068,7 +3074,7 @@
       finAdjustTitle: "Rounding adjustment",
       finAdjustText: (month, amt) => `The month ${month} payment is adjusted by ${amt} to settle the principal at exactly zero, due to accumulated rounding in the monthly payments.`,
       finConfidential: "Private and confidential document",
-      finPageLabel: (name) => `Page 1 of 1 — Amortization Schedule (${name || "Customer"})`,
+      finPageLabel: (name) => `Page 1 of 1 — Amortization Schedule (${escapeHtml(name || "Customer")})`,
       invoiceDocTitle: "STATEMENT / INVOICE",
       invLabelFor: "Account for",
       invDate: "DATE",
@@ -3084,7 +3090,7 @@
       invTotalPaid: "Total paid",
       invBalance: "REMAINING BALANCE",
       invNoPayments: "No payments recorded",
-      invPageLabel: (name) => `Statement — ${name || "Customer"}`,
+      invPageLabel: (name) => `Statement — ${escapeHtml(name || "Customer")}`,
     },
   };
 
@@ -3461,7 +3467,9 @@
     return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   document.getElementById("btnPreview").addEventListener("click", () => {

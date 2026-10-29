@@ -31,24 +31,63 @@ const sb = createClient(
 );
 
 const MAX_QTY_PER_ITEM = 50;
+const MAX_CART_LINES = 40;
+const MAX_BODY_BYTES = 50 * 1024;
+
+// Solo se permite regresar a dominios propios (evita redirects abiertos tras el pago/onboarding).
+// thetryla.app = TrylApp (operator), thetryla.com y *.thetryla.com = sitios de los restaurantes.
+function safeReturnUrl(raw: unknown): string | null {
+  try {
+    const u = new URL(String(raw || ""));
+    const h = u.hostname.toLowerCase();
+    const okHost =
+      h === "thetryla.com" || h.endsWith(".thetryla.com") ||
+      h === "thetryla.app" || h.endsWith(".thetryla.app");
+    const okDev = (h === "localhost" || h === "127.0.0.1") && u.protocol === "http:";
+    if ((u.protocol === "https:" && okHost) || okDev) return u.toString().slice(0, 1000);
+  } catch (_) { /* url invalida */ }
+  return null;
+}
+
+// Quita caracteres de control (menos \n y \t) y recorta al maximo permitido.
+function clean(v: unknown, max: number): string {
+  // deno-lint-ignore no-control-regex
+  return String(v ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const body = await req.json();
-    const subdomain = String(body.subdomain || "").toLowerCase().trim();
-    const cartItems: Array<{ name: string; qty: number }> = Array.isArray(body.items) ? body.items : [];
-    const fulfillment = body.fulfillment === "delivery" ? "delivery" : "pickup";
-    const deliveryAddress = String(body.delivery_address || "").trim();
-    const customerName = String(body.customer_name || "").trim();
-    const customerPhone = String(body.customer_phone || "").trim();
-    const notes = String(body.notes || "").trim();
-    const successUrl = String(body.success_url || "");
-    const cancelUrl = String(body.cancel_url || "");
+    const declared = Number(req.headers.get("content-length") || 0);
+    if (declared > MAX_BODY_BYTES) return json({ error: "Solicitud demasiado grande." }, 413);
+    const raw = await req.text();
+    if (raw.length > MAX_BODY_BYTES) return json({ error: "Solicitud demasiado grande." }, 413);
+    let body: Record<string, unknown> = {};
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") body = parsed as Record<string, unknown>;
+    } catch (_) {
+      return json({ error: "Solicitud invalida." }, 400);
+    }
 
-    if (!subdomain || !cartItems.length || !customerName || !customerPhone || !successUrl || !cancelUrl) {
+    const subdomain = clean(body.subdomain, 63).toLowerCase();
+    const cartItems: Array<{ name: string; qty: number }> = Array.isArray(body.items)
+      ? (body.items as Array<{ name: string; qty: number }>).slice(0, MAX_CART_LINES)
+      : [];
+    const fulfillment = body.fulfillment === "delivery" ? "delivery" : "pickup";
+    const deliveryAddress = clean(body.delivery_address, 300);
+    const customerName = clean(body.customer_name, 120);
+    const customerPhone = clean(body.customer_phone, 40);
+    const notes = clean(body.notes, 500);
+    const successUrl = safeReturnUrl(body.success_url);
+    const cancelUrl = safeReturnUrl(body.cancel_url);
+
+    if (!subdomain || !cartItems.length || !customerName || !customerPhone) {
       return json({ error: "Faltan datos del pedido." }, 400);
+    }
+    if (!successUrl || !cancelUrl) {
+      return json({ error: "URL de regreso no permitida." }, 400);
     }
     if (fulfillment === "delivery" && !deliveryAddress) {
       return json({ error: "Falta la direccion de entrega." }, 400);
@@ -130,7 +169,7 @@ Deno.serve(async (req) => {
     return json({ url: session.url, order_id: order.id });
   } catch (e) {
     console.error("[create-checkout-session]", e);
-    return json({ error: e instanceof Error ? e.message : "Error inesperado." }, 500);
+    return json({ error: "No se pudo crear el pago. Intenta de nuevo." }, 500);
   }
 });
 
