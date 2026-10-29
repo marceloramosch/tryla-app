@@ -197,12 +197,21 @@
     }
 
     try {
-      const { data, error } = await sb
-        .from("tryla_sites")
+      // Lee de la vista publica (sin owner_email/owner_user_id); si la vista aun no
+      // existe en Supabase, cae a la tabla como antes.
+      let { data, error } = await sb
+        .from("tryla_sites_public")
         .select("*")
         .eq("subdomain", subdomain)
-        .eq("published", true)
         .maybeSingle();
+      if (error) {
+        ({ data, error } = await sb
+          .from("tryla_sites")
+          .select("*")
+          .eq("subdomain", subdomain)
+          .eq("published", true)
+          .maybeSingle());
+      }
       if (error || !data) {
         renderNotFound();
         return;
