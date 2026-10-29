@@ -34,6 +34,27 @@ const sb = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
+// Solo se permite regresar a dominios propios (evita redirects abiertos tras el pago/onboarding).
+// thetryla.app = TrylApp (operator), thetryla.com y *.thetryla.com = sitios de los restaurantes.
+function safeReturnUrl(raw: unknown): string | null {
+  try {
+    const u = new URL(String(raw || ""));
+    const h = u.hostname.toLowerCase();
+    const okHost =
+      h === "thetryla.com" || h.endsWith(".thetryla.com") ||
+      h === "thetryla.app" || h.endsWith(".thetryla.app");
+    const okDev = (h === "localhost" || h === "127.0.0.1") && u.protocol === "http:";
+    if ((u.protocol === "https:" && okHost) || okDev) return u.toString().slice(0, 1000);
+  } catch (_) { /* url invalida */ }
+  return null;
+}
+
+// Quita caracteres de control (menos \n y \t) y recorta al maximo permitido.
+function clean(v: unknown, max: number): string {
+  // deno-lint-ignore no-control-regex
+  return String(v ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
+}
+
 async function resolveSite(req: Request, portalToken: string | undefined) {
   if (portalToken) {
     const { data: portal, error } = await sb
@@ -69,9 +90,19 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { portal_token, return_url, refresh_url } = await req.json();
+    const raw = await req.text();
+    if (raw.length > 10 * 1024) return json({ error: "Solicitud demasiado grande." }, 413);
+    let parsed: { portal_token?: unknown; return_url?: unknown; refresh_url?: unknown } = {};
+    try {
+      parsed = JSON.parse(raw) ?? {};
+    } catch (_) {
+      return json({ error: "Solicitud invalida." }, 400);
+    }
+    const portal_token = parsed.portal_token ? clean(parsed.portal_token, 64) : undefined;
+    const return_url = safeReturnUrl(parsed.return_url);
+    const refresh_url = safeReturnUrl(parsed.refresh_url);
     if (!return_url || !refresh_url) {
-      return json({ error: "Faltan datos (return_url, refresh_url)." }, 400);
+      return json({ error: "Faltan datos o la URL de regreso no esta permitida." }, 400);
     }
 
     const resolved = await resolveSite(req, portal_token);
@@ -115,7 +146,7 @@ Deno.serve(async (req) => {
     return json({ url: accountLink.url });
   } catch (e) {
     console.error("[stripe-connect-onboarding]", e);
-    return json({ error: e instanceof Error ? e.message : "Error inesperado." }, 500);
+    return json({ error: "No se pudo iniciar la conexion con Stripe. Intenta de nuevo." }, 500);
   }
 });
 

@@ -64,7 +64,20 @@ Deno.serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const orderId = session.metadata?.order_id;
-        if (orderId) {
+        // Solo se marca pagado si Stripe confirma el cobro (los metodos asincronos
+        // llegan con payment_status "unpaid") y el monto coincide con el pedido.
+        if (orderId && session.payment_status === "paid") {
+          const { data: order } = await sb
+            .from("orders")
+            .select("total")
+            .eq("id", orderId)
+            .eq("stripe_checkout_session_id", session.id)
+            .maybeSingle();
+          const expected = order ? Math.round(Number(order.total) * 100) : NaN;
+          if (!order || !Number.isFinite(expected) || session.amount_total !== expected) {
+            console.error("[stripe-webhook] Monto no coincide o pedido no encontrado", orderId);
+            break;
+          }
           await sb
             .from("orders")
             .update({

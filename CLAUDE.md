@@ -55,3 +55,17 @@ were extracted from thetryla.com's own `@font-face` declarations).
 - Company address: `1111 Ellenwood St, Dallas, TX 75217`.
 - Contact: Marcelo Ramos Schiaffino · +1 (645) 235-3186 ·
   marcelo.ramos@thetryla.com
+
+## Security conventions
+
+- This repo is served as-is by GitHub Pages (thetryla.app): anything committed
+  is public. Never commit secrets, and do not add new `.sql` files or internal
+  notes here — keep DB hardening SQL out of the repo and hand it to the owner.
+- Every `innerHTML` template that interpolates data (client names, notes,
+  quote fields, Supabase rows, URL params) must go through `escapeHtml()`
+  (escapes `& < > " '`) or use `textContent`.
+- External scripts/styles must be version-pinned with an `integrity=` (SRI)
+  hash verified against the downloaded bytes. Currently: supabase-js 2.118.0,
+  leaflet 1.9.4.
+- Use `crypto.getRandomValues` (never `Math.random`) for ids/tokens that grant access.
+- CSV export neutralizes cells starting with `= + - @` (`csvEscape`).

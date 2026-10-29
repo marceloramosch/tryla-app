@@ -130,13 +130,22 @@
       "position:fixed;bottom:14px;right:14px;z-index:9000;background:#171433;color:#fff;" +
       "font:600 12px Arial;padding:8px 12px;border-radius:20px;display:flex;gap:10px;" +
       "align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25);";
-    chip.innerHTML =
-      '<span>☁️ Nube · ' + (email || "") + "</span>" +
-      '<button id="novaLogout" style="background:#5B54FF;border:0;color:#fff;cursor:pointer;' +
-      'font:700 11px Arial;padding:4px 10px;border-radius:12px;">Salir</button>';
+    const label = document.createElement("span");
+    label.textContent = "☁️ Nube · " + (email || "");
+    const logoutBtn = document.createElement("button");
+    logoutBtn.id = "novaLogout";
+    logoutBtn.textContent = "Salir";
+    logoutBtn.style.cssText =
+      "background:#5B54FF;border:0;color:#fff;cursor:pointer;font:700 11px Arial;padding:4px 10px;border-radius:12px;";
+    chip.appendChild(label);
+    chip.appendChild(logoutBtn);
     document.body.appendChild(chip);
-    document.getElementById("novaLogout").addEventListener("click", async () => {
+    logoutBtn.addEventListener("click", async () => {
       await sb.auth.signOut();
+      // No dejar clientes/cotizaciones del CRM en el navegador despues de salir
+      try {
+        KEYS.forEach((k) => localStorage.removeItem(k));
+      } catch (e) {}
       location.reload();
     });
   }

@@ -30,10 +30,13 @@
   const sb = supabase.createClient(cfg.url, cfg.anonKey);
   window.ClientPortal.ready = true;
 
+  // 24 chars from a 31-char unambiguous alphabet (~119 bits) using the CSPRNG.
   function randomToken() {
     const chars = "23456789abcdefghjkmnpqrstuvwxyz";
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
     let id = "";
-    for (let i = 0; i < 14; i++) id += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < bytes.length; i++) id += chars[bytes[i] % chars.length];
     return id;
   }
 

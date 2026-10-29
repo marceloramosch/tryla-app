@@ -27,7 +27,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-ingest-secret",
 };
 
 const sb = createClient(
@@ -36,6 +36,28 @@ const sb = createClient(
 );
 
 const INGEST_LEAD_SECRET = Deno.env.get("INGEST_LEAD_SECRET") ?? "";
+const MAX_BODY_BYTES = 200 * 1024; // lotes de leads del Sheet
+const MAX_LEADS_PER_CALL = 200;
+
+// Quita caracteres de control (menos \n y \t) y recorta al maximo permitido.
+function clean(v: unknown, max: number): string {
+  // deno-lint-ignore no-control-regex
+  return String(v ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
+}
+
+// Comparacion en tiempo constante: se comparan hashes SHA-256 (misma longitud).
+async function safeEqual(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const x = new Uint8Array(ha);
+  const y = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
 
 // Debe quedar igual a PIPELINE_STAGES en tryla-app.js
 const VALID_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
@@ -70,12 +92,26 @@ Deno.serve(async (req) => {
       return json({ error: "Falta configurar el secret INGEST_LEAD_SECRET en Edge Functions." }, 500);
     }
 
-    const body = await req.json();
-    if (body.secret !== INGEST_LEAD_SECRET) {
+    const declared = Number(req.headers.get("content-length") || 0);
+    if (declared > MAX_BODY_BYTES) return json({ error: "Solicitud demasiado grande." }, 413);
+    const raw = await req.text();
+    if (raw.length > MAX_BODY_BYTES) return json({ error: "Solicitud demasiado grande." }, 413);
+    let body: { secret?: unknown; leads?: unknown } = {};
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") body = parsed;
+    } catch (_) {
+      return json({ error: "JSON invalido." }, 400);
+    }
+
+    // Preferido: header x-ingest-secret. El secret en el body se sigue aceptando
+    // para no romper el Apps Script actual del Sheet (migrar y quitar despues).
+    const provided = req.headers.get("x-ingest-secret") ?? (typeof body.secret === "string" ? body.secret : "");
+    if (!(await safeEqual(provided, INGEST_LEAD_SECRET))) {
       return json({ error: "Secret invalido." }, 403);
     }
 
-    const incoming: IncomingLead[] = Array.isArray(body.leads) ? body.leads : [];
+    const incoming: IncomingLead[] = Array.isArray(body.leads) ? (body.leads as IncomingLead[]).slice(0, MAX_LEADS_PER_CALL) : [];
     if (!incoming.length) return json({ inserted: [], skipped: [] });
 
     const { data: row, error: readError } = await sb
@@ -93,11 +129,12 @@ Deno.serve(async (req) => {
 
     for (const lead of incoming) {
       const rowId = lead.rowId;
-      if (rowId === undefined || rowId === null || !lead.nombre) {
+      const nombre = clean(lead.nombre, 120);
+      if (rowId === undefined || rowId === null || !nombre || clean(rowId, 60) === "") {
         skipped.push(rowId ?? "?");
         continue;
       }
-      const id = "sheet-" + rowId;
+      const id = "sheet-" + clean(rowId, 60);
       if (existingIds.has(id)) {
         skipped.push(rowId);
         continue;
@@ -106,13 +143,13 @@ Deno.serve(async (req) => {
       const status = VALID_STAGES.includes(lead.status || "") ? (lead.status as string) : "Cold";
       clients.push({
         id,
-        name: String(lead.nombre).trim(),
-        contacto: (lead.phone || "").trim(),
+        name: nombre,
+        contacto: clean(lead.phone, 200),
         negocio: "",
-        ciudad: (lead.ciudad || "").trim(),
+        ciudad: clean(lead.ciudad, 120),
         status,
-        notas: (lead.notas || "").trim(),
-        fuente: (lead.fuente || "").trim(),
+        notas: clean(lead.notas, 2000),
+        fuente: clean(lead.fuente, 120),
         createdAt: Date.now(),
       });
       existingIds.add(id);
@@ -129,7 +166,7 @@ Deno.serve(async (req) => {
     return json({ inserted, skipped });
   } catch (e) {
     console.error("[ingest-lead]", e);
-    return json({ error: e instanceof Error ? e.message : "Error inesperado." }, 500);
+    return json({ error: "Error inesperado." }, 500);
   }
 });
 
