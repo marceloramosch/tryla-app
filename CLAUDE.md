@@ -27,14 +27,29 @@ different size), regenerate it from `assets/tryla_logo.png`'s exact T
 proportions rather than the SVG, and verify by eye against the master
 file before using it in a real document.
 
+## Typography — never use Helvetica/default PDF fonts for Tryla documents
+
+Real site typography (verified from thetryla.com's own CSS): **Sora 700**
+for headlines/titles/section headers, **Barlow** (400/600/700/800) for
+body text, labels and data values. **Unbounded 800 is reserved for the
+"TRYLA" wordmark only** — never use it for anything else.
+
+TTF versions ready to register with reportlab (`pdfmetrics.registerFont`)
+are checked in at `assets/fonts-pdf/`: `Sora-700.ttf`, `Barlow-400.ttf`,
+`Barlow-600.ttf`, `Barlow-700.ttf`, `Barlow-800.ttf`. Use these directly —
+don't fall back to Helvetica, and don't re-derive from woff2 unless a
+missing weight is needed (source woff2 files, if you need another weight,
+were extracted from thetryla.com's own `@font-face` declarations).
+
 ## Letterhead documents (PDFs, invoices, payment instructions, etc.)
 
 - Use the full-page layout style established for `Payment Instructions`:
   a thin blue accent bar at the very top, the logo lockup + date/address
-  in the header, a bold navy title, content sections with light-purple
-  (`#F1F0FF`) bordered tables, and a solid navy footer band at the bottom
-  of the page (contact info left, confidentiality note right) so the page
-  doesn't look empty — don't leave large blank vertical space.
+  in the header, a bold navy title in Sora, content sections with
+  light-purple (`#F1F0FF`) bordered tables (Barlow text), and a solid
+  navy footer band at the bottom of the page (contact info left,
+  confidentiality note right) so the page doesn't look empty — don't
+  leave large blank vertical space.
 - Brand colors: `--blue:#5B54FF`, `--blue-dim:#3B36D6`, `--navy:#06038D`,
   `--light:#F1F0FF`, `--border:#D6D3FF`, `--text2:#5C6270`.
 - Company address: `1111 Ellenwood St, Dallas, TX 75217`.
