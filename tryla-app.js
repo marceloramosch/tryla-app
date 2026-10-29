@@ -1076,12 +1076,42 @@
     });
   }
 
+  // Estatus del pipeline desde la cotizacion: editable solo si el cliente es nuevo;
+  // si ya existe, muestra su etapa actual (se cambia desde el Pipeline).
+  const fEstatus = document.getElementById("fEstatus");
+  const fEstatusHint = document.getElementById("fEstatusHint");
+  PIPELINE_STAGES.forEach((s) => {
+    const o = document.createElement("option");
+    o.value = s;
+    o.textContent = s;
+    fEstatus.appendChild(o);
+  });
+  fEstatus.value = "HOT";
+  function refreshEstatusField() {
+    const name = normalizeName(fCliente.value);
+    const existing = name ? clients.find((c) => normalizeName(c.name) === name) : null;
+    if (existing) {
+      fEstatus.value = existing.status || "Cold";
+      fEstatus.disabled = true;
+      fEstatusHint.textContent = "Cliente existente: su etapa se cambia desde el Pipeline.";
+    } else {
+      fEstatus.disabled = false;
+      if (!fEstatus.value) fEstatus.value = "HOT";
+      fEstatusHint.textContent = name ? "Cliente nuevo: se crea en esta etapa." : "";
+    }
+  }
+  fCliente.addEventListener("input", refreshEstatusField);
+
   fClientSelect.addEventListener("change", () => {
     const client = clients.find((c) => c.id === fClientSelect.value);
-    if (!client) return;
+    if (!client) {
+      refreshEstatusField();
+      return;
+    }
     fCliente.value = client.name;
     fContacto.value = client.contacto || "";
     fEntrega.value = client.ciudad || "";
+    refreshEstatusField();
   });
 
   function renderClientsTable() {
@@ -1624,20 +1654,21 @@
     renderClientSelect();
   });
 
-  function findOrCreateClient(name, contacto, ciudad) {
+  function findOrCreateClient(name, contacto, ciudad, status) {
     if (!name) return null;
     const norm = normalizeName(name);
     let client = clients.find((c) => normalizeName(c.name) === norm);
     if (!client) {
+      const stage = PIPELINE_STAGES.indexOf(status) !== -1 ? status : "HOT";
       client = {
         id: "c" + Date.now(),
         name,
         contacto: contacto || "",
         ciudad: ciudad || "",
-        status: "HOT",
+        status: stage,
         notas: "",
         createdAt: Date.now(),
-        stageHistory: [{ stage: "HOT", at: Date.now() }],
+        stageHistory: [{ stage, at: Date.now() }],
       };
       clients.push(client);
     } else {
@@ -2836,6 +2867,7 @@
     fIdioma.value = q.idioma || "es";
     fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = q.clientId || "";
+    refreshEstatusField();
     specsEl.value = (q.notas || []).join("\n");
     lineItems = (q.lineItems || []).map((l) => ({ ...l }));
     renderCatalog();
@@ -2859,7 +2891,7 @@
 
   document.getElementById("btnSave").addEventListener("click", () => {
     const { subtotal, deposito, saldo } = updateTotals();
-    const client = findOrCreateClient(fCliente.value.trim(), fContacto.value.trim(), fEntrega.value.trim());
+    const client = findOrCreateClient(fCliente.value.trim(), fContacto.value.trim(), fEntrega.value.trim(), fEstatus.value);
 
     // Preserva financiamiento y pagos existentes (se editan en sus propias pestañas)
     const existing = quotes.find((x) => x.id === currentQuoteId);
@@ -2904,6 +2936,7 @@
     renderInvoicesTable();
     renderClientSelect();
     renderClientsTable();
+    refreshEstatusField();
     alert("Cotizacion guardada.");
   });
 
@@ -3462,6 +3495,8 @@
     fIdioma.value = "es";
     fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = "";
+    fEstatus.value = "HOT";
+    refreshEstatusField();
     specsEl.value = "";
     sizePresetEl.value = "";
     renderCatalog();
@@ -3875,7 +3910,10 @@
 
       switchTab("quote");
       specsEl.value = specsEl.value.trim() ? specsEl.value.trim() + "\n\n" + block : block;
-      if (clientName && !fCliente.value.trim()) fCliente.value = clientName;
+      if (clientName && !fCliente.value.trim()) {
+        fCliente.value = clientName;
+        refreshEstatusField();
+      }
       if (address && !fEntrega.value.trim()) fEntrega.value = address;
       logActivity(`Incluyo el analisis de "${address}" en una cotizacion`);
     });
