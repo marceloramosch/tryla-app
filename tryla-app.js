@@ -3142,6 +3142,26 @@
     `;
   }
 
+  // Nombre sugerido al guardar como PDF = titulo de la pagina durante la impresion.
+  // Formato: "<Tipo> - <Cliente>" (ej. "Quote - Alexis"), igual que el nombre en el CRM.
+  let currentDocTitle = "";
+  function docTitleFor(kind, cliente) {
+    // caracteres no validos en nombres de archivo -> "-"
+    const name = String(cliente || "").replace(/[\\/:*?"<>|]+/g, "-").trim();
+    return name ? `${kind} - ${name}` : kind;
+  }
+  function printWithTitle(title) {
+    const original = document.title;
+    if (title) document.title = title;
+    const restore = () => {
+      document.title = original;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+    setTimeout(restore, 1500);
+  }
+
   function buildFinanceExhibit(q) {
     if (!currentFinancePlan) {
       alert("Captura capital, tasa add-on y plazo (mayores a cero) para calcular el plan de financiamiento antes de generar el Exhibit C.");
@@ -3166,6 +3186,7 @@
         <b>Tryla</b> &middot; ${t.companyAddress} &middot; ${t.finConfidential} &middot; ${t.finPageLabel(cliente)}
       </div>
     `;
+    currentDocTitle = docTitleFor("Exhibit C", cliente);
     previewWrap.classList.add("show");
     return true;
   }
@@ -3277,6 +3298,7 @@
         <b>Tryla</b> &middot; ${t.companyAddress} &middot; ${t.finConfidential} &middot; ${t.invPageLabel(q.cliente)}
       </div>
     `;
+    currentDocTitle = docTitleFor("Invoice", q.cliente);
     previewWrap.classList.add("show");
     return true;
   }
@@ -3429,6 +3451,7 @@
       </div>
     `;
 
+    currentDocTitle = docTitleFor("Quote", fCliente.value);
     previewWrap.classList.add("show");
   }
 
@@ -3479,14 +3502,14 @@
 
   document.getElementById("btnPrint").addEventListener("click", () => {
     buildPreview();
-    window.print();
+    printWithTitle(currentDocTitle);
   });
 
   // Boton generico en el panel de documento compartido: imprime/descarga lo
   // que este actualmente mostrado (cotizacion, invoice/estado de cuenta o
   // Exhibit C), sin importar desde que pestana se genero.
   document.getElementById("btnPrintDoc").addEventListener("click", () => {
-    window.print();
+    printWithTitle(currentDocTitle);
   });
 
   document.getElementById("btnReset").addEventListener("click", () => {
