@@ -525,6 +525,7 @@
 
       const tdQty = document.createElement("td");
       tdQty.className = "num";
+      tdQty.dataset.label = "Cant.";
       const qtyInput = document.createElement("input");
       qtyInput.type = "number";
       qtyInput.className = "line-qty";
@@ -540,6 +541,7 @@
 
       const tdPrice = document.createElement("td");
       tdPrice.className = "num";
+      tdPrice.dataset.label = "Precio";
       const priceInput = document.createElement("input");
       priceInput.type = "number";
       priceInput.className = "line-price";
@@ -555,6 +557,7 @@
 
       const tdSubtotal = document.createElement("td");
       tdSubtotal.className = "num line-subtotal";
+      tdSubtotal.dataset.label = "Subtotal";
       tdSubtotal.textContent = formatMoney((parseFloat(line.price) || 0) * (parseFloat(line.qty) || 1));
 
       const tdRemove = document.createElement("td");
@@ -3629,13 +3632,13 @@
 
     // Tab bar inferior tipo app (movil): resalta el item si es uno de los
     // principales, o el boton "Mas" si la seccion vive dentro de esa hoja.
-    const BOTTOM_NAV_PRIMARY = ["quote", "pipeline", "clients", "dashboard"];
+    const BOTTOM_NAV_PRIMARY = ["quote", "pipeline", "tasks", "clients"];
     document.querySelectorAll(".bn-item[data-tab]").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === name);
     });
     const bnMoreBtn = document.getElementById("bnMoreBtn");
     if (bnMoreBtn) bnMoreBtn.classList.toggle("active", !BOTTOM_NAV_PRIMARY.includes(name));
-    document.querySelectorAll(".bn-sheet-item").forEach((btn) => {
+    document.querySelectorAll(".bn-sheet-item[data-tab]").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === name);
     });
 
@@ -3837,6 +3840,14 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeSheet();
     });
+  })();
+
+  // Catalogo plegable en movil (el CSS solo lo oculta en pantallas chicas)
+  (function wireCatalogToggle() {
+    const panel = document.getElementById("catalogPanel");
+    const head = document.getElementById("catalogToggle");
+    if (!panel || !head) return;
+    head.addEventListener("click", () => panel.classList.toggle("open"));
   })();
 
   // Degradados a los lados del tab bar (solo se notan en movil, donde hace
@@ -4117,6 +4128,11 @@
       const g = collect();
       const urgent = g.today.length + g.overdue.length;
       document.title = urgent ? `(${urgent}) ${baseTitle}` : baseTitle;
+      const badge = document.getElementById("bnTasksBadge");
+      if (badge) {
+        badge.hidden = !urgent;
+        badge.textContent = urgent > 9 ? "9+" : String(urgent);
+      }
       if (!urgent && !g.cold.length) { bar.hidden = true; return false; }
       barText.textContent = "🔔 " + summaryText(g);
       bar.classList.toggle("is-overdue", g.overdue.length > 0);
