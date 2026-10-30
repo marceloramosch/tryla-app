@@ -165,6 +165,28 @@
   .task-reminder.is-overdue{ background:#FFECEC; border-color:#F2A8A8; color:#8A1F1F; }
   .task-reminder-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
   .task-reminder button{ font:inherit; font-size:13px; cursor:pointer; border:1px solid currentColor; background:transparent; color:inherit; border-radius:8px; padding:4px 10px; }
+  .avisos-backdrop{ position:fixed; inset:0; background:rgba(10,8,40,.55); z-index:9300; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+  .avisos-backdrop.open{ opacity:1; pointer-events:auto; }
+  .avisos-modal{ position:fixed; z-index:9301; top:50%; left:50%; width:min(560px, 94vw); max-height:86vh; display:flex; flex-direction:column; background:#fff; border-radius:16px; box-shadow:0 24px 60px rgba(6,3,141,.35); transform:translate(-50%, -46%); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; overflow:hidden; }
+  .avisos-modal.open{ opacity:1; transform:translate(-50%, -50%); pointer-events:auto; }
+  .avisos-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:18px 20px 8px; background:var(--navy,#06038D); color:#fff; }
+  .avisos-head h2{ margin:0; font-size:20px; }
+  .avisos-date{ font-size:12px; opacity:.75; margin-top:2px; }
+  .avisos-x{ background:none; border:0; color:#fff; font-size:26px; line-height:1; cursor:pointer; padding:0 4px; }
+  .avisos-summary{ padding:0 20px 14px; background:var(--navy,#06038D); color:#CFCBFF; font-size:14px; font-weight:600; }
+  .avisos-body{ padding:12px 20px; overflow:auto; flex:1; }
+  .avisos-sec{ margin:6px 0 14px; }
+  .avisos-sec h3{ margin:0 0 6px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#5C6270; }
+  .avisos-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid #D6D3FF; border-radius:10px; margin-bottom:6px; background:#F1F0FF; font-size:14px; }
+  .avisos-row.is-late{ background:#FFECEC; border-color:#F2A8A8; }
+  .avisos-row .av-name{ font-weight:700; cursor:pointer; color:#06038D; background:none; border:0; padding:0; font:inherit; font-weight:700; text-align:left; }
+  .avisos-row .av-text{ flex:1; min-width:0; overflow-wrap:anywhere; }
+  .avisos-row .av-when{ font-size:12px; color:#5C6270; white-space:nowrap; }
+  .avisos-row.is-late .av-when{ color:#B42318; font-weight:700; }
+  .avisos-empty{ text-align:center; color:#5C6270; padding:18px 0; }
+  .avisos-foot{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 20px; border-top:1px solid #D6D3FF; }
+  .avisos-link{ background:none; border:0; color:#5B54FF; font:inherit; font-weight:600; cursor:pointer; padding:0; }
+  .avisos-ok{ background:#5B54FF; color:#fff; border:0; border-radius:10px; padding:9px 18px; font:inherit; font-weight:700; cursor:pointer; }
   .tab-btn{
     border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
     padding: 10px 18px; border-radius:999px; cursor:pointer; font-size:13px;
@@ -860,7 +882,7 @@
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions,
-    .lead-drawer, .lead-drawer-backdrop, .quote-view, .quote-view-backdrop, .card-tooltip, .call-outcome-popover{ display:none !important; }
+    .lead-drawer, .lead-drawer-backdrop, .quote-view, .quote-view-backdrop, .avisos-modal, .avisos-backdrop, .task-reminder, .card-tooltip, .call-outcome-popover{ display:none !important; }
     #previewWrap{ display:block !important; margin:0; }
     #previewDoc{ border:none; padding:0; max-width:none; }
     body{ background:#fff; }
@@ -1020,25 +1042,10 @@
 <div id="taskReminder" class="task-reminder" hidden role="status">
   <span id="taskReminderText"></span>
   <span class="task-reminder-actions">
-    <button type="button" id="taskReminderNotify" hidden>Activar avisos</button>
+    <button type="button" id="taskReminderOpen">Ver avisos</button>
     <button type="button" id="taskReminderClose" aria-label="Cerrar">&times;</button>
   </span>
 </div>
-
-<main>
-  <div class="tabs-wrap">
-  <div class="tabs" id="tabsBar">
-    <button class="tab-btn active" data-tab="quote">Cotizador</button>
-    <button class="tab-btn" data-tab="clients">Clientes</button>
-    <button class="tab-btn" data-tab="pipeline">Pipeline</button>
-    <button class="tab-btn" data-tab="tasks">Tareas</button>
-    <button class="tab-btn" data-tab="quotes">Cotizaciones guardadas</button>
-    <button class="tab-btn" data-tab="intel">Location Intelligence</button>
-    <button class="tab-btn" data-tab="finance">Financiamiento</button>
-    <button class="tab-btn" data-tab="invoices">Invoices</button>
-    <button class="tab-btn" data-tab="sites">Sitios Web</button>
-    <button class="tab-btn" data-tab="dashboard">Resumen</button>
-  </div>
   </div>
 
   <!-- ===================== TAB: COTIZADOR ===================== -->
@@ -1851,6 +1858,23 @@
 
 
 <!-- Visor de cotizacion (se abre desde el panel lateral del pipeline) -->
+<div id="avisosBackdrop" class="avisos-backdrop"></div>
+<div id="avisosModal" class="avisos-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="avisosTitle">
+  <div class="avisos-head">
+    <div>
+      <h2 id="avisosTitle">Avisos de hoy</h2>
+      <div class="avisos-date" id="avisosDate"></div>
+    </div>
+    <button type="button" class="avisos-x" id="avisosClose" aria-label="Cerrar">&times;</button>
+  </div>
+  <div class="avisos-summary" id="avisosSummary"></div>
+  <div class="avisos-body" id="avisosBody"></div>
+  <div class="avisos-foot">
+    <button type="button" class="avisos-link" id="avisosAllTasks">Ver todas las tareas</button>
+    <button type="button" class="avisos-ok" id="avisosOk">Entendido</button>
+  </div>
+</div>
+
 <div id="quoteViewBackdrop" class="quote-view-backdrop"></div>
 <div id="quoteView" class="quote-view" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cotizacion">
   <div class="quote-view-bar">
