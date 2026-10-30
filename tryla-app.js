@@ -4068,74 +4068,116 @@
   renderInvoicesTable();
 
 
-  // ===== Aviso de tareas del dia: banner + notificacion del navegador + contador en el titulo =====
-  (function taskReminders() {
-    const banner = document.getElementById("taskReminder");
-    if (!banner) return;
-    const textEl = document.getElementById("taskReminderText");
-    const notifyBtn = document.getElementById("taskReminderNotify");
-    const closeBtn = document.getElementById("taskReminderClose");
+  // ===== Avisos del dia: recuadro al abrir el CRM (tareas de hoy, vencidas y leads calientes sin tocar) =====
+  (function avisos() {
+    const bar = document.getElementById("taskReminder");
+    const modal = document.getElementById("avisosModal");
+    const backdrop = document.getElementById("avisosBackdrop");
+    if (!bar || !modal || !backdrop) return;
+    const barText = document.getElementById("taskReminderText");
+    const bodyEl = document.getElementById("avisosBody");
+    const summaryEl = document.getElementById("avisosSummary");
     const baseTitle = document.title.replace(/^\(\d+\)\s*/, "");
-    const dayKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
-    let dismissedFor = "";
-    try { dismissedFor = localStorage.getItem("tryla_reminder_dismissed") || ""; } catch (_) {}
-    let notifiedKey = "";
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-    function counts() {
-      let today = 0, overdue = 0;
-      allOpenTasks().forEach(({ task }) => {
-        if (!task.dueAt) return;
-        const l = taskDueLabel(task.dueAt);
-        if (l.overdue) overdue++;
-        else if (l.today) today++;
+    function collect() {
+      const today = [], overdue = [], cold = [];
+      allOpenTasks().forEach((it) => {
+        if (!it.task.dueAt) return;
+        const l = taskDueLabel(it.task.dueAt);
+        if (l.overdue) overdue.push(it);
+        else if (l.today) today.push(it);
       });
-      return { today, overdue };
+      clients.forEach((c) => {
+        if (c.status !== "HOT" && c.status !== "Finance") return;
+        const d = daysInactive(c);
+        if (d !== null && d >= 3) cold.push({ client: c, days: d });
+      });
+      cold.sort((a, b) => b.days - a.days);
+      return { today, overdue, cold };
     }
-    function message({ today, overdue }) {
+    function summaryText(g) {
       const parts = [];
-      if (today) parts.push(`${today} tarea${today === 1 ? "" : "s"} para hoy`);
-      if (overdue) parts.push(`${overdue} vencida${overdue === 1 ? "" : "s"}`);
-      return "Tienes " + parts.join(" y ");
+      if (g.today.length) parts.push(plural(g.today.length, "tarea para hoy", "tareas para hoy"));
+      if (g.overdue.length) parts.push(plural(g.overdue.length, "vencida", "vencidas"));
+      if (g.cold.length) parts.push(plural(g.cold.length, "lead caliente sin tocar", "leads calientes sin tocar"));
+      return parts.join(" · ");
     }
-    function refresh() {
-      const c = counts();
-      const total = c.today + c.overdue;
-      document.title = total ? `(${total}) ${baseTitle}` : baseTitle;
-      const canNotify = "Notification" in window;
-      if (!total) { banner.hidden = true; return; }
-      const msg = message(c);
-      textEl.textContent = "🔔 " + msg;
-      banner.classList.toggle("is-overdue", c.overdue > 0);
-      banner.hidden = dismissedFor === dayKey();
-      notifyBtn.hidden = !(canNotify && Notification.permission === "default");
-      // Notificacion del navegador: una vez por dia y por cantidad
-      const key = dayKey() + ":" + total;
-      if (canNotify && Notification.permission === "granted" && notifiedKey !== key) {
-        notifiedKey = key;
-        try {
-          const lastKey = localStorage.getItem("tryla_reminder_notified");
-          if (lastKey !== key) {
-            localStorage.setItem("tryla_reminder_notified", key);
-            new Notification("Tryla CRM", { body: msg, tag: "tryla-tasks" });
-          }
-        } catch (_) {}
+    function section(title, rowsHtml) {
+      return rowsHtml ? `<div class="avisos-sec"><h3>${title}</h3>${rowsHtml}</div>` : "";
+    }
+    function taskRow(it, late) {
+      const l = taskDueLabel(it.task.dueAt);
+      return `<div class="avisos-row${late ? " is-late" : ""}">
+        <input type="checkbox" class="av-check" data-client="${escapeHtml(it.client.id)}" data-task="${escapeHtml(it.task.id)}" title="Marcar como hecha">
+        <span class="av-text"><button type="button" class="av-name" data-open="${escapeHtml(it.client.id)}">${escapeHtml(it.client.name)}</button> · ${escapeHtml(it.task.text)}</span>
+        <span class="av-when">${escapeHtml(l.text)}</span></div>`;
+    }
+    function render() {
+      const g = collect();
+      const urgent = g.today.length + g.overdue.length;
+      document.title = urgent ? `(${urgent}) ${baseTitle}` : baseTitle;
+      if (!urgent && !g.cold.length) { bar.hidden = true; return false; }
+      barText.textContent = "🔔 " + summaryText(g);
+      bar.classList.toggle("is-overdue", g.overdue.length > 0);
+      bar.hidden = false;
+      summaryEl.textContent = summaryText(g);
+      document.getElementById("avisosDate").textContent = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+      bodyEl.innerHTML =
+        section("Vencidas", g.overdue.map((it) => taskRow(it, true)).join("")) +
+        section("Para hoy", g.today.map((it) => taskRow(it, false)).join("")) +
+        section("Leads calientes sin tocar", g.cold.map(({ client, days }) =>
+          `<div class="avisos-row"><span class="av-text"><button type="button" class="av-name" data-open="${escapeHtml(client.id)}">${escapeHtml(client.name)}</button> · ${escapeHtml(client.status)}${client.contacto ? " · " + escapeHtml(client.contacto) : ""}</span><span class="av-when">${escapeHtml(relativeDayStr(days))}</span></div>`).join(""));
+      return true;
+    }
+    function open() {
+      if (!render()) return;
+      modal.classList.add("open");
+      backdrop.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+    function close() {
+      modal.classList.remove("open");
+      backdrop.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    bodyEl.addEventListener("click", (e) => {
+      const nameBtn = e.target.closest("[data-open]");
+      if (nameBtn) {
+        const c = clients.find((x) => x.id === nameBtn.dataset.open);
+        if (c) {
+          close();
+          openLeadDrawer(c);
+        }
+        return;
       }
-    }
-    notifyBtn.addEventListener("click", () => {
-      Notification.requestPermission().then(refresh);
+      const chk = e.target.closest(".av-check");
+      if (chk) {
+        const c = clients.find((x) => x.id === chk.dataset.client);
+        if (!c) return;
+        toggleTask(c, chk.dataset.task);
+        renderPipeline();
+        renderTasksTab();
+        if (!render()) close();
+      }
     });
-    closeBtn.addEventListener("click", () => {
-      banner.hidden = true;
-      dismissedFor = dayKey();
-      try { localStorage.setItem("tryla_reminder_dismissed", dismissedFor); } catch (_) {}
+    ["avisosClose", "avisosOk"].forEach((id) => document.getElementById(id).addEventListener("click", close));
+    backdrop.addEventListener("click", close);
+    document.getElementById("avisosAllTasks").addEventListener("click", () => {
+      close();
+      switchTab("tasks");
     });
-    // Revisa al abrir, cada 10 min y al volver a la pestaña (cubre el cambio de dia y la sync de la nube)
-    refresh();
-    setTimeout(refresh, 3000);
-    setInterval(refresh, 10 * 60 * 1000);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
-    window.addEventListener("storage", refresh);
-    window.refreshTaskReminders = refresh;
+    document.getElementById("taskReminderOpen").addEventListener("click", open);
+    document.getElementById("taskReminderClose").addEventListener("click", () => { bar.hidden = true; });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("open")) close();
+    });
+
+    // Al abrir el CRM: recuadro una sola vez; despues queda la barra y el boton "Ver avisos".
+    setTimeout(open, 800);
+    setInterval(render, 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+    window.refreshTaskReminders = render;
   })();
 
   // ===== Portal de Fundadores: cuenta de solo lectura, un solo tab =====
