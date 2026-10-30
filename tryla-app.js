@@ -1087,7 +1087,7 @@
     o.textContent = s;
     fEstatus.appendChild(o);
   });
-  fEstatus.value = "HOT";
+  fEstatus.value = "Warm";
   function refreshEstatusField() {
     const name = normalizeName(fCliente.value);
     const existing = name ? clients.find((c) => normalizeName(c.name) === name) : null;
@@ -1097,7 +1097,7 @@
       fEstatusHint.textContent = "Cliente existente: su etapa se cambia desde el Pipeline.";
     } else {
       fEstatus.disabled = false;
-      if (!fEstatus.value) fEstatus.value = "HOT";
+      if (!fEstatus.value) fEstatus.value = "Warm";
       fEstatusHint.textContent = name ? "Cliente nuevo: se crea en esta etapa." : "";
     }
   }
@@ -3604,7 +3604,7 @@
     fIdioma.value = "es";
     fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = "";
-    fEstatus.value = "HOT";
+    fEstatus.value = "Warm";
     refreshEstatusField();
     specsEl.value = "";
     sizePresetEl.value = "";

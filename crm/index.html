@@ -258,7 +258,9 @@
     width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:13px;
     font-family: Arial, sans-serif; background:var(--panel); color:var(--text);
   }
+  .field input:not([type=checkbox]):not([type=radio]):not([type=file]), .field select{ height:36px; }
   .field-row{ display:flex; gap:10px; }
+  @media (max-width:600px){ .estatus-spacer{ display:none; } }
   .field-row .field{ flex:1; }
 
   table.builder{ width:100%; border-collapse:collapse; margin: 10px 0; }
@@ -318,6 +320,8 @@
   @media(max-width:780px){ .table-scroll table{ min-width:620px; } }
 
   /* ===== Location Intelligence (TrylApp) ===== */
+  #liMap.tli-map{ height:min(62vh, 560px); min-height:320px; margin-top:12px; }
+  @media(max-width:600px){ #liMap.tli-map{ height:58vh; min-height:300px; } }
   .li-result-layout{ display:grid; grid-template-columns:220px 1fr; gap:20px; }
   @media(max-width:700px){ .li-result-layout{ grid-template-columns:1fr; } }
   .li-score-card{
@@ -556,10 +560,13 @@
   .pc-call-count{ opacity:.75; }
 
   /* ===== Toggle tablero / lista del Pipeline ===== */
-  .view-toggle{ display:flex; border:2px solid var(--blue); border-radius:999px; overflow:hidden; flex-shrink:0; }
+  .pipeline-toolbar{ align-items:flex-end; flex-wrap:wrap; }
+  .pipeline-toolbar .field{ margin-bottom:0; }
+  .pipeline-toolbar .field input, .pipeline-toolbar .field select, .pipeline-toolbar .btn-small{ height:36px; padding-top:0; padding-bottom:0; }
+  .view-toggle{ display:inline-flex; align-items:stretch; height:36px; border:1.5px solid var(--blue); border-radius:999px; overflow:hidden; flex-shrink:0; margin-left:auto; }
   .view-toggle-btn{
-    border:none; background:var(--panel); color:var(--blue); font-weight:700; font-size:12px;
-    padding:8px 14px; cursor:pointer; transition: background .15s ease, color .15s ease;
+    display:inline-flex; align-items:center; gap:6px; border:none; background:var(--panel); color:var(--blue); font-weight:700; font-size:12.5px;
+    padding:0 14px; cursor:pointer; transition: background .15s ease, color .15s ease; font-family:inherit; white-space:nowrap;
   }
   .view-toggle-btn.active{ background:var(--blue); color:#fff; }
   .pipeline-list-row{ cursor:pointer; transition: background .12s ease; }
@@ -672,6 +679,9 @@
     font-family:inherit; transition: border-color .15s ease, background .15s ease;
   }
   .ld-quote-item:hover{ border-color:var(--blue); background:var(--light); }
+  :root[data-theme="dark"] .ld-quote-item{ background:#1D2036; }
+  :root[data-theme="dark"] .ld-quote-item:hover{ background:#262A4A; }
+  :root[data-theme="dark"] .ld-quote-item .lq-view{ color:#A9A4FF; }
   .ld-quote-item .lq-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
   .ld-quote-item .lq-num{ font-weight:800; font-size:13px; }
   .ld-quote-item .lq-meta{ font-size:11px; color:var(--text2); }
@@ -1046,6 +1056,21 @@
     <button type="button" id="taskReminderClose" aria-label="Cerrar">&times;</button>
   </span>
 </div>
+
+<main>
+  <div class="tabs-wrap">
+  <div class="tabs" id="tabsBar">
+    <button class="tab-btn active" data-tab="quote">Cotizador</button>
+    <button class="tab-btn" data-tab="clients">Clientes</button>
+    <button class="tab-btn" data-tab="pipeline">Pipeline</button>
+    <button class="tab-btn" data-tab="tasks">Tareas</button>
+    <button class="tab-btn" data-tab="quotes">Cotizaciones guardadas</button>
+    <button class="tab-btn" data-tab="intel">Location Intelligence</button>
+    <button class="tab-btn" data-tab="finance">Financiamiento</button>
+    <button class="tab-btn" data-tab="invoices">Invoices</button>
+    <button class="tab-btn" data-tab="sites">Sitios Web</button>
+    <button class="tab-btn" data-tab="dashboard">Resumen</button>
+  </div>
   </div>
 
   <!-- ===================== TAB: COTIZADOR ===================== -->
@@ -1095,11 +1120,12 @@
             <div class="field"><label>Telefono / Email</label><input id="fContacto" type="text" placeholder="Tel. o correo"></div>
           </div>
           <div class="field-row">
-            <div class="field" style="max-width:260px;">
+            <div class="field">
               <label>Estatus en el pipeline</label>
               <select id="fEstatus"></select>
               <div class="hint" id="fEstatusHint" style="margin:4px 0 0;"></div>
             </div>
+            <div class="field estatus-spacer" aria-hidden="true"></div>
           </div>
           <div class="field-row">
             <div class="field"><label>Entrega (ciudad, estado)</label><input id="fEntrega" type="text" placeholder="Houston, Texas"></div>
@@ -1293,7 +1319,7 @@
     <div class="panel">
       <h2>Pipeline de leads</h2>
       <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. Click en una tarjeta para ver toda su info. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
-      <div class="field-row" style="align-items:flex-end;">
+      <div class="field-row pipeline-toolbar">
         <div class="field" style="max-width:260px; flex:1;">
           <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
         </div>
@@ -1420,6 +1446,14 @@
       </div>
     </div>
 
+    <div class="panel" id="liMapPanel">
+      <h2>Mapa de ubicaciones</h2>
+      <div class="hint">Haz click en cualquier punto del mapa para analizarlo, o escribe una direcci&oacute;n arriba. Los &iacute;conos muestran los lugares reales cercanos.</div>
+      <div id="liMap" class="tli-map"></div>
+      <div class="hint li-radius-note">Radio de analisis: 1.5 millas (3 millas de diametro). Click en el mapa para elegir otro punto.</div>
+      <button type="button" class="li-opportunity-toggle" id="liOpportunityToggle">Mostrar zonas de oportunidad (8-10) para esta cocina</button>
+    </div>
+
     <div class="panel" id="liResultPanel" style="display:none;">
       <div class="hint" id="liDataBadge" style="margin:0 0 10px;"></div>
       <div class="li-result-layout">
@@ -1447,9 +1481,6 @@
           </div>
         </div>
       </div>
-      <div id="liMap" class="tli-map"></div>
-      <div class="hint li-radius-note">Radio de analisis: 1.5 millas (3 millas de diametro). Click en el mapa para elegir otro punto.</div>
-      <button type="button" class="li-opportunity-toggle" id="liOpportunityToggle">Mostrar zonas de oportunidad (8-10) para esta cocina</button>
       <div class="li-insights" id="liInsights"></div>
       <div class="actions" style="margin-top:14px;">
         <button class="primary" id="liSaveBtn" type="button">Guardar an&aacute;lisis</button>

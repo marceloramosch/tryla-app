@@ -126,6 +126,7 @@
   function buildStatusChip(email) {
     const chip = document.createElement("div");
     chip.id = "novaCloudChip";
+    chip.className = "nova-cloud-chip";
     chip.style.cssText =
       "position:fixed;bottom:14px;right:14px;z-index:9000;background:#171433;color:#fff;" +
       "font:600 12px Arial;padding:8px 12px;border-radius:20px;display:flex;gap:10px;" +
