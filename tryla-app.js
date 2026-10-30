@@ -1064,6 +1064,7 @@
   // ===== CRM: clientes =====
   function persistClients() {
     syncSet(CLIENTS_KEY, JSON.stringify(clients), true);
+    if (window.refreshTaskReminders) window.refreshTaskReminders();
   }
 
   function renderClientSelect() {
@@ -4065,6 +4066,77 @@
   renderFinanceQuoteSelect();
   renderInvoiceQuoteSelect();
   renderInvoicesTable();
+
+
+  // ===== Aviso de tareas del dia: banner + notificacion del navegador + contador en el titulo =====
+  (function taskReminders() {
+    const banner = document.getElementById("taskReminder");
+    if (!banner) return;
+    const textEl = document.getElementById("taskReminderText");
+    const notifyBtn = document.getElementById("taskReminderNotify");
+    const closeBtn = document.getElementById("taskReminderClose");
+    const baseTitle = document.title.replace(/^\(\d+\)\s*/, "");
+    const dayKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    let dismissedFor = "";
+    try { dismissedFor = localStorage.getItem("tryla_reminder_dismissed") || ""; } catch (_) {}
+    let notifiedKey = "";
+
+    function counts() {
+      let today = 0, overdue = 0;
+      allOpenTasks().forEach(({ task }) => {
+        if (!task.dueAt) return;
+        const l = taskDueLabel(task.dueAt);
+        if (l.overdue) overdue++;
+        else if (l.today) today++;
+      });
+      return { today, overdue };
+    }
+    function message({ today, overdue }) {
+      const parts = [];
+      if (today) parts.push(`${today} tarea${today === 1 ? "" : "s"} para hoy`);
+      if (overdue) parts.push(`${overdue} vencida${overdue === 1 ? "" : "s"}`);
+      return "Tienes " + parts.join(" y ");
+    }
+    function refresh() {
+      const c = counts();
+      const total = c.today + c.overdue;
+      document.title = total ? `(${total}) ${baseTitle}` : baseTitle;
+      const canNotify = "Notification" in window;
+      if (!total) { banner.hidden = true; return; }
+      const msg = message(c);
+      textEl.textContent = "🔔 " + msg;
+      banner.classList.toggle("is-overdue", c.overdue > 0);
+      banner.hidden = dismissedFor === dayKey();
+      notifyBtn.hidden = !(canNotify && Notification.permission === "default");
+      // Notificacion del navegador: una vez por dia y por cantidad
+      const key = dayKey() + ":" + total;
+      if (canNotify && Notification.permission === "granted" && notifiedKey !== key) {
+        notifiedKey = key;
+        try {
+          const lastKey = localStorage.getItem("tryla_reminder_notified");
+          if (lastKey !== key) {
+            localStorage.setItem("tryla_reminder_notified", key);
+            new Notification("Tryla CRM", { body: msg, tag: "tryla-tasks" });
+          }
+        } catch (_) {}
+      }
+    }
+    notifyBtn.addEventListener("click", () => {
+      Notification.requestPermission().then(refresh);
+    });
+    closeBtn.addEventListener("click", () => {
+      banner.hidden = true;
+      dismissedFor = dayKey();
+      try { localStorage.setItem("tryla_reminder_dismissed", dismissedFor); } catch (_) {}
+    });
+    // Revisa al abrir, cada 10 min y al volver a la pestaña (cubre el cambio de dia y la sync de la nube)
+    refresh();
+    setTimeout(refresh, 3000);
+    setInterval(refresh, 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+    window.addEventListener("storage", refresh);
+    window.refreshTaskReminders = refresh;
+  })();
 
   // ===== Portal de Fundadores: cuenta de solo lectura, un solo tab =====
   if (window.NovaCloud && window.NovaCloud.isFounder) {
