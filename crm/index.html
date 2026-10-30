@@ -613,6 +613,44 @@
   }
   .ld-actions a:hover, .ld-actions button:hover{ background:var(--blue); color:#fff; transform:translateY(-1px); }
 
+
+  /* ===== Visor de cotizacion desde el pipeline ===== */
+  .quote-view-backdrop{
+    position:fixed; inset:0; background:rgba(10,8,40,.55); z-index:9200; opacity:0; pointer-events:none;
+    transition: opacity .2s ease;
+  }
+  .quote-view-backdrop.open{ opacity:1; pointer-events:auto; }
+  .quote-view{
+    position:fixed; z-index:9201; top:4vh; left:50%; width:min(900px, 96vw); height:92vh;
+    transform:translate(-50%, 12px); opacity:0; pointer-events:none; display:flex; flex-direction:column;
+    background:var(--panel); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .quote-view.open{ opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
+  .quote-view-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:12px 16px; border-bottom:1px solid var(--border); flex-shrink:0; color:var(--text);
+  }
+  .qv-actions{ display:flex; align-items:center; gap:8px; }
+  .quote-view-doc{
+    flex:1; overflow-y:auto; margin:14px; background:#fff; border:1px solid var(--silver); border-radius:10px;
+    padding:36px 44px; font-size:13px; color:var(--dark);
+  }
+  @media (max-width:600px){ .quote-view{ top:0; height:100vh; width:100vw; border-radius:0; } .quote-view-doc{ padding:20px 16px; margin:8px; } }
+  /* lista de cotizaciones dentro del panel lateral */
+  .ld-quotes{ display:flex; flex-direction:column; gap:6px; }
+  .ld-quote-item{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer;
+    padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:var(--panel); color:var(--text);
+    font-family:inherit; transition: border-color .15s ease, background .15s ease;
+  }
+  .ld-quote-item:hover{ border-color:var(--blue); background:var(--light); }
+  .ld-quote-item .lq-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .ld-quote-item .lq-num{ font-weight:800; font-size:13px; }
+  .ld-quote-item .lq-meta{ font-size:11px; color:var(--text2); }
+  .ld-quote-item .lq-total{ font-weight:800; font-size:13px; white-space:nowrap; }
+  .ld-quote-item .lq-view{ font-size:11px; font-weight:700; color:var(--blue); white-space:nowrap; }
+
   /* ===== Tooltip flotante al dejar el mouse sobre una tarjeta ===== */
   .card-tooltip{
     position:fixed; z-index:9050; max-width:260px; background:var(--dark); color:#fff; font-size:12px;
@@ -817,7 +855,7 @@
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions,
-    .lead-drawer, .lead-drawer-backdrop, .card-tooltip, .call-outcome-popover{ display:none !important; }
+    .lead-drawer, .lead-drawer-backdrop, .quote-view, .quote-view-backdrop, .card-tooltip, .call-outcome-popover{ display:none !important; }
     #previewWrap{ display:block !important; margin:0; }
     #previewDoc{ border:none; padding:0; max-width:none; }
     body{ background:#fff; }
@@ -1796,6 +1834,21 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     <span>Sitios Web</span>
   </button>
+</div>
+
+
+<!-- Visor de cotizacion (se abre desde el panel lateral del pipeline) -->
+<div id="quoteViewBackdrop" class="quote-view-backdrop"></div>
+<div id="quoteView" class="quote-view" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cotizacion">
+  <div class="quote-view-bar">
+    <b id="qvTitle"></b>
+    <span class="qv-actions">
+      <button type="button" id="qvEdit" class="btn-small">Editar en Cotizador</button>
+      <button type="button" id="qvPrint" class="btn-small">Imprimir / PDF</button>
+      <button type="button" id="qvClose" class="lead-drawer-close" aria-label="Cerrar">&times;</button>
+    </span>
+  </div>
+  <div class="quote-view-doc" id="qvDoc"></div>
 </div>
 
 <!-- Panel lateral: info completa de un lead (se abre al hacer click en su tarjeta) -->

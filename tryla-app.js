@@ -2092,6 +2092,60 @@
   }
 
   // ---- Panel lateral: toda la info de un lead ----
+  // ---- Cotizaciones de un cliente dentro del panel lateral + visor ----
+  function clientQuotesList(c) {
+    return quotes.filter((q) => q.clientId === c.id).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  }
+  function clientQuotesHtml(c) {
+    const list = clientQuotesList(c);
+    if (!list.length) return `<div style="font-size:12px; color:var(--text2);">Sin cotizaciones todavia</div>`;
+    return list
+      .map((q) => {
+        const meta = [q.fecha || "", isInvoice(q) ? "Invoice" : q.status || ""].filter(Boolean).join(" · ");
+        return `<button type="button" class="ld-quote-item" data-qid="${escapeHtml(q.id)}">
+          <span class="lq-main"><span class="lq-num">${escapeHtml(q.number || "(sin no.)")}</span><span class="lq-meta">${escapeHtml(meta)}</span></span>
+          <span class="lq-total">${formatMoney(quoteTotals(q).subtotal)}</span>
+          <span class="lq-view">Ver</span>
+        </button>`;
+      })
+      .join("");
+  }
+  let qvQuoteId = null;
+  function quoteDocHtmlFor(q) {
+    return quoteDocHtml({
+      idioma: q.idioma || "es",
+      fecha: q.fecha,
+      number: q.number,
+      cliente: q.cliente,
+      contacto: q.contacto,
+      entrega: q.entrega,
+      garantia: q.garantia,
+      lineItems: q.lineItems || [],
+      notas: q.notas || [],
+      subtotal: quoteTotals(q).subtotal,
+    });
+  }
+  function openQuoteView(id) {
+    const q = quotes.find((x) => x.id === id);
+    if (!q) return;
+    qvQuoteId = id;
+    document.getElementById("qvTitle").textContent = docTitleFor("Quote", q.cliente) + (q.number ? ` · ${q.number}` : "");
+    document.getElementById("qvDoc").innerHTML = quoteDocHtmlFor(q);
+    document.getElementById("qvDoc").scrollTop = 0;
+    const view = document.getElementById("quoteView");
+    view.classList.add("open");
+    view.setAttribute("aria-hidden", "false");
+    document.getElementById("quoteViewBackdrop").classList.add("open");
+  }
+  function closeQuoteView() {
+    qvQuoteId = null;
+    const view = document.getElementById("quoteView");
+    if (!view) return;
+    view.classList.remove("open");
+    view.setAttribute("aria-hidden", "true");
+    document.getElementById("quoteViewBackdrop").classList.remove("open");
+  }
+
   function openLeadDrawer(c) {
     hideCardTooltip();
     hideCallOutcomePopover();
@@ -2117,7 +2171,10 @@
       ${c.contacto ? `<div class="ld-row"><span class="ld-label">Telefono / contacto</span><span class="ld-value">${escapeHtml(c.contacto)}</span></div>` : ""}
       ${needsFinancing ? `<div class="ld-row"><span class="ld-label">Financiamiento</span><span class="ld-value">🏦 Si${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
       ${value > 0 ? `<div class="ld-row"><span class="ld-label">Valor en pipeline</span><span class="ld-value">${formatMoney(value)}</span></div>` : ""}
-      <div class="ld-row"><span class="ld-label">Cotizaciones</span><span class="ld-value">${quoteCount}</span></div>
+      <div class="ld-row">
+        <span class="ld-label">Cotizaciones (${quoteCount})</span>
+        <div class="ld-quotes">${clientQuotesHtml(c)}</div>
+      </div>
       ${customFieldDefs
         .filter((f) => c.customFields && c.customFields[f.id])
         .map((f) => `<div class="ld-row"><span class="ld-label">${escapeHtml(f.label)}</span><span class="ld-value">${escapeHtml(c.customFields[f.id])}</span></div>`)
@@ -2215,6 +2272,9 @@
       if (!href) e.preventDefault();
       logCallAttempt(c);
       showCallOutcomePopover(body.querySelector(".ld-call"), c);
+    });
+    body.querySelectorAll(".ld-quote-item").forEach((btn) => {
+      btn.addEventListener("click", () => openQuoteView(btn.dataset.qid));
     });
     body.querySelector(".ld-email").addEventListener("click", () => {
       const subject = prompt(`Asunto del correo enviado a "${c.name}" (opcional):`, "");
@@ -3359,24 +3419,24 @@
     return rows.join("");
   }
 
-  function buildPreview() {
-    const { subtotal } = updateTotals();
-    const t = I18N[fIdioma.value] || I18N.es;
+  // Documento de cotizacion (HTML) a partir de datos, sin depender del formulario.
+  function quoteDocHtml(d) {
+    const subtotal = d.subtotal;
+    const t = I18N[d.idioma] || I18N.es;
 
-    const fechaVal = fFecha.value
-      ? new Date(fFecha.value + "T00:00:00").toLocaleDateString(t.locale, { year: "numeric", month: "long", day: "numeric" })
+    const fechaVal = d.fecha
+      ? new Date(d.fecha + "T00:00:00").toLocaleDateString(t.locale, { year: "numeric", month: "long", day: "numeric" })
       : "";
 
-    const rowsHtml = buildProductRows(true);
+    const rowsHtml = buildProductRows(true, d.lineItems);
 
-    const specLines = specsEl.value
-      .split("\n")
-      .map((s) => s.trim())
+    const specLines = (d.notas || [])
+      .map((s) => String(s).trim())
       .filter((s) => s !== "")
       .map((s) => `<li>${escapeHtml(s)}</li>`)
       .join("");
 
-    previewDoc.innerHTML = `
+    return `
       <div class="doc-header">
         <img src="../assets/tryla_logo.png" alt="Tryla">
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
@@ -3395,16 +3455,16 @@
           <div class="label">${t.date}</div>
           <div class="value">${escapeHtml(fechaVal)}</div>
           <div class="label" style="margin-top:6px;">${t.quoteNo}</div>
-          <div class="value">${escapeHtml(fNumero.value)}</div>
+          <div class="value">${escapeHtml(d.number)}</div>
         </div>
       </div>
 
       <div class="doc-section">${t.clientInfo}</div>
       <table class="doc-client">
-        <tr><td class="label">${t.client}</td><td>${escapeHtml(fCliente.value)}</td></tr>
-        <tr><td class="label">${t.contact}</td><td>${escapeHtml(fContacto.value)}</td></tr>
-        <tr><td class="label">${t.deliverTo}</td><td>${escapeHtml(fEntrega.value)}</td></tr>
-        <tr><td class="label">${t.warranty}</td><td>${escapeHtml(fGarantia.value)}</td></tr>
+        <tr><td class="label">${t.client}</td><td>${escapeHtml(d.cliente)}</td></tr>
+        <tr><td class="label">${t.contact}</td><td>${escapeHtml(d.contacto)}</td></tr>
+        <tr><td class="label">${t.deliverTo}</td><td>${escapeHtml(d.entrega)}</td></tr>
+        <tr><td class="label">${t.warranty}</td><td>${escapeHtml(d.garantia)}</td></tr>
       </table>
 
       <div class="doc-section">${t.components}</div>
@@ -3423,7 +3483,7 @@
         <tr class="total"><td class="label">${t.total}</td><td style="width:140px;">${formatMoney(subtotal)}</td></tr>
       </table>
 
-      ${finIncluirPdf.checked && currentFinancePlan ? financeExhibitBody(t, currentFinancePlan, fCliente.value) : ""}
+      ${finIncluirPdf.checked && currentFinancePlan ? financeExhibitBody(t, currentFinancePlan, d.cliente) : ""}
 
       <div class="doc-section">${t.termsTitle}</div>
       <div class="doc-note">
@@ -3436,14 +3496,14 @@
       </div>
       <div class="doc-note">
         <b>${t.constructionTitle}</b>
-        ${t.constructionText(escapeHtml(fEntrega.value || t.destinationFallback))}
+        ${t.constructionText(escapeHtml(d.entrega || t.destinationFallback))}
       </div>
 
       <div class="doc-section">${t.signaturesTitle}</div>
       <p style="font-size:12.5px; color:#5b6b8c;">${t.signaturesText}</p>
       <div class="doc-signatures">
         <div class="doc-sig">${t.sellerSig}</div>
-        <div class="doc-sig">${escapeHtml(fCliente.value || t.clientSigFallback)} — ${t.clientSig}</div>
+        <div class="doc-sig">${escapeHtml(d.cliente || t.clientSigFallback)} — ${t.clientSig}</div>
       </div>
 
       <div class="doc-footer">
@@ -3451,9 +3511,26 @@
       </div>
     `;
 
+  }
+
+  function buildPreview() {
+    const { subtotal } = updateTotals();
+    previewDoc.innerHTML = quoteDocHtml({
+      idioma: fIdioma.value,
+      fecha: fFecha.value,
+      number: fNumero.value,
+      cliente: fCliente.value,
+      contacto: fContacto.value,
+      entrega: fEntrega.value,
+      garantia: fGarantia.value,
+      lineItems,
+      notas: specsEl.value.split("\n"),
+      subtotal,
+    });
     currentDocTitle = docTitleFor("Quote", fCliente.value);
     previewWrap.classList.add("show");
   }
+
 
   // ===== Compartir cotizacion por link publico (thetryla.com/?quote=<id>) =====
   async function shareQuote(id) {
@@ -3902,8 +3979,36 @@
   const ldBackdrop = document.getElementById("leadDrawerBackdrop");
   if (ldCloseBtn) ldCloseBtn.addEventListener("click", closeLeadDrawer);
   if (ldBackdrop) ldBackdrop.addEventListener("click", closeLeadDrawer);
+  const qvCloseBtn = document.getElementById("qvClose");
+  if (qvCloseBtn) qvCloseBtn.addEventListener("click", closeQuoteView);
+  const qvBackdrop = document.getElementById("quoteViewBackdrop");
+  if (qvBackdrop) qvBackdrop.addEventListener("click", closeQuoteView);
+  const qvEditBtn = document.getElementById("qvEdit");
+  if (qvEditBtn) {
+    qvEditBtn.addEventListener("click", () => {
+      const id = qvQuoteId;
+      if (!id) return;
+      closeQuoteView();
+      closeLeadDrawer();
+      loadQuote(id);
+    });
+  }
+  const qvPrintBtn = document.getElementById("qvPrint");
+  if (qvPrintBtn) {
+    qvPrintBtn.addEventListener("click", () => {
+      const q = quotes.find((x) => x.id === qvQuoteId);
+      if (!q) return;
+      // La impresion usa el documento compartido (#previewDoc), el resto de la pagina se oculta
+      previewDoc.innerHTML = quoteDocHtmlFor(q);
+      printWithTitle(docTitleFor("Quote", q.cliente));
+    });
+  }
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (qvQuoteId) {
+        closeQuoteView();
+        return;
+      }
       closeLeadDrawer();
       hideCallOutcomePopover();
     }
