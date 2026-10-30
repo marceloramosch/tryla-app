@@ -122,7 +122,7 @@
   .theme-switch:active .ts-track{ transform:scale(.94); }
 
   /* ===== Toggle coqueton: idioma ES/EN ===== */
-  .visually-hidden{ position:absolute!important; width:1px;height:1px; padding:0;margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .visually-hidden{ position:absolute!important; width:1px!important;height:1px!important; padding:0;margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .lang-switch{
     --w:76px; --h:30px; --pad:3px; --thumb:calc(var(--h) - var(--pad)*2);
     border:none; padding:0; cursor:pointer; background:transparent; margin-top:4px;
@@ -162,6 +162,8 @@
   .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
   .task-reminder{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px auto 0; max-width:1280px; padding:10px 14px; background:#FFF4E0; border:1px solid #F5C77E; border-radius:10px; color:#7A4A00; font-size:14px; font-weight:600; }
   .task-reminder[hidden]{ display:none; }
+  :root[data-theme="dark"] .task-reminder{ background:#33260C; border-color:#7A5A1F; color:#FFD99A; }
+  :root[data-theme="dark"] .task-reminder.is-overdue{ background:#3A1416; border-color:#8A2F33; color:#FFB4B4; }
   .task-reminder.is-overdue{ background:#FFECEC; border-color:#F2A8A8; color:#8A1F1F; }
   .task-reminder-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
   .task-reminder button{ font:inherit; font-size:13px; cursor:pointer; border:1px solid currentColor; background:transparent; color:inherit; border-radius:8px; padding:4px 10px; }
@@ -1012,6 +1014,92 @@
     .col-filter, .cell-edit-input, .cell-edit-select{ font-size:16px; padding:7px; } /* evita el zoom automatico de iOS al enfocar un input */
     .filter-toggle-btn{ min-height:38px; }
   }
+
+  /* ===== Optimizacion movil ===== */
+  .bn-item{ position:relative; }
+  .bn-badge{ position:absolute; top:5px; left:calc(50% + 6px); min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:#E5484D; color:#fff; font:800 10px/16px Barlow,Arial,sans-serif; font-style:normal; text-align:center; }
+  .bn-badge[hidden]{ display:none; }
+  .bn-sheet a.bn-sheet-item{ text-decoration:none; }
+  @media (max-width:600px){
+    /* Encabezado compacto: logo + nombre + interruptor de tema; los links van en "Mas" */
+    header{ padding:8px 14px; flex-wrap:nowrap; gap:10px; }
+    header .trailer-icon{ width:36px !important; height:36px !important; border-radius:10px !important; }
+    header .trailer-icon svg{ width:34px; height:34px; }
+    header .brand-text h1{ font-size:19px; letter-spacing:1px; }
+    header .brand-text p{ display:none; }
+    header nav a{ display:none; }
+    .task-reminder{ margin:8px 14px 0; padding:8px 10px; font-size:12.5px; gap:8px; }
+    .task-reminder button{ padding:6px 10px; min-height:34px; }
+    main{ padding:10px 14px 14px; }
+    .panel{ padding:14px; margin-bottom:12px; border-radius:12px; }
+    .panel > .hint:not(#fEstatusHint){ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+    /* Todos los controles tactiles con altura comoda */
+    .field input:not([type=checkbox]):not([type=radio]), .field select{ height:44px; }
+    .field textarea{ min-height:88px; }
+    .btn-small{ min-height:40px; padding:8px 12px; }
+    .actions{ gap:8px; }
+    .actions button{ flex:1 1 calc(50% - 4px); min-height:46px; }
+    .actions button.primary{ flex-basis:100%; }
+
+    /* Cotizador: el formulario primero; el catalogo se abre bajo demanda */
+    #tab-quote .layout{ display:flex; flex-direction:column; gap:0; }
+    #tab-quote .layout > div:not(.catalog-panel){ order:-1; }
+    .catalog-panel > h2{ cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+    .catalog-panel > h2::after{ content:"\25BE"; font-size:16px; transition:transform .2s ease; }
+    .catalog-panel.open > h2::after{ transform:rotate(180deg); }
+    .catalog-panel:not(.open) > :not(h2){ display:none; }
+    #tab-quote .panel > .field-row > .field{ max-width:none !important; flex:1 1 100% !important; }
+    #tab-quote .panel > .field-row > .field:has(#quickAddPrice){ flex:1 1 calc(50% - 5px) !important; }
+    #tab-quote .panel > .field-row > .field:has(#quickAddBtn){ flex:1 1 calc(50% - 5px) !important; }
+
+    /* Lineas de la cotizacion como tarjetas, sin scroll horizontal */
+    .table-scroll:has(table.lines){ overflow:visible; }
+    table.builder.lines{ min-width:0 !important; display:block; }
+    table.builder.lines thead{ display:none; }
+    table.builder.lines tbody{ display:block; }
+    table.builder.lines tr{ display:grid; grid-template-columns:76px 1fr 1fr 40px; gap:6px 8px; padding:12px 0; border-bottom:1px solid var(--border); align-items:end; }
+    table.builder.lines td{ display:block; padding:0; border:0; text-align:left; }
+    table.builder.lines td.drag-handle{ display:none; }
+    table.builder.lines td:nth-child(2){ grid-column:1 / 4; }
+    table.builder.lines td:nth-child(6){ grid-column:4; grid-row:1; text-align:right; }
+    table.builder.lines td:nth-child(5){ grid-column:3 / 5; text-align:right; font-size:15px; padding-bottom:10px; }
+    table.builder.lines td[data-label]::before{ content:attr(data-label); display:block; font-size:9.5px; letter-spacing:.8px; text-transform:uppercase; color:var(--text2); font-weight:600; margin-bottom:2px; }
+    table.builder.lines input.line-desc{ border-color:var(--border); height:44px; padding:6px 10px; font-size:16px; }
+    table.builder.lines input.line-price, table.builder.lines input.line-qty{ width:100%; height:44px; text-align:left; padding:6px 10px; }
+    table.builder.lines button.remove{ width:40px; height:44px; }
+
+    /* Pipeline: barra de filtros ordenada y tablero con columnas a pantalla casi completa */
+    .pipeline-toolbar{ gap:8px; }
+    .pipeline-toolbar .field{ flex:1 1 calc(50% - 4px) !important; max-width:none !important; min-width:0; }
+    .pipeline-toolbar .field:first-child{ flex-basis:100% !important; }
+    .pipeline-toolbar .field input, .pipeline-toolbar .field select, .pipeline-toolbar .btn-small{ height:42px; width:100%; }
+    .view-toggle{ width:100%; margin-left:0; height:42px; }
+    .view-toggle-btn{ flex:1; justify-content:center; font-size:13px; }
+    .pipeline-board{ scroll-snap-type:x mandatory; margin:0 -14px; padding:0 14px 10px; gap:10px; scroll-padding:0 14px; }
+    .pipeline-col{ flex:0 0 84vw !important; width:84vw !important; max-width:340px; scroll-snap-align:start; }
+    .pipeline-col-body{ max-height:68vh !important; }
+
+    .lbl-spacer{ display:none; }
+    .dash-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+    .dash-card{ padding:12px 12px; }
+    .field-row{ align-items:flex-end; }
+    .card-tooltip{ display:none !important; }
+    .lead-drawer:not(.open), .quote-view:not(.open){ box-shadow:none !important; }
+    #tab-intel .panel > .field-row > .field{ flex:1 1 100% !important; max-width:none !important; }
+    #liAnalyzeBtn{ min-height:46px; }
+    /* Panel lateral y visores a pantalla completa */
+    .lead-drawer{ width:100vw !important; max-width:100vw !important; }
+    .avisos-modal{ width:94vw; max-height:84vh; }
+    .avisos-row{ padding:10px; }
+    .avisos-row .av-check{ width:22px; height:22px; flex-shrink:0; }
+    .avisos-ok{ min-height:44px; }
+
+    /* Insignia de la nube: ya no flota sobre la barra inferior, queda al final de la pagina */
+    .nova-cloud-chip{ position:static !important; margin:6px auto 14px !important; width:fit-content; max-width:calc(100% - 28px); font-size:11px !important; box-shadow:none !important; }
+    .nova-cloud-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bottom-nav{ z-index:60; }
+  }
 </style>
 <script>
   // Aplica el tema guardado antes de pintar, para evitar parpadeo. Claro es el primario/por defecto.
@@ -1090,15 +1178,15 @@
           <input id="quickAddPrice" type="number" min="0" step="10" value="0">
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="quickAddBtn" type="button" class="primary" style="width:100%; border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:13px;">+ Agregar</button>
         </div>
       </div>
     </div>
 
     <div class="layout">
-      <div class="panel">
-        <h2>Catalogo de componentes</h2>
+      <div class="panel catalog-panel" id="catalogPanel">
+        <h2 id="catalogToggle">Catalogo de componentes</h2>
         <div class="hint">El catalogo se muestra en el idioma seleccionado en "Idioma de la cotizacion". Cambialo a English y los equipos se agregan en ingles.</div>
         <div id="catalog"></div>
       </div>
@@ -1154,7 +1242,7 @@
           <h2 style="margin-top:14px;">Componentes de la cotizacion</h2>
           <div class="hint">Arrastra el icono &#x2807; para reordenar los componentes.</div>
           <div class="table-scroll">
-            <table class="builder">
+            <table class="builder lines">
               <thead>
                 <tr><th class="drag"></th><th>Descripcion</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th><th></th></tr>
               </thead>
@@ -1241,7 +1329,7 @@
           </select>
         </div>
         <div class="field" style="max-width:170px; align-self:flex-end;">
-          <button id="cfAddBtn" type="button">+ Agregar campo</button>
+          <button id="cfAddBtn" type="button" class="btn-small">+ Agregar campo</button>
         </div>
       </div>
     </div>
@@ -1267,7 +1355,7 @@
           <input id="clientsSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad, contacto...">
         </div>
         <div class="field" style="max-width:130px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsFilterToggle" class="btn-small filter-toggle-btn" style="width:100%;">Filtros <span class="filter-toggle-caret">&#9662;</span></button>
         </div>
         <div class="field" style="max-width:150px;">
@@ -1279,15 +1367,15 @@
           <input id="clientsDateTo" type="date">
         </div>
         <div class="field" style="max-width:110px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsDateClear" class="btn-small" style="width:100%;">Limpiar</button>
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsExportCsv" class="btn-small" style="width:100%;">Exportar CSV</button>
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsImportCsv" class="btn-small" style="width:100%;">Importar CSV</button>
           <input type="file" id="clientsImportCsvFile" accept=".csv" style="display:none;">
         </div>
@@ -1324,7 +1412,7 @@
           <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
         </div>
         <div class="field" style="max-width:130px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="pipelineFilterToggle" class="btn-small filter-toggle-btn" style="width:100%;">Filtros <span class="filter-toggle-caret">&#9662;</span></button>
         </div>
         <div class="field" style="max-width:150px;">
@@ -1336,7 +1424,7 @@
           <input id="pipelineDateTo" type="date">
         </div>
         <div class="field" style="max-width:100px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="pipelineDateClear" class="btn-small" style="width:100%;">Limpiar</button>
         </div>
         <div class="field" style="max-width:170px;">
@@ -1344,7 +1432,7 @@
           <select id="pipelineAssigneeFilter"><option value="">Todos</option></select>
         </div>
         <div class="field" style="max-width:120px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="pipelineMyLeads" class="btn-small" style="width:100%;">Mis leads</button>
         </div>
         <div class="view-toggle" role="tablist" aria-label="Vista del pipeline">
@@ -1385,7 +1473,7 @@
           <input id="tasksSearch" type="text" placeholder="Buscar por cliente o texto de la tarea...">
         </div>
         <div class="field" style="max-width:130px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="tasksShowDone" class="btn-small" style="width:100%;">Ver completadas</button>
         </div>
       </div>
@@ -1440,7 +1528,7 @@
           <input id="liClientName" type="text" placeholder="Nombre del cliente">
         </div>
         <div class="field" style="max-width:150px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="liAnalyzeBtn" type="button" class="primary" style="width:100%; border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:13px;">Analizar &rarr;</button>
         </div>
       </div>
@@ -1526,7 +1614,7 @@
             <input id="finPlazo" type="number" min="1" step="1" value="12">
           </div>
           <div class="field" style="max-width:150px;">
-            <label>&nbsp;</label>
+            <label class="lbl-spacer">&nbsp;</label>
             <button id="finUseSaldoBtn" type="button" class="btn-small" style="width:100%;">&#8635; Usar saldo restante</button>
           </div>
         </div>
@@ -1579,7 +1667,7 @@
           <select id="invQuoteSelect"><option value="">-- selecciona una cotizacion --</option></select>
         </div>
         <div class="field" style="max-width:180px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="invConvertBtn" type="button" class="btn-small" style="width:100%;">Convertir a invoice</button>
         </div>
       </div>
@@ -1602,11 +1690,11 @@
           <input id="payConcepto" type="text" placeholder="Ej. Abono en efectivo, transferencia...">
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="payAddBtn" type="button" class="btn-small" style="width:100%;">+ Registrar pago</button>
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="payCancelEditBtn" type="button" style="width:100%; display:none;">Cancelar edicion</button>
         </div>
       </div>
@@ -1852,9 +1940,9 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     <span>Clientes</span>
   </button>
-  <button class="bn-item" data-tab="dashboard" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <span>Resumen</span>
+  <button class="bn-item" data-tab="tasks" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>Tareas</span><i class="bn-badge" id="bnTasksBadge" hidden></i>
   </button>
   <button class="bn-item" id="bnMoreBtn" type="button" aria-haspopup="true" aria-expanded="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -1885,6 +1973,12 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     <span>Sitios Web</span>
   </button>
+  <button class="bn-sheet-item" data-tab="dashboard" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Resumen</span>
+  </button>
+  <a class="bn-sheet-item" href="https://thetryla.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><span>Sitio thetryla.com</span></a>
+  <a class="bn-sheet-item" href="https://thetryla.app" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg><span>Portal de clientes</span></a>
 </div>
 
 
