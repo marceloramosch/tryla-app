@@ -3016,6 +3016,7 @@
       locale: "es-MX",
       title: "COTIZACION DE VENTA",
       preparedBy: "PREPARADO POR",
+      phoneLabel: "TELEFONO",
       company: "EMPRESA",
       companyName: "Tryla",
       companyAddress: "1111 Ellenwood St, Dallas, TX 75217",
@@ -3088,6 +3089,7 @@
       locale: "en-US",
       title: "SALES QUOTE",
       preparedBy: "PREPARED BY",
+      phoneLabel: "PHONE",
       company: "COMPANY",
       companyName: "Tryla",
       companyAddress: "1111 Ellenwood St, Dallas, TX 75217",
@@ -3451,6 +3453,8 @@
         <div>
           <div class="label">${t.preparedBy}</div>
           <div class="value">Marcelo Ramos Schiaffino</div>
+          <div class="label" style="margin-top:6px;">${t.phoneLabel}</div>
+          <div class="value">+1 (645) 235-3186</div>
           <div class="label" style="margin-top:6px;">${t.company}</div>
           <div class="value">${t.companyName}</div>
           <div style="font-size:11px; color:#5b6b8c; margin-top:2px;">${t.companyAddress}</div>
