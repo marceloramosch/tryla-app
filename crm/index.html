@@ -872,6 +872,12 @@
   table.doc-client{ width:100%; border-collapse:collapse; }
   table.doc-client td{ background:var(--light); padding:8px 12px; font-size:13px; }
   table.doc-client td.label{ color:#7c8aa6; font-size:11px; letter-spacing:1px; width:160px; font-weight:700; vertical-align:top; }
+  /* Informacion del cliente compacta: 2 filas x 2 columnas */
+  table.doc-client2{ table-layout:fixed; }
+  table.doc-client2 td{ padding:4px 9px; font-size:12px; vertical-align:top; overflow-wrap:anywhere; }
+  table.doc-client2 td.label{ width:13%; font-size:10px; letter-spacing:.6px; padding-right:4px; }
+  table.doc-client2 td:nth-child(2), table.doc-client2 td:nth-child(4){ width:37%; }
+  .doc-footer-phone{ display:inline-block; margin-top:4px; font-size:12.5px; color:var(--dark); }
   table.doc-product{ width:100%; border-collapse:collapse; margin-top:6px; }
   table.doc-product th{ background:var(--dark); color:#fff; text-align:left; padding:8px 12px; font-size:11px; letter-spacing:1px; }
   table.doc-product th.num, table.doc-product td.num{ text-align:right; }
