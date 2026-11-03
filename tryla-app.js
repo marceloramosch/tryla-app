@@ -3241,7 +3241,7 @@
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
       </div>
       <div style="text-align:center; font-size:11px; letter-spacing:1.5px; color:#5b6b8c; margin:-4px 0 10px;">
-        MARCELO RAMOS SCHIAFFINO — DBA NOVA FOOD TRAILER<br>Dallas County, Texas
+        MARCELO RAMOS SCHIAFFINO — DBA TRYLA<br>Dallas County, Texas
       </div>
       <div class="doc-title">${t.financingDocTitle}</div>
       <div style="text-align:center; font-size:12px; color:var(--blue); font-weight:700; margin-bottom:18px;">
