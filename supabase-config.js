@@ -1,7 +1,7 @@
 // ============================================================
 //  CONFIGURACIÓN DE SUPABASE (CRM en la nube) — TRYLA
 //  Proyecto independiente de Tryla, sembrado con la info
-//  historica de Nova Food Trailers como punto de partida.
+//  historica de Tryla como punto de partida.
 // ============================================================
 window.NOVA_SUPABASE = {
   url: "https://dcuescldzrgcppubcoxq.supabase.co",

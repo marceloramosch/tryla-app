@@ -1,4 +1,4 @@
-// Nova Food Trailers - catalogo de tamanos 10ft - 30ft (todos de 8ft de ancho)
+// Tryla - catalogo de tamanos 10ft - 30ft (todos de 8ft de ancho)
 // Cada tamano define: dimensiones, ejes, porch, ventanas de servicio,
 // precio base y la linea de equipo (para el blueprint y la cotizacion).
 //

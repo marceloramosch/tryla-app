@@ -1,5 +1,5 @@
 // ============================================================
-//  NOVA CLOUD STORE
+//  TRYLA CLOUD STORE
 //  Sincroniza el cotizador (clientes, cotizaciones y precios)
 //  con Supabase. Si Supabase no está configurado, no hace nada
 //  y la herramienta sigue funcionando en modo local.
@@ -38,12 +38,12 @@
 
   // --- Sin configurar, o sin librería: modo local ---
   if (!configured) {
-    console.log("[Nova] Modo LOCAL (Supabase no configurado).");
+    console.log("[Tryla] Modo LOCAL (Supabase no configurado).");
     resolveReady("local");
     return;
   }
   if (typeof supabase === "undefined" || !supabase.createClient) {
-    console.warn("[Nova] No se pudo cargar Supabase. Modo local de respaldo.");
+    console.warn("[Tryla] No se pudo cargar Supabase. Modo local de respaldo.");
     resolveReady("local");
     return;
   }
@@ -69,7 +69,7 @@
         });
         remoteVersions[key] = updatedAt;
       } catch (e) {
-        console.warn("[Nova] No se pudo guardar en la nube:", key, e);
+        console.warn("[Tryla] No se pudo guardar en la nube:", key, e);
       }
     });
     return pushChain;
@@ -116,9 +116,9 @@
           }
         }
       }
-      console.log("[Nova] Datos sincronizados desde la nube ✓");
+      console.log("[Tryla] Datos sincronizados desde la nube ✓");
     } catch (e) {
-      console.warn("[Nova] Error al sincronizar:", e);
+      console.warn("[Tryla] Error al sincronizar:", e);
     }
   }
 
