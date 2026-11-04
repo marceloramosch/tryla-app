@@ -163,7 +163,9 @@
   const SEQUENCES_KEY = "novaSequences";
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
-  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
+  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost", "Trash"];
+  // Trash = basura (no interesados, numeros malos, duplicados): no cuenta en el embudo ni genera avisos de tareas
+  const FUNNEL_STAGES = PIPELINE_STAGES.filter((s) => s !== "Trash");
   // Grupo/campana: leads con c.grupo === "Utah Colds" viven en su propio pipeline ("Utah").
   // Es una etiqueta permanente: el estatus (Cold/Warm/...) se maneja aparte y el grupo no cambia al mover etapas.
   const COLD_GROUP = "Utah Colds";
@@ -1890,6 +1892,7 @@
   function allOpenTasks() {
     const out = [];
     clients.forEach((c) => {
+      if (c.status === "Trash") return;
       openTasksOf(c).forEach((t) => out.push({ client: c, task: t }));
     });
     out.sort((a, b) => {
@@ -3681,12 +3684,13 @@
   function computeStageReports() {
     const funnelCounts = {};
     const stageDurations = {};
-    PIPELINE_STAGES.forEach((s) => {
+    FUNNEL_STAGES.forEach((s) => {
       funnelCounts[s] = 0;
       stageDurations[s] = [];
     });
 
-    clients.forEach((c) => {
+    const funnelClients = clients.filter((c) => c.status !== "Trash");
+    funnelClients.forEach((c) => {
       const hist = c.stageHistory && c.stageHistory.length
         ? c.stageHistory
         : [{ stage: c.status, at: c.createdAt || Date.now() }];
@@ -3704,14 +3708,14 @@
       }
     });
 
-    const totalClients = clients.length || 1;
-    const funnel = PIPELINE_STAGES.map((s) => ({
+    const totalClients = funnelClients.length || 1;
+    const funnel = FUNNEL_STAGES.map((s) => ({
       stage: s,
       count: funnelCounts[s],
       pct: Math.round((funnelCounts[s] / totalClients) * 100),
     }));
 
-    const avgTime = PIPELINE_STAGES.map((s) => {
+    const avgTime = FUNNEL_STAGES.map((s) => {
       const arr = stageDurations[s];
       const avgMs = arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
       return { stage: s, avgDays: arr.length ? Math.round((avgMs / 86400000) * 10) / 10 : 0, n: arr.length };
