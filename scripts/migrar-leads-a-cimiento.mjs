@@ -23,7 +23,7 @@
 //    TRYLA_SUPABASE_URL      opcional; por omision la de supabase-config.js
 //    CIMIENTO_LEADS_URL      opcional; por omision la de produccion
 // ============================================================
-import { readFileSync } from "node:fs";
+import { leerNovaStore } from "./nova-store.mjs";
 
 const TRYLA_URL = process.env.TRYLA_SUPABASE_URL ?? "https://dcuescldzrgcppubcoxq.supabase.co";
 const TRYLA_KEY = process.env.TRYLA_SERVICE_ROLE_KEY ?? "";
@@ -37,7 +37,10 @@ const TANDA = 200;
 if (!CSV && !TRYLA_KEY) salir("Falta TRYLA_SERVICE_ROLE_KEY (o usa --desde-csv <archivo>)");
 if (!CIMIENTO_TOKEN && !PROBAR) salir("Falta CIMIENTO_LEADS_TOKEN");
 
-const clientes = CSV ? clientesDelCsv(CSV) : await clientesDeTryla();
+const valor = await leerNovaStore("novaClients", { csv: CSV, url: TRYLA_URL, llave: TRYLA_KEY }).catch((e) =>
+  salir(e.message),
+);
+const clientes = Array.isArray(valor) ? valor : [];
 console.log(`${clientes.length} leads en el CRM de tryla-app`);
 
 const leads = clientes.map((c) => ({
@@ -125,60 +128,6 @@ function fechaDeAlta(c) {
     c.movedAt,
   ].filter((f) => typeof f === "number" && f > 0);
   return fechas.length ? Math.min(...fechas) : undefined;
-}
-
-async function clientesDeTryla() {
-  const res = await fetch(`${TRYLA_URL}/rest/v1/nova_store?key=eq.novaClients&select=value`, {
-    headers: { apikey: TRYLA_KEY, Authorization: `Bearer ${TRYLA_KEY}` },
-  });
-  if (!res.ok) salir(`No se pudo leer nova_store: ${res.status} ${await res.text()}`);
-  const [fila] = await res.json();
-  return Array.isArray(fila?.value) ? fila.value : [];
-}
-
-function clientesDelCsv(ruta) {
-  const filas = leerCsv(readFileSync(ruta, "utf8"));
-  const [encabezado, ...datos] = filas;
-  const iKey = encabezado.indexOf("key");
-  const iValue = encabezado.indexOf("value");
-  if (iKey < 0 || iValue < 0) salir("El CSV debe traer las columnas key y value");
-  const fila = datos.find((f) => f[iKey] === "novaClients");
-  if (!fila) salir("El CSV no trae la fila novaClients");
-  const valor = JSON.parse(fila[iValue]);
-  return Array.isArray(valor) ? valor : [];
-}
-
-// CSV con comillas dobles y saltos de linea dentro de los campos.
-function leerCsv(texto) {
-  const filas = [];
-  let fila = [];
-  let campo = "";
-  let entreComillas = false;
-  for (let i = 0; i < texto.length; i++) {
-    const ch = texto[i];
-    if (entreComillas) {
-      if (ch === '"' && texto[i + 1] === '"') {
-        campo += '"';
-        i++;
-      } else if (ch === '"') entreComillas = false;
-      else campo += ch;
-    } else if (ch === '"') entreComillas = true;
-    else if (ch === ",") {
-      fila.push(campo);
-      campo = "";
-    } else if (ch === "\n" || ch === "\r") {
-      if (ch === "\r" && texto[i + 1] === "\n") i++;
-      fila.push(campo);
-      filas.push(fila);
-      fila = [];
-      campo = "";
-    } else campo += ch;
-  }
-  if (campo || fila.length) {
-    fila.push(campo);
-    filas.push(fila);
-  }
-  return filas.filter((f) => f.length > 1);
 }
 
 function argumento(nombre) {
