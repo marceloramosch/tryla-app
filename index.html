@@ -21,7 +21,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <link rel="stylesheet" href="location-intel.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
 <style>
   @font-face{font-family:'Unbounded';src:url('fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
   @font-face{font-family:'Sora';src:url('fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
@@ -335,8 +335,8 @@
   <div class="ios-screens" id="screens"><div class="full-loading">Cargando...</div></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
 <script src="location-intel.js"></script>
 <script>
 (function () {
@@ -684,7 +684,7 @@
                 '<span>' + t("auth_apple") + '</span>' +
               '</button>' +
             '</div>' +
-            '<div class="auth-fine">' + t("auth_fine_pre") + '<a href="https://wa.me/16452353186" target="_blank" style="color:#C9C6FF;">' + t("auth_fine_link") + '</a></div>' +
+            '<div class="auth-fine">' + t("auth_fine_pre") + '<a href="https://wa.me/16452353186" target="_blank" rel="noopener noreferrer" style="color:#C9C6FF;">' + t("auth_fine_link") + '</a></div>' +
           '</div>' +
         '</div>' +
         featureGridHtml() +
@@ -1257,7 +1257,7 @@
         '<div class="hint">' + t("site_hint") +
         (site.subdomain ?
           t("site_your_site") +
-          '<a class="live-link" href="https://' + esc(site.subdomain) + '.thetryla.app" target="_blank">' + esc(site.subdomain) + ".thetryla.app</a>"
+          '<a class="live-link" href="https://' + esc(site.subdomain) + '.thetryla.app" target="_blank" rel="noopener noreferrer">' + esc(site.subdomain) + ".thetryla.app</a>"
         : "") +
         "</div>" +
         '<div class="field"><label>' + t("site_name") + '</label><input type="text" id="pvName" value="' + esc(site.restaurant_name) + '"></div>' +
@@ -1425,10 +1425,10 @@
         var time = new Date(o.created_at).toLocaleTimeString(lang === "en" ? "en-US" : "es-MX", { hour: "2-digit", minute: "2-digit" });
         var next = NEXT_STATUS[o.status];
         return (
-          '<div class="op-order status-' + o.status + '" data-order-id="' + o.id + '">' +
+          '<div class="op-order status-' + esc(o.status) + '" data-order-id="' + esc(o.id) + '">' +
             '<div class="op-order-head">' +
               '<div><div class="op-order-name">' + esc(o.customer_name) + '</div><div class="op-order-time">' + esc(o.customer_phone) + " · " + time + "</div></div>" +
-              '<span class="op-status-label">' + STATUS_LABEL[o.status] + "</span>" +
+              '<span class="op-status-label">' + esc(STATUS_LABEL[o.status] || o.status) + "</span>" +
             "</div>" +
             '<div class="op-fulfill-pill">' + (o.fulfillment === "delivery" ? t("op_delivery") + esc(o.delivery_address || "") : t("op_pickup")) + "</div>" +
             '<div class="op-order-items">' + items + (o.notes ? "<br><em>" + t("op_note") + esc(o.notes) + "</em>" : "") + "</div>" +
@@ -1467,6 +1467,9 @@
         var res = await siteApi.connectStripe();
         if (res.error) throw res.error;
         if (res.data && res.data.error) throw new Error(res.data.error);
+        if (!/^https:\/\/(checkout|connect)\.stripe\.com\//.test(String(res.data.url))) {
+          throw new Error("URL no valida.");
+        }
         location.href = res.data.url;
       } catch (e) {
         btn.disabled = false;

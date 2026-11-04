@@ -164,6 +164,13 @@
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
   const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
+  // Grupo/campana: leads con c.grupo === "Utah Colds" viven en su propio pipeline ("Utah").
+  // Es una etiqueta permanente: el estatus (Cold/Warm/...) se maneja aparte y el grupo no cambia al mover etapas.
+  const COLD_GROUP = "Utah Colds";
+  const PIPELINE_SCOPE_KEY = "trylaPipelineScope";
+  const PIPELINE_PERIOD_KEY = "trylaPipelinePeriod";
+  const pipelineScopeEl = document.getElementById("pipelineScope");
+  const pipelinePeriodEl = document.getElementById("pipelinePeriod");
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
@@ -330,7 +337,7 @@
 
   // Totales derivados de un objeto cotizacion (no del formulario del Cotizador)
   function quoteTotals(q) {
-    const subtotal = (q.lineItems || []).reduce((s, l) => s + (parseFloat(l.price) || 0), 0);
+    const subtotal = (q.lineItems || []).reduce((s, l) => s + (parseFloat(l.price) || 0) * (parseFloat(l.qty) || 1), 0);
     const deposito = parseFloat(q.deposito) || 0;
     return { subtotal, deposito, saldo: subtotal - deposito };
   }
@@ -469,8 +476,8 @@
   });
 
   // ===== Lineas de la cotizacion =====
-  function addLineItem(desc, price) {
-    lineItems.push({ desc, price });
+  function addLineItem(desc, price, qty) {
+    lineItems.push({ desc, price, qty: qty || 1 });
     renderLineItems();
   }
 
@@ -523,8 +530,25 @@
       });
       tdDesc.appendChild(descInput);
 
+      const tdQty = document.createElement("td");
+      tdQty.className = "num";
+      tdQty.dataset.label = "Cant.";
+      const qtyInput = document.createElement("input");
+      qtyInput.type = "number";
+      qtyInput.className = "line-qty";
+      qtyInput.min = "1";
+      qtyInput.step = "1";
+      qtyInput.value = line.qty || 1;
+      qtyInput.addEventListener("input", () => {
+        lineItems[idx].qty = parseFloat(qtyInput.value) || 1;
+        tdSubtotal.textContent = formatMoney((parseFloat(lineItems[idx].price) || 0) * (parseFloat(lineItems[idx].qty) || 1));
+        updateTotals();
+      });
+      tdQty.appendChild(qtyInput);
+
       const tdPrice = document.createElement("td");
       tdPrice.className = "num";
+      tdPrice.dataset.label = "Precio";
       const priceInput = document.createElement("input");
       priceInput.type = "number";
       priceInput.className = "line-price";
@@ -533,9 +557,15 @@
       priceInput.value = line.price;
       priceInput.addEventListener("input", () => {
         lineItems[idx].price = parseFloat(priceInput.value) || 0;
+        tdSubtotal.textContent = formatMoney((parseFloat(lineItems[idx].price) || 0) * (parseFloat(lineItems[idx].qty) || 1));
         updateTotals();
       });
       tdPrice.appendChild(priceInput);
+
+      const tdSubtotal = document.createElement("td");
+      tdSubtotal.className = "num line-subtotal";
+      tdSubtotal.dataset.label = "Subtotal";
+      tdSubtotal.textContent = formatMoney((parseFloat(line.price) || 0) * (parseFloat(line.qty) || 1));
 
       const tdRemove = document.createElement("td");
       const removeBtn = document.createElement("button");
@@ -549,7 +579,9 @@
       tdRemove.appendChild(removeBtn);
 
       tr.appendChild(tdDesc);
+      tr.appendChild(tdQty);
       tr.appendChild(tdPrice);
+      tr.appendChild(tdSubtotal);
       tr.appendChild(tdRemove);
       lineItemsEl.appendChild(tr);
     });
@@ -557,7 +589,7 @@
   }
 
   function updateTotals() {
-    const subtotal = lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0), 0);
+    const subtotal = lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0) * (parseFloat(l.qty) || 1), 0);
     const deposito = loadedDeposito || 0;
     const saldo = subtotal - deposito;
     tSubtotal.textContent = formatMoney(subtotal);
@@ -1042,6 +1074,7 @@
   // ===== CRM: clientes =====
   function persistClients() {
     syncSet(CLIENTS_KEY, JSON.stringify(clients), true);
+    if (window.refreshTaskReminders) window.refreshTaskReminders();
   }
 
   function renderClientSelect() {
@@ -1054,12 +1087,42 @@
     });
   }
 
+  // Estatus del pipeline desde la cotizacion: editable solo si el cliente es nuevo;
+  // si ya existe, muestra su etapa actual (se cambia desde el Pipeline).
+  const fEstatus = document.getElementById("fEstatus");
+  const fEstatusHint = document.getElementById("fEstatusHint");
+  PIPELINE_STAGES.forEach((s) => {
+    const o = document.createElement("option");
+    o.value = s;
+    o.textContent = s;
+    fEstatus.appendChild(o);
+  });
+  fEstatus.value = "Warm";
+  function refreshEstatusField() {
+    const name = normalizeName(fCliente.value);
+    const existing = name ? clients.find((c) => normalizeName(c.name) === name) : null;
+    if (existing) {
+      fEstatus.value = existing.status || "Cold";
+      fEstatus.disabled = true;
+      fEstatusHint.textContent = "Cliente existente: su etapa se cambia desde el Pipeline.";
+    } else {
+      fEstatus.disabled = false;
+      if (!fEstatus.value) fEstatus.value = "Warm";
+      fEstatusHint.textContent = name ? "Cliente nuevo: se crea en esta etapa." : "";
+    }
+  }
+  fCliente.addEventListener("input", refreshEstatusField);
+
   fClientSelect.addEventListener("change", () => {
     const client = clients.find((c) => c.id === fClientSelect.value);
-    if (!client) return;
+    if (!client) {
+      refreshEstatusField();
+      return;
+    }
     fCliente.value = client.name;
     fContacto.value = client.contacto || "";
     fEntrega.value = client.ciudad || "";
+    refreshEstatusField();
   });
 
   function renderClientsTable() {
@@ -1426,17 +1489,23 @@
 
   // Descarga todos los clientes visibles como CSV (respeta busqueda y fechas activas)
   function csvEscape(v) {
-    const s = String(v == null ? "" : v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    let s = String(v == null ? "" : v);
+    // Evita inyeccion de formulas en Excel/Sheets: celdas que empiezan con = + - @ se prefijan con '
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  // Inverso de la proteccion anterior al importar un CSV exportado por nosotros
+  function csvUnguard(v) {
+    return typeof v === "string" ? v.replace(/^'(?=[=+\-@\t\r])/, "") : v;
   }
   function exportClientsCsv() {
     const rows = clients;
-    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Asignado a", "Fuente", "Notas", "Fecha creacion"].concat(
+    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Grupo", "Asignado a", "Fuente", "Notas", "Fecha creacion"].concat(
       customFieldDefs.map((f) => f.label)
     );
     const lines = [header.join(",")];
     rows.forEach((c) => {
-      const base = [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""];
+      const base = [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.grupo || "", c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""];
       const custom = customFieldDefs.map((f) => (c.customFields && c.customFields[f.id]) || "");
       lines.push(base.concat(custom).map(csvEscape).join(","));
     });
@@ -1481,7 +1550,7 @@
   // Importa clientes desde un CSV (mismo formato que exportClientsCsv).
   // Omite filas cuyo nombre ya coincida con un cliente existente (ver findSimilarClient).
   function importClientsCsv(text) {
-    const rows = parseCsv(text.replace(/^﻿/, ""));
+    const rows = parseCsv(text.replace(/^﻿/, "")).map((r) => r.map(csvUnguard));
     if (!rows.length) {
       alert("El archivo esta vacio.");
       return;
@@ -1497,6 +1566,7 @@
     const iNegocio = idx("Negocio");
     const iCiudad = idx("Ciudad");
     const iEstatus = idx("Estatus");
+    const iGrupo = idx("Grupo");
     const iAsignado = idx("Asignado a");
     const iFuente = idx("Fuente");
     const iNotas = idx("Notas");
@@ -1508,7 +1578,8 @@
       const row = rows[r];
       const name = (row[iName] || "").trim();
       if (!name) continue;
-      if (findSimilarClient(name)) {
+      const phoneDigits = ((iContacto !== -1 ? row[iContacto] : "") || "").replace(/\D/g, "").slice(-10);
+      if (findSimilarClient(name) || (phoneDigits.length === 10 && clients.some((c) => (c.contacto || "").replace(/\D/g, "").slice(-10) === phoneDigits))) {
         skipped++;
         continue;
       }
@@ -1524,6 +1595,7 @@
         negocio: iNegocio !== -1 ? (row[iNegocio] || "").trim() : "",
         ciudad: iCiudad !== -1 ? (row[iCiudad] || "").trim() : "",
         status,
+        grupo: iGrupo !== -1 && status === "Cold" ? (row[iGrupo] || "").trim() : "",
         assignedTo: iAsignado !== -1 ? (row[iAsignado] || "").trim() : "",
         fuente: iFuente !== -1 ? (row[iFuente] || "").trim() : "",
         notas: iNotas !== -1 ? (row[iNotas] || "").trim() : "",
@@ -1602,20 +1674,21 @@
     renderClientSelect();
   });
 
-  function findOrCreateClient(name, contacto, ciudad) {
+  function findOrCreateClient(name, contacto, ciudad, status) {
     if (!name) return null;
     const norm = normalizeName(name);
     let client = clients.find((c) => normalizeName(c.name) === norm);
     if (!client) {
+      const stage = PIPELINE_STAGES.indexOf(status) !== -1 ? status : "HOT";
       client = {
         id: "c" + Date.now(),
         name,
         contacto: contacto || "",
         ciudad: ciudad || "",
-        status: "HOT",
+        status: stage,
         notas: "",
         createdAt: Date.now(),
-        stageHistory: [{ stage: "HOT", at: Date.now() }],
+        stageHistory: [{ stage, at: Date.now() }],
       };
       clients.push(client);
     } else {
@@ -2033,6 +2106,60 @@
   }
 
   // ---- Panel lateral: toda la info de un lead ----
+  // ---- Cotizaciones de un cliente dentro del panel lateral + visor ----
+  function clientQuotesList(c) {
+    return quotes.filter((q) => q.clientId === c.id).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  }
+  function clientQuotesHtml(c) {
+    const list = clientQuotesList(c);
+    if (!list.length) return `<div style="font-size:12px; color:var(--text2);">Sin cotizaciones todavia</div>`;
+    return list
+      .map((q) => {
+        const meta = [q.fecha || "", isInvoice(q) ? "Invoice" : q.status || ""].filter(Boolean).join(" · ");
+        return `<button type="button" class="ld-quote-item" data-qid="${escapeHtml(q.id)}">
+          <span class="lq-main"><span class="lq-num">${escapeHtml(q.number || "(sin no.)")}</span><span class="lq-meta">${escapeHtml(meta)}</span></span>
+          <span class="lq-total">${formatMoney(quoteTotals(q).subtotal)}</span>
+          <span class="lq-view">Ver</span>
+        </button>`;
+      })
+      .join("");
+  }
+  let qvQuoteId = null;
+  function quoteDocHtmlFor(q) {
+    return quoteDocHtml({
+      idioma: q.idioma || "es",
+      fecha: q.fecha,
+      number: q.number,
+      cliente: q.cliente,
+      contacto: q.contacto,
+      entrega: q.entrega,
+      garantia: q.garantia,
+      lineItems: q.lineItems || [],
+      notas: q.notas || [],
+      subtotal: quoteTotals(q).subtotal,
+    });
+  }
+  function openQuoteView(id) {
+    const q = quotes.find((x) => x.id === id);
+    if (!q) return;
+    qvQuoteId = id;
+    document.getElementById("qvTitle").textContent = docTitleFor("Quote", q.cliente) + (q.number ? ` · ${q.number}` : "");
+    document.getElementById("qvDoc").innerHTML = quoteDocHtmlFor(q);
+    document.getElementById("qvDoc").scrollTop = 0;
+    const view = document.getElementById("quoteView");
+    view.classList.add("open");
+    view.setAttribute("aria-hidden", "false");
+    document.getElementById("quoteViewBackdrop").classList.add("open");
+  }
+  function closeQuoteView() {
+    qvQuoteId = null;
+    const view = document.getElementById("quoteView");
+    if (!view) return;
+    view.classList.remove("open");
+    view.setAttribute("aria-hidden", "true");
+    document.getElementById("quoteViewBackdrop").classList.remove("open");
+  }
+
   function openLeadDrawer(c) {
     hideCardTooltip();
     hideCallOutcomePopover();
@@ -2058,7 +2185,10 @@
       ${c.contacto ? `<div class="ld-row"><span class="ld-label">Telefono / contacto</span><span class="ld-value">${escapeHtml(c.contacto)}</span></div>` : ""}
       ${needsFinancing ? `<div class="ld-row"><span class="ld-label">Financiamiento</span><span class="ld-value">🏦 Si${c.downpayment ? " · DP: " + escapeHtml(c.downpayment) : ""}</span></div>` : ""}
       ${value > 0 ? `<div class="ld-row"><span class="ld-label">Valor en pipeline</span><span class="ld-value">${formatMoney(value)}</span></div>` : ""}
-      <div class="ld-row"><span class="ld-label">Cotizaciones</span><span class="ld-value">${quoteCount}</span></div>
+      <div class="ld-row">
+        <span class="ld-label">Cotizaciones (${quoteCount})</span>
+        <div class="ld-quotes">${clientQuotesHtml(c)}</div>
+      </div>
       ${customFieldDefs
         .filter((f) => c.customFields && c.customFields[f.id])
         .map((f) => `<div class="ld-row"><span class="ld-label">${escapeHtml(f.label)}</span><span class="ld-value">${escapeHtml(c.customFields[f.id])}</span></div>`)
@@ -2157,6 +2287,9 @@
       logCallAttempt(c);
       showCallOutcomePopover(body.querySelector(".ld-call"), c);
     });
+    body.querySelectorAll(".ld-quote-item").forEach((btn) => {
+      btn.addEventListener("click", () => openQuoteView(btn.dataset.qid));
+    });
     body.querySelector(".ld-email").addEventListener("click", () => {
       const subject = prompt(`Asunto del correo enviado a "${c.name}" (opcional):`, "");
       if (subject === null) return;
@@ -2217,7 +2350,7 @@
         ${c.assignedTo ? `<span class="pc-assignee" title="Asignado a ${escapeHtml(c.assignedTo)}">${escapeHtml(assigneeInitials(c.assignedTo))}</span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
-      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}${c.grupo === COLD_GROUP ? " · Utah" : ""}</div>` : ""}
       ${lastActivityLineHtml(c)}
       ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
@@ -2385,7 +2518,14 @@
     const toStr = pipelineDateTo.value;
     const assignee = pipelineAssigneeFilter ? pipelineAssigneeFilter.value : "";
     const myEmail = (window.NovaCloud && window.NovaCloud.email !== "local" && window.NovaCloud.email) || "";
+    const scope = pipelineScopeEl ? pipelineScopeEl.value : "all";
+    const periodDays = pipelinePeriodEl ? parseInt(pipelinePeriodEl.value, 10) || 0 : 0;
+    const periodCutoff = periodDays ? Date.now() - periodDays * 86400000 : 0;
     return clients.filter((c) => {
+      const isUtah = c.grupo === COLD_GROUP;
+      if (scope === "main" && isUtah) return false;
+      if (scope === "utah" && !isUtah) return false;
+      if (periodCutoff && !(c.createdAt && c.createdAt >= periodCutoff)) return false;
       const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
       const matchesAssignee = !assignee || c.assignedTo === assignee;
       const matchesMine = !pipelineMyLeadsOnly || (myEmail && c.assignedTo === myEmail);
@@ -2420,10 +2560,19 @@
     });
   }
 
+  // Pone el conteo de leads en cada opcion del selector de pipeline (Principal / Utah / Todos)
+  function updatePipelineScopeLabels() {
+    if (!pipelineScopeEl) return;
+    const utah = clients.filter((c) => c.grupo === COLD_GROUP).length;
+    const labels = { main: `Principal (${clients.length - utah})`, utah: `Utah (${utah})`, all: `Todos (${clients.length})` };
+    Array.from(pipelineScopeEl.options).forEach((o) => { if (labels[o.value]) o.textContent = labels[o.value]; });
+  }
+
   function renderPipeline() {
     const board = document.getElementById("pipelineBoard");
     if (!board) return;
     renderAssigneeFilterOptions();
+    updatePipelineScopeLabels();
     const filtered = filterPipelineClients();
 
     board.innerHTML = "";
@@ -2576,7 +2725,7 @@
         <span class="pc-name">${escapeHtml(c.name)}</span>
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
-      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}${c.grupo === COLD_GROUP ? " · Utah" : ""}</div>` : ""}
       ${lastActivityLineHtml(c)}
       ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
@@ -2648,7 +2797,7 @@
       .slice()
       .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
       .forEach((q) => {
-        const subtotal = q.lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0), 0);
+        const subtotal = q.lineItems.reduce((sum, l) => sum + (parseFloat(l.price) || 0) * (parseFloat(l.qty) || 1), 0);
         const saldo = subtotal - (parseFloat(q.deposito) || 0);
 
         const tr = document.createElement("tr");
@@ -2814,6 +2963,7 @@
     fIdioma.value = q.idioma || "es";
     fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = q.clientId || "";
+    refreshEstatusField();
     specsEl.value = (q.notas || []).join("\n");
     lineItems = (q.lineItems || []).map((l) => ({ ...l }));
     renderCatalog();
@@ -2837,7 +2987,7 @@
 
   document.getElementById("btnSave").addEventListener("click", () => {
     const { subtotal, deposito, saldo } = updateTotals();
-    const client = findOrCreateClient(fCliente.value.trim(), fContacto.value.trim(), fEntrega.value.trim());
+    const client = findOrCreateClient(fCliente.value.trim(), fContacto.value.trim(), fEntrega.value.trim(), fEstatus.value);
 
     // Preserva financiamiento y pagos existentes (se editan en sus propias pestañas)
     const existing = quotes.find((x) => x.id === currentQuoteId);
@@ -2882,6 +3032,7 @@
     renderInvoicesTable();
     renderClientSelect();
     renderClientsTable();
+    refreshEstatusField();
     alert("Cotizacion guardada.");
   });
 
@@ -2941,7 +3092,7 @@
       finAdjustTitle: "Ajuste por redondeo",
       finAdjustText: (month, amt) => `El pago del mes ${month} se ajusta en ${amt} para saldar el capital exactamente en cero, por el redondeo acumulado de los pagos mensuales.`,
       finConfidential: "Documento privado y confidencial",
-      finPageLabel: (name) => `Pagina 1 de 1 — Tabla de Amortizacion (${name || "Cliente"})`,
+      finPageLabel: (name) => `Pagina 1 de 1 — Tabla de Amortizacion (${escapeHtml(name || "Cliente")})`,
       invoiceDocTitle: "ESTADO DE CUENTA / INVOICE",
       invLabelFor: "Cuenta de",
       invDate: "FECHA",
@@ -2957,7 +3108,7 @@
       invTotalPaid: "Total pagado",
       invBalance: "SALDO RESTANTE",
       invNoPayments: "Sin pagos registrados",
-      invPageLabel: (name) => `Estado de cuenta — ${name || "Cliente"}`,
+      invPageLabel: (name) => `Estado de cuenta — ${escapeHtml(name || "Cliente")}`,
     },
     en: {
       locale: "en-US",
@@ -3013,7 +3164,7 @@
       finAdjustTitle: "Rounding adjustment",
       finAdjustText: (month, amt) => `The month ${month} payment is adjusted by ${amt} to settle the principal at exactly zero, due to accumulated rounding in the monthly payments.`,
       finConfidential: "Private and confidential document",
-      finPageLabel: (name) => `Page 1 of 1 — Amortization Schedule (${name || "Customer"})`,
+      finPageLabel: (name) => `Page 1 of 1 — Amortization Schedule (${escapeHtml(name || "Customer")})`,
       invoiceDocTitle: "STATEMENT / INVOICE",
       invLabelFor: "Account for",
       invDate: "DATE",
@@ -3029,7 +3180,7 @@
       invTotalPaid: "Total paid",
       invBalance: "REMAINING BALANCE",
       invNoPayments: "No payments recorded",
-      invPageLabel: (name) => `Statement — ${name || "Customer"}`,
+      invPageLabel: (name) => `Statement — ${escapeHtml(name || "Customer")}`,
     },
   };
 
@@ -3081,6 +3232,26 @@
     `;
   }
 
+  // Nombre sugerido al guardar como PDF = titulo de la pagina durante la impresion.
+  // Formato: "<Tipo> - <Cliente>" (ej. "Quote - Alexis"), igual que el nombre en el CRM.
+  let currentDocTitle = "";
+  function docTitleFor(kind, cliente) {
+    // caracteres no validos en nombres de archivo -> "-"
+    const name = String(cliente || "").replace(/[\\/:*?"<>|]+/g, "-").trim();
+    return name ? `${kind} - ${name}` : kind;
+  }
+  function printWithTitle(title) {
+    const original = document.title;
+    if (title) document.title = title;
+    const restore = () => {
+      document.title = original;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+    setTimeout(restore, 1500);
+  }
+
   function buildFinanceExhibit(q) {
     if (!currentFinancePlan) {
       alert("Captura capital, tasa add-on y plazo (mayores a cero) para calcular el plan de financiamiento antes de generar el Exhibit C.");
@@ -3094,7 +3265,7 @@
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
       </div>
       <div style="text-align:center; font-size:11px; letter-spacing:1.5px; color:#5b6b8c; margin:-4px 0 10px;">
-        MARCELO RAMOS SCHIAFFINO — DBA NOVA FOOD TRAILER<br>Dallas County, Texas
+        MARCELO RAMOS SCHIAFFINO — DBA TRYLA<br>Dallas County, Texas
       </div>
       <div class="doc-title">${t.financingDocTitle}</div>
       <div style="text-align:center; font-size:12px; color:var(--blue); font-weight:700; margin-bottom:18px;">
@@ -3105,6 +3276,7 @@
         <b>Tryla</b> &middot; ${t.companyAddress} &middot; ${t.finConfidential} &middot; ${t.finPageLabel(cliente)}
       </div>
     `;
+    currentDocTitle = docTitleFor("Exhibit C", cliente);
     previewWrap.classList.add("show");
     return true;
   }
@@ -3216,6 +3388,7 @@
         <b>Tryla</b> &middot; ${t.companyAddress} &middot; ${t.finConfidential} &middot; ${t.invPageLabel(q.cliente)}
       </div>
     `;
+    currentDocTitle = docTitleFor("Invoice", q.cliente);
     previewWrap.classList.add("show");
     return true;
   }
@@ -3241,8 +3414,10 @@
     while (i < filtered.length) {
       const l = filtered[i];
       const descLower = l.desc.toLowerCase();
+      const qty = parseFloat(l.qty) || 1;
+      const unitPrice = parseFloat(l.price) || 0;
       const priceCells = showPrice
-        ? `<td class="num">${formatMoney(l.price)}</td><td class="num">${formatMoney(l.price)}</td>`
+        ? `<td class="num">${formatMoney(unitPrice)}</td><td class="num">${formatMoney(unitPrice * qty)}</td>`
         : "";
       if (descLower.includes("unidad base") || descLower.includes("base unit")) {
         const included = [];
@@ -3256,7 +3431,7 @@
           : "";
         rows.push(`
         <tr>
-          <td>1</td>
+          <td>${qty}</td>
           <td>${escapeHtml(l.desc)}${subList}</td>
           ${priceCells}
         </tr>`);
@@ -3264,7 +3439,7 @@
       } else {
         rows.push(`
         <tr>
-          <td>1</td>
+          <td>${qty}</td>
           <td>${escapeHtml(l.desc)}</td>
           ${priceCells}
         </tr>`);
@@ -3274,24 +3449,24 @@
     return rows.join("");
   }
 
-  function buildPreview() {
-    const { subtotal } = updateTotals();
-    const t = I18N[fIdioma.value] || I18N.es;
+  // Documento de cotizacion (HTML) a partir de datos, sin depender del formulario.
+  function quoteDocHtml(d) {
+    const subtotal = d.subtotal;
+    const t = I18N[d.idioma] || I18N.es;
 
-    const fechaVal = fFecha.value
-      ? new Date(fFecha.value + "T00:00:00").toLocaleDateString(t.locale, { year: "numeric", month: "long", day: "numeric" })
+    const fechaVal = d.fecha
+      ? new Date(d.fecha + "T00:00:00").toLocaleDateString(t.locale, { year: "numeric", month: "long", day: "numeric" })
       : "";
 
-    const rowsHtml = buildProductRows(true);
+    const rowsHtml = buildProductRows(true, d.lineItems);
 
-    const specLines = specsEl.value
-      .split("\n")
-      .map((s) => s.trim())
+    const specLines = (d.notas || [])
+      .map((s) => String(s).trim())
       .filter((s) => s !== "")
       .map((s) => `<li>${escapeHtml(s)}</li>`)
       .join("");
 
-    previewDoc.innerHTML = `
+    return `
       <div class="doc-header">
         <img src="../assets/tryla_logo.png" alt="Tryla">
         <h1>TRYLA<span style="font-size:0.4em;vertical-align:super;">&reg;</span></h1>
@@ -3310,16 +3485,14 @@
           <div class="label">${t.date}</div>
           <div class="value">${escapeHtml(fechaVal)}</div>
           <div class="label" style="margin-top:6px;">${t.quoteNo}</div>
-          <div class="value">${escapeHtml(fNumero.value)}</div>
+          <div class="value">${escapeHtml(d.number)}</div>
         </div>
       </div>
 
       <div class="doc-section">${t.clientInfo}</div>
-      <table class="doc-client">
-        <tr><td class="label">${t.client}</td><td>${escapeHtml(fCliente.value)}</td></tr>
-        <tr><td class="label">${t.contact}</td><td>${escapeHtml(fContacto.value)}</td></tr>
-        <tr><td class="label">${t.deliverTo}</td><td>${escapeHtml(fEntrega.value)}</td></tr>
-        <tr><td class="label">${t.warranty}</td><td>${escapeHtml(fGarantia.value)}</td></tr>
+      <table class="doc-client doc-client2">
+        <tr><td class="label">${t.client}</td><td>${escapeHtml(d.cliente)}</td><td class="label">${t.contact}</td><td>${escapeHtml(d.contacto)}</td></tr>
+        <tr><td class="label">${t.deliverTo}</td><td>${escapeHtml(d.entrega)}</td><td class="label">${t.warranty}</td><td>${escapeHtml(d.garantia)}</td></tr>
       </table>
 
       <div class="doc-section">${t.components}</div>
@@ -3338,7 +3511,7 @@
         <tr class="total"><td class="label">${t.total}</td><td style="width:140px;">${formatMoney(subtotal)}</td></tr>
       </table>
 
-      ${finIncluirPdf.checked && currentFinancePlan ? financeExhibitBody(t, currentFinancePlan, fCliente.value) : ""}
+      ${finIncluirPdf.checked && currentFinancePlan ? financeExhibitBody(t, currentFinancePlan, d.cliente) : ""}
 
       <div class="doc-section">${t.termsTitle}</div>
       <div class="doc-note">
@@ -3351,23 +3524,42 @@
       </div>
       <div class="doc-note">
         <b>${t.constructionTitle}</b>
-        ${t.constructionText(escapeHtml(fEntrega.value || t.destinationFallback))}
+        ${t.constructionText(escapeHtml(d.entrega || t.destinationFallback))}
       </div>
 
       <div class="doc-section">${t.signaturesTitle}</div>
       <p style="font-size:12.5px; color:#5b6b8c;">${t.signaturesText}</p>
       <div class="doc-signatures">
         <div class="doc-sig">${t.sellerSig}</div>
-        <div class="doc-sig">${escapeHtml(fCliente.value || t.clientSigFallback)} — ${t.clientSig}</div>
+        <div class="doc-sig">${escapeHtml(d.cliente || t.clientSigFallback)} — ${t.clientSig}</div>
       </div>
 
       <div class="doc-footer">
-        <b>Tryla</b> &middot; 1111 Ellenwood St, Dallas, TX 75217 &middot; Marcelo Ramos Schiaffino &middot; +1 (645) 235-3186 &middot; marcelo.ramos@thetryla.com
+        <b>Tryla</b> &middot; 1111 Ellenwood St, Dallas, TX 75217 &middot; marcelo.ramos@thetryla.com<br>
+        <span class="doc-footer-phone">Marcelo Ramos Schiaffino &middot; <b>+1 (645) 235-3186</b></span>
       </div>
     `;
 
+  }
+
+  function buildPreview() {
+    const { subtotal } = updateTotals();
+    previewDoc.innerHTML = quoteDocHtml({
+      idioma: fIdioma.value,
+      fecha: fFecha.value,
+      number: fNumero.value,
+      cliente: fCliente.value,
+      contacto: fContacto.value,
+      entrega: fEntrega.value,
+      garantia: fGarantia.value,
+      lineItems,
+      notas: specsEl.value.split("\n"),
+      subtotal,
+    });
+    currentDocTitle = docTitleFor("Quote", fCliente.value);
     previewWrap.classList.add("show");
   }
+
 
   // ===== Compartir cotizacion por link publico (thetryla.com/?quote=<id>) =====
   async function shareQuote(id) {
@@ -3404,7 +3596,9 @@
     return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   document.getElementById("btnPreview").addEventListener("click", () => {
@@ -3414,14 +3608,14 @@
 
   document.getElementById("btnPrint").addEventListener("click", () => {
     buildPreview();
-    window.print();
+    printWithTitle(currentDocTitle);
   });
 
   // Boton generico en el panel de documento compartido: imprime/descarga lo
   // que este actualmente mostrado (cotizacion, invoice/estado de cuenta o
   // Exhibit C), sin importar desde que pestana se genero.
   document.getElementById("btnPrintDoc").addEventListener("click", () => {
-    window.print();
+    printWithTitle(currentDocTitle);
   });
 
   document.getElementById("btnReset").addEventListener("click", () => {
@@ -3438,6 +3632,8 @@
     fIdioma.value = "es";
     fIdioma.dispatchEvent(new Event("change"));
     fClientSelect.value = "";
+    fEstatus.value = "Warm";
+    refreshEstatusField();
     specsEl.value = "";
     sizePresetEl.value = "";
     renderCatalog();
@@ -3461,13 +3657,13 @@
 
     // Tab bar inferior tipo app (movil): resalta el item si es uno de los
     // principales, o el boton "Mas" si la seccion vive dentro de esa hoja.
-    const BOTTOM_NAV_PRIMARY = ["quote", "pipeline", "clients", "dashboard"];
+    const BOTTOM_NAV_PRIMARY = ["quote", "pipeline", "tasks", "clients"];
     document.querySelectorAll(".bn-item[data-tab]").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === name);
     });
     const bnMoreBtn = document.getElementById("bnMoreBtn");
     if (bnMoreBtn) bnMoreBtn.classList.toggle("active", !BOTTOM_NAV_PRIMARY.includes(name));
-    document.querySelectorAll(".bn-sheet-item").forEach((btn) => {
+    document.querySelectorAll(".bn-sheet-item[data-tab]").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.tab === name);
     });
 
@@ -3671,6 +3867,14 @@
     });
   })();
 
+  // Catalogo plegable en movil (el CSS solo lo oculta en pantallas chicas)
+  (function wireCatalogToggle() {
+    const panel = document.getElementById("catalogPanel");
+    const head = document.getElementById("catalogToggle");
+    if (!panel || !head) return;
+    head.addEventListener("click", () => panel.classList.toggle("open"));
+  })();
+
   // Degradados a los lados del tab bar (solo se notan en movil, donde hace
   // scroll horizontal) que avisan si hay mas pestanas ocultas de ese lado.
   (function wireTabsScrollFade() {
@@ -3722,6 +3926,24 @@
     clientsSortDateBtn.addEventListener("click", () => {
       clientsDateSort = clientsDateSort === "desc" ? "asc" : "desc";
       renderClientsTable();
+    });
+  }
+  try {
+    const sv = localStorage.getItem(PIPELINE_SCOPE_KEY);
+    if (pipelineScopeEl && ["main", "utah", "all"].indexOf(sv) !== -1) pipelineScopeEl.value = sv;
+    const pv = localStorage.getItem(PIPELINE_PERIOD_KEY);
+    if (pipelinePeriodEl && ["", "7", "30", "90"].indexOf(pv) !== -1 && pv !== null) pipelinePeriodEl.value = pv;
+  } catch (e) { /* sin storage: valores por defecto */ }
+  if (pipelineScopeEl) {
+    pipelineScopeEl.addEventListener("change", () => {
+      try { localStorage.setItem(PIPELINE_SCOPE_KEY, pipelineScopeEl.value); } catch (e) {}
+      renderPipeline();
+    });
+  }
+  if (pipelinePeriodEl) {
+    pipelinePeriodEl.addEventListener("change", () => {
+      try { localStorage.setItem(PIPELINE_PERIOD_KEY, pipelinePeriodEl.value); } catch (e) {}
+      renderPipeline();
     });
   }
   pipelineSearch.addEventListener("input", renderPipeline);
@@ -3812,8 +4034,36 @@
   const ldBackdrop = document.getElementById("leadDrawerBackdrop");
   if (ldCloseBtn) ldCloseBtn.addEventListener("click", closeLeadDrawer);
   if (ldBackdrop) ldBackdrop.addEventListener("click", closeLeadDrawer);
+  const qvCloseBtn = document.getElementById("qvClose");
+  if (qvCloseBtn) qvCloseBtn.addEventListener("click", closeQuoteView);
+  const qvBackdrop = document.getElementById("quoteViewBackdrop");
+  if (qvBackdrop) qvBackdrop.addEventListener("click", closeQuoteView);
+  const qvEditBtn = document.getElementById("qvEdit");
+  if (qvEditBtn) {
+    qvEditBtn.addEventListener("click", () => {
+      const id = qvQuoteId;
+      if (!id) return;
+      closeQuoteView();
+      closeLeadDrawer();
+      loadQuote(id);
+    });
+  }
+  const qvPrintBtn = document.getElementById("qvPrint");
+  if (qvPrintBtn) {
+    qvPrintBtn.addEventListener("click", () => {
+      const q = quotes.find((x) => x.id === qvQuoteId);
+      if (!q) return;
+      // La impresion usa el documento compartido (#previewDoc), el resto de la pagina se oculta
+      previewDoc.innerHTML = quoteDocHtmlFor(q);
+      printWithTitle(docTitleFor("Quote", q.cliente));
+    });
+  }
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (qvQuoteId) {
+        closeQuoteView();
+        return;
+      }
       closeLeadDrawer();
       hideCallOutcomePopover();
     }
@@ -3851,7 +4101,10 @@
 
       switchTab("quote");
       specsEl.value = specsEl.value.trim() ? specsEl.value.trim() + "\n\n" + block : block;
-      if (clientName && !fCliente.value.trim()) fCliente.value = clientName;
+      if (clientName && !fCliente.value.trim()) {
+        fCliente.value = clientName;
+        refreshEstatusField();
+      }
       if (address && !fEntrega.value.trim()) fEntrega.value = address;
       logActivity(`Incluyo el analisis de "${address}" en una cotizacion`);
     });
@@ -3867,6 +4120,124 @@
   renderFinanceQuoteSelect();
   renderInvoiceQuoteSelect();
   renderInvoicesTable();
+
+
+  // ===== Avisos del dia: recuadro al abrir el CRM (tareas de hoy, vencidas y leads calientes sin tocar) =====
+  (function avisos() {
+    const bar = document.getElementById("taskReminder");
+    const modal = document.getElementById("avisosModal");
+    const backdrop = document.getElementById("avisosBackdrop");
+    if (!bar || !modal || !backdrop) return;
+    const barText = document.getElementById("taskReminderText");
+    const bodyEl = document.getElementById("avisosBody");
+    const summaryEl = document.getElementById("avisosSummary");
+    const baseTitle = document.title.replace(/^\(\d+\)\s*/, "");
+    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+    function collect() {
+      const today = [], overdue = [], cold = [];
+      allOpenTasks().forEach((it) => {
+        if (!it.task.dueAt) return;
+        const l = taskDueLabel(it.task.dueAt);
+        if (l.overdue) overdue.push(it);
+        else if (l.today) today.push(it);
+      });
+      clients.forEach((c) => {
+        if (c.status !== "HOT" && c.status !== "Finance") return;
+        const d = daysInactive(c);
+        if (d !== null && d >= 3) cold.push({ client: c, days: d });
+      });
+      cold.sort((a, b) => b.days - a.days);
+      return { today, overdue, cold };
+    }
+    function summaryText(g) {
+      const parts = [];
+      if (g.today.length) parts.push(plural(g.today.length, "tarea para hoy", "tareas para hoy"));
+      if (g.overdue.length) parts.push(plural(g.overdue.length, "vencida", "vencidas"));
+      if (g.cold.length) parts.push(plural(g.cold.length, "lead caliente sin tocar", "leads calientes sin tocar"));
+      return parts.join(" · ");
+    }
+    function section(title, rowsHtml) {
+      return rowsHtml ? `<div class="avisos-sec"><h3>${title}</h3>${rowsHtml}</div>` : "";
+    }
+    function taskRow(it, late) {
+      const l = taskDueLabel(it.task.dueAt);
+      return `<div class="avisos-row${late ? " is-late" : ""}">
+        <input type="checkbox" class="av-check" data-client="${escapeHtml(it.client.id)}" data-task="${escapeHtml(it.task.id)}" title="Marcar como hecha">
+        <span class="av-text"><button type="button" class="av-name" data-open="${escapeHtml(it.client.id)}">${escapeHtml(it.client.name)}</button> · ${escapeHtml(it.task.text)}</span>
+        <span class="av-when">${escapeHtml(l.text)}</span></div>`;
+    }
+    function render() {
+      const g = collect();
+      const urgent = g.today.length + g.overdue.length;
+      document.title = urgent ? `(${urgent}) ${baseTitle}` : baseTitle;
+      const badge = document.getElementById("bnTasksBadge");
+      if (badge) {
+        badge.hidden = !urgent;
+        badge.textContent = urgent > 9 ? "9+" : String(urgent);
+      }
+      if (!urgent && !g.cold.length) { bar.hidden = true; return false; }
+      barText.textContent = "🔔 " + summaryText(g);
+      bar.classList.toggle("is-overdue", g.overdue.length > 0);
+      bar.hidden = false;
+      summaryEl.textContent = summaryText(g);
+      document.getElementById("avisosDate").textContent = new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+      bodyEl.innerHTML =
+        section("Vencidas", g.overdue.map((it) => taskRow(it, true)).join("")) +
+        section("Para hoy", g.today.map((it) => taskRow(it, false)).join("")) +
+        section("Leads calientes sin tocar", g.cold.map(({ client, days }) =>
+          `<div class="avisos-row"><span class="av-text"><button type="button" class="av-name" data-open="${escapeHtml(client.id)}">${escapeHtml(client.name)}</button> · ${escapeHtml(client.status)}${client.contacto ? " · " + escapeHtml(client.contacto) : ""}</span><span class="av-when">${escapeHtml(relativeDayStr(days))}</span></div>`).join(""));
+      return true;
+    }
+    function open() {
+      if (!render()) return;
+      modal.classList.add("open");
+      backdrop.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+    function close() {
+      modal.classList.remove("open");
+      backdrop.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    bodyEl.addEventListener("click", (e) => {
+      const nameBtn = e.target.closest("[data-open]");
+      if (nameBtn) {
+        const c = clients.find((x) => x.id === nameBtn.dataset.open);
+        if (c) {
+          close();
+          openLeadDrawer(c);
+        }
+        return;
+      }
+      const chk = e.target.closest(".av-check");
+      if (chk) {
+        const c = clients.find((x) => x.id === chk.dataset.client);
+        if (!c) return;
+        toggleTask(c, chk.dataset.task);
+        renderPipeline();
+        renderTasksTab();
+        if (!render()) close();
+      }
+    });
+    ["avisosClose", "avisosOk"].forEach((id) => document.getElementById(id).addEventListener("click", close));
+    backdrop.addEventListener("click", close);
+    document.getElementById("avisosAllTasks").addEventListener("click", () => {
+      close();
+      switchTab("tasks");
+    });
+    document.getElementById("taskReminderOpen").addEventListener("click", open);
+    document.getElementById("taskReminderClose").addEventListener("click", () => { bar.hidden = true; });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("open")) close();
+    });
+
+    // Al abrir el CRM: recuadro una sola vez; despues queda la barra y el boton "Ver avisos".
+    setTimeout(open, 800);
+    setInterval(render, 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+    window.refreshTaskReminders = render;
+  })();
 
   // ===== Portal de Fundadores: cuenta de solo lectura, un solo tab =====
   if (window.NovaCloud && window.NovaCloud.isFounder) {

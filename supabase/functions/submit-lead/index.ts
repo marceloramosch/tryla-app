@@ -36,22 +36,50 @@ const CIMIENTO_LEADS_TOKEN = Deno.env.get("CIMIENTO_LEADS_TOKEN") ?? "";
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 min
 const hits = new Map<string, number[]>();
+const MAX_BODY_BYTES = 20 * 1024;
+
+// Quita caracteres de control (menos \n y \t) y recorta al maximo permitido.
+function clean(v: unknown, max: number): string {
+  // deno-lint-ignore no-control-regex
+  return String(v ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim().slice(0, max);
+}
+
+// cf-connecting-ip lo pone Cloudflare (no lo controla el cliente); si no esta,
+// se usa el ULTIMO salto de x-forwarded-for (el agregado por el proxy), no el primero.
+function clientIp(req: Request): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return "unknown";
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = clientIp(req);
     if (isRateLimited(ip)) return json({ ok: false, error: "Demasiados intentos, espera unos minutos." }, 429);
 
-    const body = await req.json().catch(() => ({}));
+    const declared = Number(req.headers.get("content-length") || 0);
+    if (declared > MAX_BODY_BYTES) return json({ ok: false, error: "Solicitud demasiado grande." }, 413);
+    const raw = await req.text();
+    if (raw.length > MAX_BODY_BYTES) return json({ ok: false, error: "Solicitud demasiado grande." }, 413);
+    let body: Record<string, unknown> = {};
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") body = parsed as Record<string, unknown>;
+    } catch (_) { /* body vacio -> falla la validacion de abajo */ }
 
     // Honeypot: un campo invisible para humanos que un bot si llena.
     if (body.website) return json({ ok: true, id: "ignored" });
 
-    const name = String(body.name || "").trim();
-    const phone = String(body.phone || "").trim();
-    const email = String(body.email || "").trim();
+    const name = clean(body.name, 120);
+    const phone = clean(body.phone, 40);
+    const email = clean(body.email, 200);
 
     if (!name || (!phone && !email)) {
       return json({ ok: false, error: "Falta nombre y un telefono o correo." }, 400);
@@ -61,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     // El ref hace que un reintento del mismo envio no abra dos leads.
-    const ref = "site-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7);
+    const ref = "site-" + crypto.randomUUID();
     const res = await fetch(CIMIENTO_LEADS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + CIMIENTO_LEADS_TOKEN },
@@ -73,9 +101,9 @@ Deno.serve(async (req) => {
             name,
             phone,
             email,
-            size: String(body.size || "").trim(),
-            message: String(body.message || "").trim(),
-            ciudad: String(body.city || "").trim(),
+            size: clean(body.size, 60),
+            message: clean(body.message, 2000),
+            ciudad: clean(body.city, 120),
             fuente: "Website contact form",
           },
         ],
@@ -96,6 +124,12 @@ Deno.serve(async (req) => {
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
+  // Poda de entradas viejas para que el Map no crezca sin limite.
+  if (hits.size > 500) {
+    for (const [k, v] of hits) {
+      if (!v.length || now - v[v.length - 1] >= RATE_LIMIT_WINDOW_MS) hits.delete(k);
+    }
+  }
   const arr = (hits.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
   arr.push(now);
   hits.set(ip, arr);

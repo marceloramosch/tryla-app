@@ -94,7 +94,8 @@
     const wrap = $("sGalleryPreview");
     if (!currentGallery.length) { wrap.innerHTML = ""; return; }
     wrap.innerHTML = "Fotos actuales: " + currentGallery
-      .map((u, i) => `<a href="${escapeHtml(u)}" target="_blank">#${i + 1}</a>`)
+      .filter((u) => /^https?:\/\//i.test(String(u).trim()))
+      .map((u, i) => `<a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer">#${i + 1}</a>`)
       .join(" &middot; ");
   }
 
@@ -155,7 +156,7 @@
       ? filtered.map((s) => `
         <tr>
           <td>${escapeHtml(s.restaurant_name)}</td>
-          <td><a href="https://${escapeHtml(s.subdomain)}.thetryla.com" target="_blank">${escapeHtml(s.subdomain)}.thetryla.com</a></td>
+          <td><a href="https://${escapeHtml(s.subdomain)}.thetryla.com" target="_blank" rel="noopener noreferrer">${escapeHtml(s.subdomain)}.thetryla.com</a></td>
           <td>${escapeHtml(s.template)}</td>
           <td>${statusPill(s.published)}</td>
           <td>${s.updated_at ? new Date(s.updated_at).toLocaleDateString() : ""}</td>

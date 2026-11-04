@@ -27,10 +27,13 @@
   const sb = supabase.createClient(cfg.url, cfg.anonKey);
   window.SharedQuotes.ready = true;
 
+  // 16 chars from a 31-char unambiguous alphabet (~79 bits) using the CSPRNG.
   function randomId() {
     const chars = "23456789abcdefghjkmnpqrstuvwxyz";
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
     let id = "";
-    for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)];
+    for (let i = 0; i < bytes.length; i++) id += chars[bytes[i] % chars.length];
     return id;
   }
 

@@ -152,8 +152,33 @@ Deno.serve(async (req) => {
     const staffId = await requireStaff(req);
     if (!staffId) return json({ error: "Solo el staff puede sincronizar lugares." }, 403);
 
-    const { area_name, label, bbox, force } = await req.json();
+    const raw = await req.text();
+    if (raw.length > 10 * 1024) return json({ error: "Solicitud demasiado grande." }, 413);
+    let parsed: { area_name?: unknown; label?: unknown; bbox?: unknown; force?: unknown } = {};
+    try {
+      parsed = JSON.parse(raw) ?? {};
+    } catch (_) {
+      return json({ error: "Solicitud invalida." }, 400);
+    }
+    const area_name = typeof parsed.area_name === "string" ? parsed.area_name.trim().slice(0, 120) : "";
+    const label = typeof parsed.label === "string" ? parsed.label.trim().slice(0, 120) : "";
+    const force = parsed.force;
+    const bbox = parsed.bbox as Bbox | undefined;
     if (!area_name || !bbox) return json({ error: "Faltan datos (area_name, bbox)." }, 400);
+
+    // Valida el bbox: numeros finitos, orientado, y de tamano acotado (cada celda de 3 mi es 1 llamada a Geoapify).
+    const { south, west, north, east } = bbox;
+    const nums = [south, west, north, east];
+    if (!nums.every((n) => typeof n === "number" && Number.isFinite(n))) {
+      return json({ error: "bbox invalido." }, 400);
+    }
+    if (south < -90 || north > 90 || west < -180 || east > 180 || south >= north || west >= east) {
+      return json({ error: "bbox invalido." }, 400);
+    }
+    const MAX_SPAN_DEG = 1; // ~69 millas por lado
+    if (north - south > MAX_SPAN_DEG || east - west > MAX_SPAN_DEG) {
+      return json({ error: "La zona es demasiado grande (maximo ~1 grado por lado). Divide el area." }, 400);
+    }
 
     if (!force) {
       const { data: existing } = await sb
@@ -174,7 +199,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const tiles = tileBbox(bbox as Bbox, 3);
+    const tiles = tileBbox(bbox, 3);
+    if (tiles.length > 600) return json({ error: "La zona genera demasiadas celdas. Divide el area." }, 400);
     const tileResults = await mapWithConcurrency(tiles, 6, (tile) =>
       fetchGeoapifyTile(tile).catch((e) => {
         console.error("[sync-places] una celda fallo:", e);
@@ -250,7 +276,7 @@ Deno.serve(async (req) => {
     return json({ area_name, tiles: tiles.length, place_count: rows.length, by_category: byCategory });
   } catch (e) {
     console.error("[sync-places]", e);
-    return json({ error: e instanceof Error ? e.message : "Error inesperado." }, 500);
+    return json({ error: "Error inesperado al sincronizar lugares." }, 500);
   }
 });
 

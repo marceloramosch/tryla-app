@@ -872,14 +872,19 @@
         var tr = document.createElement("tr");
         var d = new Date(item.ts);
         var when = isNaN(d) ? "" : d.toLocaleDateString("es-MX");
-        tr.innerHTML =
-          "<td>" + when + "</td>" +
-          "<td>" + (item.client || "—") + "</td>" +
-          "<td>" + item.address + "</td>" +
-          "<td>" + item.cuisine + "</td>" +
-          "<td><b>" + item.overall10.toFixed(1) + "/10</b></td>" +
-          '<td class="actions-cell"></td>';
-        var actionsTd = tr.children[5];
+        [when, item.client || "—", item.address, item.cuisine].forEach(function (txt) {
+          var td = document.createElement("td");
+          td.textContent = txt == null ? "" : String(txt);
+          tr.appendChild(td);
+        });
+        var scoreTd = document.createElement("td");
+        var scoreB = document.createElement("b");
+        scoreB.textContent = item.overall10.toFixed(1) + "/10";
+        scoreTd.appendChild(scoreB);
+        tr.appendChild(scoreTd);
+        var actionsTd = document.createElement("td");
+        actionsTd.className = "actions-cell";
+        tr.appendChild(actionsTd);
         var delBtn = document.createElement("button");
         delBtn.type = "button";
         delBtn.className = "btn-small";

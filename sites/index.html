@@ -70,7 +70,7 @@
 <div id="loading">Cargando...</div>
 <div id="app" style="display:none;"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
 <script src="../supabase-config.js"></script>
 <script src="../order-cart.js"></script>
 <script>
@@ -197,12 +197,21 @@
     }
 
     try {
-      const { data, error } = await sb
-        .from("tryla_sites")
+      // Lee de la vista publica (sin owner_email/owner_user_id); si la vista aun no
+      // existe en Supabase, cae a la tabla como antes.
+      let { data, error } = await sb
+        .from("tryla_sites_public")
         .select("*")
         .eq("subdomain", subdomain)
-        .eq("published", true)
         .maybeSingle();
+      if (error) {
+        ({ data, error } = await sb
+          .from("tryla_sites")
+          .select("*")
+          .eq("subdomain", subdomain)
+          .eq("published", true)
+          .maybeSingle());
+      }
       if (error || !data) {
         renderNotFound();
         return;

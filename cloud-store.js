@@ -1,5 +1,5 @@
 // ============================================================
-//  NOVA CLOUD STORE
+//  TRYLA CLOUD STORE
 //  Sincroniza el cotizador (clientes, cotizaciones y precios)
 //  con Supabase. Si Supabase no está configurado, no hace nada
 //  y la herramienta sigue funcionando en modo local.
@@ -38,12 +38,12 @@
 
   // --- Sin configurar, o sin librería: modo local ---
   if (!configured) {
-    console.log("[Nova] Modo LOCAL (Supabase no configurado).");
+    console.log("[Tryla] Modo LOCAL (Supabase no configurado).");
     resolveReady("local");
     return;
   }
   if (typeof supabase === "undefined" || !supabase.createClient) {
-    console.warn("[Nova] No se pudo cargar Supabase. Modo local de respaldo.");
+    console.warn("[Tryla] No se pudo cargar Supabase. Modo local de respaldo.");
     resolveReady("local");
     return;
   }
@@ -69,7 +69,7 @@
         });
         remoteVersions[key] = updatedAt;
       } catch (e) {
-        console.warn("[Nova] No se pudo guardar en la nube:", key, e);
+        console.warn("[Tryla] No se pudo guardar en la nube:", key, e);
       }
     });
     return pushChain;
@@ -116,9 +116,9 @@
           }
         }
       }
-      console.log("[Nova] Datos sincronizados desde la nube ✓");
+      console.log("[Tryla] Datos sincronizados desde la nube ✓");
     } catch (e) {
-      console.warn("[Nova] Error al sincronizar:", e);
+      console.warn("[Tryla] Error al sincronizar:", e);
     }
   }
 
@@ -126,17 +126,27 @@
   function buildStatusChip(email) {
     const chip = document.createElement("div");
     chip.id = "novaCloudChip";
+    chip.className = "nova-cloud-chip";
     chip.style.cssText =
       "position:fixed;bottom:14px;right:14px;z-index:9000;background:#171433;color:#fff;" +
       "font:600 12px Arial;padding:8px 12px;border-radius:20px;display:flex;gap:10px;" +
       "align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25);";
-    chip.innerHTML =
-      '<span>☁️ Nube · ' + (email || "") + "</span>" +
-      '<button id="novaLogout" style="background:#5B54FF;border:0;color:#fff;cursor:pointer;' +
-      'font:700 11px Arial;padding:4px 10px;border-radius:12px;">Salir</button>';
+    const label = document.createElement("span");
+    label.textContent = "☁️ Nube · " + (email || "");
+    const logoutBtn = document.createElement("button");
+    logoutBtn.id = "novaLogout";
+    logoutBtn.textContent = "Salir";
+    logoutBtn.style.cssText =
+      "background:#5B54FF;border:0;color:#fff;cursor:pointer;font:700 11px Arial;padding:4px 10px;border-radius:12px;";
+    chip.appendChild(label);
+    chip.appendChild(logoutBtn);
     document.body.appendChild(chip);
-    document.getElementById("novaLogout").addEventListener("click", async () => {
+    logoutBtn.addEventListener("click", async () => {
       await sb.auth.signOut();
+      // No dejar clientes/cotizaciones del CRM en el navegador despues de salir
+      try {
+        KEYS.forEach((k) => localStorage.removeItem(k));
+      } catch (e) {}
       location.reload();
     });
   }

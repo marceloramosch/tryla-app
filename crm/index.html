@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tryla CRM">
 <link rel="stylesheet" href="../location-intel.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
 <style>
   @font-face{font-family:'Unbounded';src:url('../fonts/unbounded-800.woff2') format('woff2');font-weight:800;font-display:swap;}
   @font-face{font-family:'Sora';src:url('../fonts/sora-700.woff2') format('woff2');font-weight:700;font-display:swap;}
@@ -122,7 +122,7 @@
   .theme-switch:active .ts-track{ transform:scale(.94); }
 
   /* ===== Toggle coqueton: idioma ES/EN ===== */
-  .visually-hidden{ position:absolute!important; width:1px;height:1px; padding:0;margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .visually-hidden{ position:absolute!important; width:1px!important;height:1px!important; padding:0;margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .lang-switch{
     --w:76px; --h:30px; --pad:3px; --thumb:calc(var(--h) - var(--pad)*2);
     border:none; padding:0; cursor:pointer; background:transparent; margin-top:4px;
@@ -160,6 +160,35 @@
   /* ===== Tabs ===== */
   .tabs-wrap{ position:relative; }
   .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .task-reminder{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px auto 0; max-width:1280px; padding:10px 14px; background:#FFF4E0; border:1px solid #F5C77E; border-radius:10px; color:#7A4A00; font-size:14px; font-weight:600; }
+  .task-reminder[hidden]{ display:none; }
+  :root[data-theme="dark"] .task-reminder{ background:#33260C; border-color:#7A5A1F; color:#FFD99A; }
+  :root[data-theme="dark"] .task-reminder.is-overdue{ background:#3A1416; border-color:#8A2F33; color:#FFB4B4; }
+  .task-reminder.is-overdue{ background:#FFECEC; border-color:#F2A8A8; color:#8A1F1F; }
+  .task-reminder-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
+  .task-reminder button{ font:inherit; font-size:13px; cursor:pointer; border:1px solid currentColor; background:transparent; color:inherit; border-radius:8px; padding:4px 10px; }
+  .avisos-backdrop{ position:fixed; inset:0; background:rgba(10,8,40,.55); z-index:9300; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+  .avisos-backdrop.open{ opacity:1; pointer-events:auto; }
+  .avisos-modal{ position:fixed; z-index:9301; top:50%; left:50%; width:min(560px, 94vw); max-height:86vh; display:flex; flex-direction:column; background:#fff; border-radius:16px; box-shadow:0 24px 60px rgba(6,3,141,.35); transform:translate(-50%, -46%); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; overflow:hidden; }
+  .avisos-modal.open{ opacity:1; transform:translate(-50%, -50%); pointer-events:auto; }
+  .avisos-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:18px 20px 8px; background:var(--navy,#06038D); color:#fff; }
+  .avisos-head h2{ margin:0; font-size:20px; }
+  .avisos-date{ font-size:12px; opacity:.75; margin-top:2px; }
+  .avisos-x{ background:none; border:0; color:#fff; font-size:26px; line-height:1; cursor:pointer; padding:0 4px; }
+  .avisos-summary{ padding:0 20px 14px; background:var(--navy,#06038D); color:#CFCBFF; font-size:14px; font-weight:600; }
+  .avisos-body{ padding:12px 20px; overflow:auto; flex:1; }
+  .avisos-sec{ margin:6px 0 14px; }
+  .avisos-sec h3{ margin:0 0 6px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#5C6270; }
+  .avisos-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid #D6D3FF; border-radius:10px; margin-bottom:6px; background:#F1F0FF; font-size:14px; }
+  .avisos-row.is-late{ background:#FFECEC; border-color:#F2A8A8; }
+  .avisos-row .av-name{ font-weight:700; cursor:pointer; color:#06038D; background:none; border:0; padding:0; font:inherit; font-weight:700; text-align:left; }
+  .avisos-row .av-text{ flex:1; min-width:0; overflow-wrap:anywhere; }
+  .avisos-row .av-when{ font-size:12px; color:#5C6270; white-space:nowrap; }
+  .avisos-row.is-late .av-when{ color:#B42318; font-weight:700; }
+  .avisos-empty{ text-align:center; color:#5C6270; padding:18px 0; }
+  .avisos-foot{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 20px; border-top:1px solid #D6D3FF; }
+  .avisos-link{ background:none; border:0; color:#5B54FF; font:inherit; font-weight:600; cursor:pointer; padding:0; }
+  .avisos-ok{ background:#5B54FF; color:#fff; border:0; border-radius:10px; padding:9px 18px; font:inherit; font-weight:700; cursor:pointer; }
   .tab-btn{
     border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
     padding: 10px 18px; border-radius:999px; cursor:pointer; font-size:13px;
@@ -231,7 +260,9 @@
     width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:13px;
     font-family: Arial, sans-serif; background:var(--panel); color:var(--text);
   }
+  .field input:not([type=checkbox]):not([type=radio]):not([type=file]), .field select{ height:36px; }
   .field-row{ display:flex; gap:10px; }
+  @media (max-width:600px){ .estatus-spacer{ display:none; } }
   .field-row .field{ flex:1; }
 
   table.builder{ width:100%; border-collapse:collapse; margin: 10px 0; }
@@ -248,6 +279,11 @@
     width: 90px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; text-align:right;
     background:var(--panel); color:var(--text);
   }
+  table.builder input.line-qty{
+    width: 56px; padding:4px 6px; border:1px solid var(--border); border-radius:4px; text-align:right;
+    background:var(--panel); color:var(--text);
+  }
+  table.builder td.line-subtotal{ font-weight:700; white-space:nowrap; }
   table.builder input.line-desc{ width:100%; border:1px solid transparent; padding:4px 6px; border-radius:4px; background:var(--panel); color:var(--text); }
   table.builder input.line-desc:focus{ border-color: var(--border); }
   table.builder button.remove{
@@ -286,6 +322,8 @@
   @media(max-width:780px){ .table-scroll table{ min-width:620px; } }
 
   /* ===== Location Intelligence (TrylApp) ===== */
+  #liMap.tli-map{ height:min(62vh, 560px); min-height:320px; margin-top:12px; }
+  @media(max-width:600px){ #liMap.tli-map{ height:58vh; min-height:300px; } }
   .li-result-layout{ display:grid; grid-template-columns:220px 1fr; gap:20px; }
   @media(max-width:700px){ .li-result-layout{ grid-template-columns:1fr; } }
   .li-score-card{
@@ -524,10 +562,13 @@
   .pc-call-count{ opacity:.75; }
 
   /* ===== Toggle tablero / lista del Pipeline ===== */
-  .view-toggle{ display:flex; border:2px solid var(--blue); border-radius:999px; overflow:hidden; flex-shrink:0; }
+  .pipeline-toolbar{ align-items:flex-end; flex-wrap:wrap; }
+  .pipeline-toolbar .field{ margin-bottom:0; }
+  .pipeline-toolbar .field input, .pipeline-toolbar .field select, .pipeline-toolbar .btn-small{ height:36px; padding-top:0; padding-bottom:0; }
+  .view-toggle{ display:inline-flex; align-items:stretch; height:36px; border:1.5px solid var(--blue); border-radius:999px; overflow:hidden; flex-shrink:0; margin-left:auto; }
   .view-toggle-btn{
-    border:none; background:var(--panel); color:var(--blue); font-weight:700; font-size:12px;
-    padding:8px 14px; cursor:pointer; transition: background .15s ease, color .15s ease;
+    display:inline-flex; align-items:center; gap:6px; border:none; background:var(--panel); color:var(--blue); font-weight:700; font-size:12.5px;
+    padding:0 14px; cursor:pointer; transition: background .15s ease, color .15s ease; font-family:inherit; white-space:nowrap;
   }
   .view-toggle-btn.active{ background:var(--blue); color:#fff; }
   .pipeline-list-row{ cursor:pointer; transition: background .12s ease; }
@@ -607,6 +648,47 @@
     transition: background .15s ease, color .15s ease, transform .12s ease;
   }
   .ld-actions a:hover, .ld-actions button:hover{ background:var(--blue); color:#fff; transform:translateY(-1px); }
+
+
+  /* ===== Visor de cotizacion desde el pipeline ===== */
+  .quote-view-backdrop{
+    position:fixed; inset:0; background:rgba(10,8,40,.55); z-index:9200; opacity:0; pointer-events:none;
+    transition: opacity .2s ease;
+  }
+  .quote-view-backdrop.open{ opacity:1; pointer-events:auto; }
+  .quote-view{
+    position:fixed; z-index:9201; top:4vh; left:50%; width:min(900px, 96vw); height:92vh;
+    transform:translate(-50%, 12px); opacity:0; pointer-events:none; display:flex; flex-direction:column;
+    background:var(--panel); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .quote-view.open{ opacity:1; pointer-events:auto; transform:translate(-50%, 0); }
+  .quote-view-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:12px 16px; border-bottom:1px solid var(--border); flex-shrink:0; color:var(--text);
+  }
+  .qv-actions{ display:flex; align-items:center; gap:8px; }
+  .quote-view-doc{
+    flex:1; overflow-y:auto; margin:14px; background:#fff; border:1px solid var(--silver); border-radius:10px;
+    padding:36px 44px; font-size:13px; color:var(--dark);
+  }
+  @media (max-width:600px){ .quote-view{ top:0; height:100vh; width:100vw; border-radius:0; } .quote-view-doc{ padding:20px 16px; margin:8px; } }
+  /* lista de cotizaciones dentro del panel lateral */
+  .ld-quotes{ display:flex; flex-direction:column; gap:6px; }
+  .ld-quote-item{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer;
+    padding:9px 11px; border:1px solid var(--border); border-radius:8px; background:var(--panel); color:var(--text);
+    font-family:inherit; transition: border-color .15s ease, background .15s ease;
+  }
+  .ld-quote-item:hover{ border-color:var(--blue); background:var(--light); }
+  :root[data-theme="dark"] .ld-quote-item{ background:#1D2036; }
+  :root[data-theme="dark"] .ld-quote-item:hover{ background:#262A4A; }
+  :root[data-theme="dark"] .ld-quote-item .lq-view{ color:#A9A4FF; }
+  .ld-quote-item .lq-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .ld-quote-item .lq-num{ font-weight:800; font-size:13px; }
+  .ld-quote-item .lq-meta{ font-size:11px; color:var(--text2); }
+  .ld-quote-item .lq-total{ font-weight:800; font-size:13px; white-space:nowrap; }
+  .ld-quote-item .lq-view{ font-size:11px; font-weight:700; color:var(--blue); white-space:nowrap; }
 
   /* ===== Tooltip flotante al dejar el mouse sobre una tarjeta ===== */
   .card-tooltip{
@@ -790,6 +872,12 @@
   table.doc-client{ width:100%; border-collapse:collapse; }
   table.doc-client td{ background:var(--light); padding:8px 12px; font-size:13px; }
   table.doc-client td.label{ color:#7c8aa6; font-size:11px; letter-spacing:1px; width:160px; font-weight:700; vertical-align:top; }
+  /* Informacion del cliente compacta: 2 filas x 2 columnas */
+  table.doc-client2{ table-layout:fixed; }
+  table.doc-client2 td{ padding:4px 9px; font-size:12px; vertical-align:top; overflow-wrap:anywhere; }
+  table.doc-client2 td.label{ width:13%; font-size:10px; letter-spacing:.6px; padding-right:4px; }
+  table.doc-client2 td:nth-child(2), table.doc-client2 td:nth-child(4){ width:37%; }
+  .doc-footer-phone{ display:inline-block; margin-top:4px; font-size:12.5px; color:var(--dark); }
   table.doc-product{ width:100%; border-collapse:collapse; margin-top:6px; }
   table.doc-product th{ background:var(--dark); color:#fff; text-align:left; padding:8px 12px; font-size:11px; letter-spacing:1px; }
   table.doc-product th.num, table.doc-product td.num{ text-align:right; }
@@ -812,7 +900,7 @@
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions,
-    .lead-drawer, .lead-drawer-backdrop, .card-tooltip, .call-outcome-popover{ display:none !important; }
+    .lead-drawer, .lead-drawer-backdrop, .quote-view, .quote-view-backdrop, .avisos-modal, .avisos-backdrop, .task-reminder, .card-tooltip, .call-outcome-popover{ display:none !important; }
     #previewWrap{ display:block !important; margin:0; }
     #previewDoc{ border:none; padding:0; max-width:none; }
     body{ background:#fff; }
@@ -889,7 +977,7 @@
     .field-row .field{ min-width:130px; flex:1 1 130px; }
     /* Evita que Safari en iPhone haga zoom automatico al enfocar un input */
     .field input, .field textarea, .field select,
-    .catalog-item input.price, table.builder input.line-price, table.builder input.line-desc,
+    .catalog-item input.price, table.builder input.line-price, table.builder input.line-qty, table.builder input.line-desc,
     table.crm select{ font-size:16px; }
 
     /* Barra de pestanas: una sola fila con scroll horizontal, como un tab bar nativo.
@@ -932,6 +1020,92 @@
     .col-filter, .cell-edit-input, .cell-edit-select{ font-size:16px; padding:7px; } /* evita el zoom automatico de iOS al enfocar un input */
     .filter-toggle-btn{ min-height:38px; }
   }
+
+  /* ===== Optimizacion movil ===== */
+  .bn-item{ position:relative; }
+  .bn-badge{ position:absolute; top:5px; left:calc(50% + 6px); min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:#E5484D; color:#fff; font:800 10px/16px Barlow,Arial,sans-serif; font-style:normal; text-align:center; }
+  .bn-badge[hidden]{ display:none; }
+  .bn-sheet a.bn-sheet-item{ text-decoration:none; }
+  @media (max-width:600px){
+    /* Encabezado compacto: logo + nombre + interruptor de tema; los links van en "Mas" */
+    header{ padding:8px 14px; flex-wrap:nowrap; gap:10px; }
+    header .trailer-icon{ width:36px !important; height:36px !important; border-radius:10px !important; }
+    header .trailer-icon svg{ width:34px; height:34px; }
+    header .brand-text h1{ font-size:19px; letter-spacing:1px; }
+    header .brand-text p{ display:none; }
+    header nav a{ display:none; }
+    .task-reminder{ margin:8px 14px 0; padding:8px 10px; font-size:12.5px; gap:8px; }
+    .task-reminder button{ padding:6px 10px; min-height:34px; }
+    main{ padding:10px 14px 14px; }
+    .panel{ padding:14px; margin-bottom:12px; border-radius:12px; }
+    .panel > .hint:not(#fEstatusHint){ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+    /* Todos los controles tactiles con altura comoda */
+    .field input:not([type=checkbox]):not([type=radio]), .field select{ height:44px; }
+    .field textarea{ min-height:88px; }
+    .btn-small{ min-height:40px; padding:8px 12px; }
+    .actions{ gap:8px; }
+    .actions button{ flex:1 1 calc(50% - 4px); min-height:46px; }
+    .actions button.primary{ flex-basis:100%; }
+
+    /* Cotizador: el formulario primero; el catalogo se abre bajo demanda */
+    #tab-quote .layout{ display:flex; flex-direction:column; gap:0; }
+    #tab-quote .layout > div:not(.catalog-panel){ order:-1; }
+    .catalog-panel > h2{ cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+    .catalog-panel > h2::after{ content:"\25BE"; font-size:16px; transition:transform .2s ease; }
+    .catalog-panel.open > h2::after{ transform:rotate(180deg); }
+    .catalog-panel:not(.open) > :not(h2){ display:none; }
+    #tab-quote .panel > .field-row > .field{ max-width:none !important; flex:1 1 100% !important; }
+    #tab-quote .panel > .field-row > .field:has(#quickAddPrice){ flex:1 1 calc(50% - 5px) !important; }
+    #tab-quote .panel > .field-row > .field:has(#quickAddBtn){ flex:1 1 calc(50% - 5px) !important; }
+
+    /* Lineas de la cotizacion como tarjetas, sin scroll horizontal */
+    .table-scroll:has(table.lines){ overflow:visible; }
+    table.builder.lines{ min-width:0 !important; display:block; }
+    table.builder.lines thead{ display:none; }
+    table.builder.lines tbody{ display:block; }
+    table.builder.lines tr{ display:grid; grid-template-columns:76px 1fr 1fr 40px; gap:6px 8px; padding:12px 0; border-bottom:1px solid var(--border); align-items:end; }
+    table.builder.lines td{ display:block; padding:0; border:0; text-align:left; }
+    table.builder.lines td.drag-handle{ display:none; }
+    table.builder.lines td:nth-child(2){ grid-column:1 / 4; }
+    table.builder.lines td:nth-child(6){ grid-column:4; grid-row:1; text-align:right; }
+    table.builder.lines td:nth-child(5){ grid-column:3 / 5; text-align:right; font-size:15px; padding-bottom:10px; }
+    table.builder.lines td[data-label]::before{ content:attr(data-label); display:block; font-size:9.5px; letter-spacing:.8px; text-transform:uppercase; color:var(--text2); font-weight:600; margin-bottom:2px; }
+    table.builder.lines input.line-desc{ border-color:var(--border); height:44px; padding:6px 10px; font-size:16px; }
+    table.builder.lines input.line-price, table.builder.lines input.line-qty{ width:100%; height:44px; text-align:left; padding:6px 10px; }
+    table.builder.lines button.remove{ width:40px; height:44px; }
+
+    /* Pipeline: barra de filtros ordenada y tablero con columnas a pantalla casi completa */
+    .pipeline-toolbar{ gap:8px; }
+    .pipeline-toolbar .field{ flex:1 1 calc(50% - 4px) !important; max-width:none !important; min-width:0; }
+    .pipeline-toolbar .field:first-child{ flex-basis:100% !important; }
+    .pipeline-toolbar .field input, .pipeline-toolbar .field select, .pipeline-toolbar .btn-small{ height:42px; width:100%; }
+    .view-toggle{ width:100%; margin-left:0; height:42px; }
+    .view-toggle-btn{ flex:1; justify-content:center; font-size:13px; }
+    .pipeline-board{ scroll-snap-type:x mandatory; margin:0 -14px; padding:0 14px 10px; gap:10px; scroll-padding:0 14px; }
+    .pipeline-col{ flex:0 0 84vw !important; width:84vw !important; max-width:340px; scroll-snap-align:start; }
+    .pipeline-col-body{ max-height:68vh !important; }
+
+    .lbl-spacer{ display:none; }
+    .dash-grid{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+    .dash-card{ padding:12px 12px; }
+    .field-row{ align-items:flex-end; }
+    .card-tooltip{ display:none !important; }
+    .lead-drawer:not(.open), .quote-view:not(.open){ box-shadow:none !important; }
+    #tab-intel .panel > .field-row > .field{ flex:1 1 100% !important; max-width:none !important; }
+    #liAnalyzeBtn{ min-height:46px; }
+    /* Panel lateral y visores a pantalla completa */
+    .lead-drawer{ width:100vw !important; max-width:100vw !important; }
+    .avisos-modal{ width:94vw; max-height:84vh; }
+    .avisos-row{ padding:10px; }
+    .avisos-row .av-check{ width:22px; height:22px; flex-shrink:0; }
+    .avisos-ok{ min-height:44px; }
+
+    /* Insignia de la nube: ya no flota sobre la barra inferior, queda al final de la pagina */
+    .nova-cloud-chip{ position:static !important; margin:6px auto 14px !important; width:fit-content; max-width:calc(100% - 28px); font-size:11px !important; box-shadow:none !important; }
+    .nova-cloud-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bottom-nav{ z-index:60; }
+  }
 </style>
 <script>
   // Aplica el tema guardado antes de pintar, para evitar parpadeo. Claro es el primario/por defecto.
@@ -969,6 +1143,14 @@
   </nav>
 </header>
 
+<div id="taskReminder" class="task-reminder" hidden role="status">
+  <span id="taskReminderText"></span>
+  <span class="task-reminder-actions">
+    <button type="button" id="taskReminderOpen">Ver avisos</button>
+    <button type="button" id="taskReminderClose" aria-label="Cerrar">&times;</button>
+  </span>
+</div>
+
 <main>
   <div class="tabs-wrap">
   <div class="tabs" id="tabsBar">
@@ -1002,15 +1184,15 @@
           <input id="quickAddPrice" type="number" min="0" step="10" value="0">
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="quickAddBtn" type="button" class="primary" style="width:100%; border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:13px;">+ Agregar</button>
         </div>
       </div>
     </div>
 
     <div class="layout">
-      <div class="panel">
-        <h2>Catalogo de componentes</h2>
+      <div class="panel catalog-panel" id="catalogPanel">
+        <h2 id="catalogToggle">Catalogo de componentes</h2>
         <div class="hint">El catalogo se muestra en el idioma seleccionado en "Idioma de la cotizacion". Cambialo a English y los equipos se agregan en ingles.</div>
         <div id="catalog"></div>
       </div>
@@ -1030,6 +1212,14 @@
           <div class="field-row">
             <div class="field"><label>Cliente</label><input id="fCliente" type="text" placeholder="Nombre del cliente"></div>
             <div class="field"><label>Telefono / Email</label><input id="fContacto" type="text" placeholder="Tel. o correo"></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Estatus en el pipeline</label>
+              <select id="fEstatus"></select>
+              <div class="hint" id="fEstatusHint" style="margin:4px 0 0;"></div>
+            </div>
+            <div class="field estatus-spacer" aria-hidden="true"></div>
           </div>
           <div class="field-row">
             <div class="field"><label>Entrega (ciudad, estado)</label><input id="fEntrega" type="text" placeholder="Houston, Texas"></div>
@@ -1058,9 +1248,9 @@
           <h2 style="margin-top:14px;">Componentes de la cotizacion</h2>
           <div class="hint">Arrastra el icono &#x2807; para reordenar los componentes.</div>
           <div class="table-scroll">
-            <table class="builder">
+            <table class="builder lines">
               <thead>
-                <tr><th class="drag"></th><th>Descripcion</th><th class="num">Precio</th><th></th></tr>
+                <tr><th class="drag"></th><th>Descripcion</th><th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th><th></th></tr>
               </thead>
               <tbody id="lineItems"></tbody>
             </table>
@@ -1145,7 +1335,7 @@
           </select>
         </div>
         <div class="field" style="max-width:170px; align-self:flex-end;">
-          <button id="cfAddBtn" type="button">+ Agregar campo</button>
+          <button id="cfAddBtn" type="button" class="btn-small">+ Agregar campo</button>
         </div>
       </div>
     </div>
@@ -1171,7 +1361,7 @@
           <input id="clientsSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad, contacto...">
         </div>
         <div class="field" style="max-width:130px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsFilterToggle" class="btn-small filter-toggle-btn" style="width:100%;">Filtros <span class="filter-toggle-caret">&#9662;</span></button>
         </div>
         <div class="field" style="max-width:150px;">
@@ -1183,15 +1373,15 @@
           <input id="clientsDateTo" type="date">
         </div>
         <div class="field" style="max-width:110px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsDateClear" class="btn-small" style="width:100%;">Limpiar</button>
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsExportCsv" class="btn-small" style="width:100%;">Exportar CSV</button>
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="clientsImportCsv" class="btn-small" style="width:100%;">Importar CSV</button>
           <input type="file" id="clientsImportCsvFile" accept=".csv" style="display:none;">
         </div>
@@ -1230,12 +1420,29 @@
     <div class="panel">
       <h2>Pipeline de leads</h2>
       <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. Click en una tarjeta para ver toda su info. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
-      <div class="field-row" style="align-items:flex-end;">
+      <div class="field-row pipeline-toolbar">
+        <div class="field" style="max-width:170px;">
+          <label>Pipeline</label>
+          <select id="pipelineScope">
+            <option value="main">Principal</option>
+            <option value="utah">Utah</option>
+            <option value="all">Todos</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:175px; min-width:140px;">
+          <label>Periodo</label>
+          <select id="pipelinePeriod">
+            <option value="">Todo el tiempo</option>
+            <option value="7">Ultimos 7 dias</option>
+            <option value="30">Ultimo mes</option>
+            <option value="90">Ultimos 3 meses</option>
+          </select>
+        </div>
         <div class="field" style="max-width:260px; flex:1;">
           <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
         </div>
         <div class="field" style="max-width:130px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="pipelineFilterToggle" class="btn-small filter-toggle-btn" style="width:100%;">Filtros <span class="filter-toggle-caret">&#9662;</span></button>
         </div>
         <div class="field" style="max-width:150px;">
@@ -1247,7 +1454,7 @@
           <input id="pipelineDateTo" type="date">
         </div>
         <div class="field" style="max-width:100px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="pipelineDateClear" class="btn-small" style="width:100%;">Limpiar</button>
         </div>
         <div class="field" style="max-width:170px;">
@@ -1255,7 +1462,7 @@
           <select id="pipelineAssigneeFilter"><option value="">Todos</option></select>
         </div>
         <div class="field" style="max-width:120px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="pipelineMyLeads" class="btn-small" style="width:100%;">Mis leads</button>
         </div>
         <div class="view-toggle" role="tablist" aria-label="Vista del pipeline">
@@ -1297,7 +1504,7 @@
           <input id="tasksSearch" type="text" placeholder="Buscar por cliente o texto de la tarea...">
         </div>
         <div class="field" style="max-width:130px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button type="button" id="tasksShowDone" class="btn-small" style="width:100%;">Ver completadas</button>
         </div>
       </div>
@@ -1352,10 +1559,18 @@
           <input id="liClientName" type="text" placeholder="Nombre del cliente">
         </div>
         <div class="field" style="max-width:150px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="liAnalyzeBtn" type="button" class="primary" style="width:100%; border:2px solid var(--blue); background:var(--blue); color:#fff; font-weight:700; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:13px;">Analizar &rarr;</button>
         </div>
       </div>
+    </div>
+
+    <div class="panel" id="liMapPanel">
+      <h2>Mapa de ubicaciones</h2>
+      <div class="hint">Haz click en cualquier punto del mapa para analizarlo, o escribe una direcci&oacute;n arriba. Los &iacute;conos muestran los lugares reales cercanos.</div>
+      <div id="liMap" class="tli-map"></div>
+      <div class="hint li-radius-note">Radio de analisis: 1.5 millas (3 millas de diametro). Click en el mapa para elegir otro punto.</div>
+      <button type="button" class="li-opportunity-toggle" id="liOpportunityToggle">Mostrar zonas de oportunidad (8-10) para esta cocina</button>
     </div>
 
     <div class="panel" id="liResultPanel" style="display:none;">
@@ -1385,9 +1600,6 @@
           </div>
         </div>
       </div>
-      <div id="liMap" class="tli-map"></div>
-      <div class="hint li-radius-note">Radio de analisis: 1.5 millas (3 millas de diametro). Click en el mapa para elegir otro punto.</div>
-      <button type="button" class="li-opportunity-toggle" id="liOpportunityToggle">Mostrar zonas de oportunidad (8-10) para esta cocina</button>
       <div class="li-insights" id="liInsights"></div>
       <div class="actions" style="margin-top:14px;">
         <button class="primary" id="liSaveBtn" type="button">Guardar an&aacute;lisis</button>
@@ -1413,7 +1625,7 @@
   <div class="tab-panel" id="tab-finance">
     <div class="panel">
       <h2>Crear / editar plan de financiamiento</h2>
-      <div class="hint">Financiamiento propio de Nova (no un tercero). Elige una cotizacion guardada y define su plan. Metodo add-on: el interes total se calcula sobre el capital y se reparte en partes iguales entre los meses del plazo.</div>
+      <div class="hint">Financiamiento propio de Tryla (no un tercero). Elige una cotizacion guardada y define su plan. Metodo add-on: el interes total se calcula sobre el capital y se reparte en partes iguales entre los meses del plazo.</div>
       <div class="field">
         <label>Cotizacion</label>
         <select id="finQuoteSelect"><option value="">-- selecciona una cotizacion guardada --</option></select>
@@ -1433,7 +1645,7 @@
             <input id="finPlazo" type="number" min="1" step="1" value="12">
           </div>
           <div class="field" style="max-width:150px;">
-            <label>&nbsp;</label>
+            <label class="lbl-spacer">&nbsp;</label>
             <button id="finUseSaldoBtn" type="button" class="btn-small" style="width:100%;">&#8635; Usar saldo restante</button>
           </div>
         </div>
@@ -1486,7 +1698,7 @@
           <select id="invQuoteSelect"><option value="">-- selecciona una cotizacion --</option></select>
         </div>
         <div class="field" style="max-width:180px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="invConvertBtn" type="button" class="btn-small" style="width:100%;">Convertir a invoice</button>
         </div>
       </div>
@@ -1509,11 +1721,11 @@
           <input id="payConcepto" type="text" placeholder="Ej. Abono en efectivo, transferencia...">
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="payAddBtn" type="button" class="btn-small" style="width:100%;">+ Registrar pago</button>
         </div>
         <div class="field" style="max-width:140px;">
-          <label>&nbsp;</label>
+          <label class="lbl-spacer">&nbsp;</label>
           <button id="payCancelEditBtn" type="button" style="width:100%; display:none;">Cancelar edicion</button>
         </div>
       </div>
@@ -1578,12 +1790,12 @@
         <div class="field">
           <label>Logo</label>
           <input id="sLogoFile" type="file" accept="image/*">
-          <div id="sLogoPreviewWrap" class="hint" style="display:none;">Logo actual: <a id="sLogoPreview" href="#" target="_blank">ver</a></div>
+          <div id="sLogoPreviewWrap" class="hint" style="display:none;">Logo actual: <a id="sLogoPreview" href="#" target="_blank" rel="noopener noreferrer">ver</a></div>
         </div>
         <div class="field">
           <label>Foto principal (hero)</label>
           <input id="sHeroFile" type="file" accept="image/*">
-          <div id="sHeroPreviewWrap" class="hint" style="display:none;">Foto actual: <a id="sHeroPreview" href="#" target="_blank">ver</a></div>
+          <div id="sHeroPreviewWrap" class="hint" style="display:none;">Foto actual: <a id="sHeroPreview" href="#" target="_blank" rel="noopener noreferrer">ver</a></div>
         </div>
       </div>
       <div class="field">
@@ -1759,9 +1971,9 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     <span>Clientes</span>
   </button>
-  <button class="bn-item" data-tab="dashboard" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <span>Resumen</span>
+  <button class="bn-item" data-tab="tasks" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>Tareas</span><i class="bn-badge" id="bnTasksBadge" hidden></i>
   </button>
   <button class="bn-item" id="bnMoreBtn" type="button" aria-haspopup="true" aria-expanded="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -1792,6 +2004,44 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     <span>Sitios Web</span>
   </button>
+  <button class="bn-sheet-item" data-tab="dashboard" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Resumen</span>
+  </button>
+  <a class="bn-sheet-item" href="https://thetryla.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><span>Sitio thetryla.com</span></a>
+  <a class="bn-sheet-item" href="https://thetryla.app" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg><span>Portal de clientes</span></a>
+</div>
+
+
+<!-- Visor de cotizacion (se abre desde el panel lateral del pipeline) -->
+<div id="avisosBackdrop" class="avisos-backdrop"></div>
+<div id="avisosModal" class="avisos-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="avisosTitle">
+  <div class="avisos-head">
+    <div>
+      <h2 id="avisosTitle">Avisos de hoy</h2>
+      <div class="avisos-date" id="avisosDate"></div>
+    </div>
+    <button type="button" class="avisos-x" id="avisosClose" aria-label="Cerrar">&times;</button>
+  </div>
+  <div class="avisos-summary" id="avisosSummary"></div>
+  <div class="avisos-body" id="avisosBody"></div>
+  <div class="avisos-foot">
+    <button type="button" class="avisos-link" id="avisosAllTasks">Ver todas las tareas</button>
+    <button type="button" class="avisos-ok" id="avisosOk">Entendido</button>
+  </div>
+</div>
+
+<div id="quoteViewBackdrop" class="quote-view-backdrop"></div>
+<div id="quoteView" class="quote-view" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Cotizacion">
+  <div class="quote-view-bar">
+    <b id="qvTitle"></b>
+    <span class="qv-actions">
+      <button type="button" id="qvEdit" class="btn-small">Editar en Cotizador</button>
+      <button type="button" id="qvPrint" class="btn-small">Imprimir / PDF</button>
+      <button type="button" id="qvClose" class="lead-drawer-close" aria-label="Cerrar">&times;</button>
+    </span>
+  </div>
+  <div class="quote-view-doc" id="qvDoc"></div>
 </div>
 
 <!-- Panel lateral: info completa de un lead (se abre al hacer click en su tarjeta) -->
@@ -1816,7 +2066,7 @@
   <b>Tryla</b> &middot; 1111 Ellenwood St, Dallas, TX 75217 &middot; Marcelo Ramos Schiaffino &middot; +1 (645) 235-3186 &middot; marcelo.ramos@thetryla.com
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0" integrity="sha384-UagCvVPT5XXA0Hx+nJYUAGBFseHT9zBgpJMSebsAxl9lciTwbT+39j5VfRjdP5Tp" crossorigin="anonymous"></script>
 <script src="../supabase-config.js"></script>
 <script src="../cloud-store.js"></script>
 <script src="../sites-store.js"></script>
@@ -1827,7 +2077,7 @@
 <script src="../data/components.js"></script>
 <script src="../data/equipment-i18n.js"></script>
 <script src="../tryla-app.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
 <script src="../location-intel.js"></script>
 <script>
   // Registra el service worker para que el CRM se pueda instalar como app

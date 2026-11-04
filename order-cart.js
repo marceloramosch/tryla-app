@@ -187,6 +187,9 @@
       if (data && data.error) throw new Error(data.error);
       if (!data || !data.url) throw new Error("No se pudo iniciar el pago.");
       localStorage.removeItem(storageKey());
+      if (!/^https:\/\/(checkout|connect)\.stripe\.com\//.test(String(data.url))) {
+        throw new Error("URL de pago no valida.");
+      }
       location.href = data.url;
     } catch (e) {
       console.warn("[TrylaOrderCart] checkout error:", e);
@@ -267,7 +270,7 @@
     const step = STATUS_STEP[order.status] || 1;
     const steps = [1, 2, 3, 4].map((n) => '<span class="' + (n <= step ? "done" : "") + '"></span>').join("");
     const items = (order.items || []).map((it) =>
-      '<div class="tcart-confirm-row"><span>' + it.qty + "x " + escapeHtml(it.name) + "</span><span>" + money(it.price * it.qty) + "</span></div>"
+      '<div class="tcart-confirm-row"><span>' + (Number(it.qty) || 0) + "x " + escapeHtml(it.name) + "</span><span>" + money(it.price * it.qty) + "</span></div>"
     ).join("");
     return (
       '<div class="tcart-confirm-card">' +
