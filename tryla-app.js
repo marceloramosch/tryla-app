@@ -164,6 +164,8 @@
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
   const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
+  // Segmento visual dentro de Cold: leads con c.grupo === "Utah Colds" (estatus sigue siendo "Cold")
+  const COLD_GROUP = "Utah Colds";
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
@@ -1493,12 +1495,12 @@
   }
   function exportClientsCsv() {
     const rows = clients;
-    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Asignado a", "Fuente", "Notas", "Fecha creacion"].concat(
+    const header = ["Nombre", "Contacto", "Negocio", "Ciudad", "Estatus", "Grupo", "Asignado a", "Fuente", "Notas", "Fecha creacion"].concat(
       customFieldDefs.map((f) => f.label)
     );
     const lines = [header.join(",")];
     rows.forEach((c) => {
-      const base = [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""];
+      const base = [c.name, c.contacto, c.negocio, c.ciudad, c.status, c.grupo || "", c.assignedTo, c.fuente, c.notas, c.createdAt ? formatClientDate(c) : ""];
       const custom = customFieldDefs.map((f) => (c.customFields && c.customFields[f.id]) || "");
       lines.push(base.concat(custom).map(csvEscape).join(","));
     });
@@ -1559,6 +1561,7 @@
     const iNegocio = idx("Negocio");
     const iCiudad = idx("Ciudad");
     const iEstatus = idx("Estatus");
+    const iGrupo = idx("Grupo");
     const iAsignado = idx("Asignado a");
     const iFuente = idx("Fuente");
     const iNotas = idx("Notas");
@@ -1570,7 +1573,8 @@
       const row = rows[r];
       const name = (row[iName] || "").trim();
       if (!name) continue;
-      if (findSimilarClient(name)) {
+      const phoneDigits = ((iContacto !== -1 ? row[iContacto] : "") || "").replace(/\D/g, "").slice(-10);
+      if (findSimilarClient(name) || (phoneDigits.length === 10 && clients.some((c) => (c.contacto || "").replace(/\D/g, "").slice(-10) === phoneDigits))) {
         skipped++;
         continue;
       }
@@ -1586,6 +1590,7 @@
         negocio: iNegocio !== -1 ? (row[iNegocio] || "").trim() : "",
         ciudad: iCiudad !== -1 ? (row[iCiudad] || "").trim() : "",
         status,
+        grupo: iGrupo !== -1 && status === "Cold" ? (row[iGrupo] || "").trim() : "",
         assignedTo: iAsignado !== -1 ? (row[iAsignado] || "").trim() : "",
         fuente: iFuente !== -1 ? (row[iFuente] || "").trim() : "",
         notas: iNotas !== -1 ? (row[iNotas] || "").trim() : "",
@@ -2484,11 +2489,13 @@
   // clientId, stage -- se llama tanto al cambiar de etapa (select o soltar en otra
   // columna) como al soltar en la MISMA columna (reordenar) -- en ambos casos cuenta
   // como actividad y la tarjeta sube al tope de su columna.
-  function moveClientToStage(clientId, stage) {
+  function moveClientToStage(clientId, stage, grupo) {
     const c = clients.find((x) => x.id === clientId);
     if (!c) return;
     const stageChanged = c.status !== stage;
     c.status = stage;
+    if (stage === "Cold" && grupo) c.grupo = grupo;
+    else if (c.grupo) delete c.grupo;
     c.movedAt = Date.now();
     if (stageChanged) {
       c.stageHistory = c.stageHistory || [];
@@ -2550,10 +2557,15 @@
     const filtered = filterPipelineClients();
 
     board.innerHTML = "";
-    PIPELINE_STAGES.forEach((stage) => {
+    const hasGroup = clients.some((c) => c.grupo === COLD_GROUP && (c.status || "Cold") === "Cold");
+    const columns = [];
+    if (hasGroup) columns.push({ label: COLD_GROUP, stage: "Cold", grupo: COLD_GROUP });
+    PIPELINE_STAGES.forEach((st) => columns.push({ label: st, stage: st, grupo: "" }));
+    columns.forEach((colDef) => {
+      const stage = colDef.stage;
       // Mas reciente (nota, llamada, o arrastrada) arriba de la columna
       const stageClients = filtered
-        .filter((c) => (c.status || "Cold") === stage)
+        .filter((c) => (c.status || "Cold") === stage && (c.grupo === COLD_GROUP && stage === "Cold" ? COLD_GROUP : "") === colDef.grupo)
         .sort((a, b) => lastActivity(b).at - lastActivity(a).at);
       const stageValue = stageClients.reduce((s, c) => s + clientPipelineValue(c), 0);
 
@@ -2561,7 +2573,7 @@
       col.className = "pipeline-col";
       col.innerHTML = `
         <div class="pipeline-col-head">
-          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(stage)}</span>
+          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(colDef.label)}</span>
           <span class="pipeline-col-count">${stageClients.length}</span>
         </div>
         <div class="pipeline-col-value">${stageValue > 0 ? formatMoney(stageValue) : ""}</div>
@@ -2585,7 +2597,7 @@
       body.addEventListener("drop", (e) => {
         e.preventDefault();
         body.classList.remove("drag-over");
-        if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage);
+        if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage, colDef.grupo);
       });
 
       board.appendChild(col);
