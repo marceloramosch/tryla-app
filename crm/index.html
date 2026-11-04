@@ -1414,6 +1414,23 @@
       <h2>Pipeline de leads</h2>
       <div class="hint">Arrastra una tarjeta a otra columna para cambiar su etapa, o usa el selector rapido dentro de la tarjeta. Click en una tarjeta para ver toda su info. El valor de cada columna suma las cotizaciones abiertas (sin invoice) de esos clientes.</div>
       <div class="field-row pipeline-toolbar">
+        <div class="field" style="max-width:170px;">
+          <label>Pipeline</label>
+          <select id="pipelineScope">
+            <option value="main">Principal</option>
+            <option value="utah">Utah</option>
+            <option value="all">Todos</option>
+          </select>
+        </div>
+        <div class="field" style="max-width:175px; min-width:140px;">
+          <label>Periodo</label>
+          <select id="pipelinePeriod">
+            <option value="">Todo el tiempo</option>
+            <option value="7">Ultimos 7 dias</option>
+            <option value="30">Ultimo mes</option>
+            <option value="90">Ultimos 3 meses</option>
+          </select>
+        </div>
         <div class="field" style="max-width:260px; flex:1;">
           <input id="pipelineSearch" type="text" placeholder="Buscar por nombre, negocio, ciudad...">
         </div>

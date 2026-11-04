@@ -164,8 +164,13 @@
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
   const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
-  // Segmento visual dentro de Cold: leads con c.grupo === "Utah Colds" (estatus sigue siendo "Cold")
+  // Grupo/campana: leads con c.grupo === "Utah Colds" viven en su propio pipeline ("Utah").
+  // Es una etiqueta permanente: el estatus (Cold/Warm/...) se maneja aparte y el grupo no cambia al mover etapas.
   const COLD_GROUP = "Utah Colds";
+  const PIPELINE_SCOPE_KEY = "trylaPipelineScope";
+  const PIPELINE_PERIOD_KEY = "trylaPipelinePeriod";
+  const pipelineScopeEl = document.getElementById("pipelineScope");
+  const pipelinePeriodEl = document.getElementById("pipelinePeriod");
 
   const savedPrices = JSON.parse(localStorage.getItem(PRICES_KEY) || "{}");
   let clients = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
@@ -2345,7 +2350,7 @@
         ${c.assignedTo ? `<span class="pc-assignee" title="Asignado a ${escapeHtml(c.assignedTo)}">${escapeHtml(assigneeInitials(c.assignedTo))}</span>` : ""}
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
-      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}${c.grupo === COLD_GROUP ? " · Utah" : ""}</div>` : ""}
       ${lastActivityLineHtml(c)}
       ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
@@ -2489,13 +2494,11 @@
   // clientId, stage -- se llama tanto al cambiar de etapa (select o soltar en otra
   // columna) como al soltar en la MISMA columna (reordenar) -- en ambos casos cuenta
   // como actividad y la tarjeta sube al tope de su columna.
-  function moveClientToStage(clientId, stage, grupo) {
+  function moveClientToStage(clientId, stage) {
     const c = clients.find((x) => x.id === clientId);
     if (!c) return;
     const stageChanged = c.status !== stage;
     c.status = stage;
-    if (stage === "Cold" && grupo) c.grupo = grupo;
-    else if (c.grupo) delete c.grupo;
     c.movedAt = Date.now();
     if (stageChanged) {
       c.stageHistory = c.stageHistory || [];
@@ -2515,7 +2518,14 @@
     const toStr = pipelineDateTo.value;
     const assignee = pipelineAssigneeFilter ? pipelineAssigneeFilter.value : "";
     const myEmail = (window.NovaCloud && window.NovaCloud.email !== "local" && window.NovaCloud.email) || "";
+    const scope = pipelineScopeEl ? pipelineScopeEl.value : "all";
+    const periodDays = pipelinePeriodEl ? parseInt(pipelinePeriodEl.value, 10) || 0 : 0;
+    const periodCutoff = periodDays ? Date.now() - periodDays * 86400000 : 0;
     return clients.filter((c) => {
+      const isUtah = c.grupo === COLD_GROUP;
+      if (scope === "main" && isUtah) return false;
+      if (scope === "utah" && !isUtah) return false;
+      if (periodCutoff && !(c.createdAt && c.createdAt >= periodCutoff)) return false;
       const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
       const matchesAssignee = !assignee || c.assignedTo === assignee;
       const matchesMine = !pipelineMyLeadsOnly || (myEmail && c.assignedTo === myEmail);
@@ -2550,22 +2560,26 @@
     });
   }
 
+  // Pone el conteo de leads en cada opcion del selector de pipeline (Principal / Utah / Todos)
+  function updatePipelineScopeLabels() {
+    if (!pipelineScopeEl) return;
+    const utah = clients.filter((c) => c.grupo === COLD_GROUP).length;
+    const labels = { main: `Principal (${clients.length - utah})`, utah: `Utah (${utah})`, all: `Todos (${clients.length})` };
+    Array.from(pipelineScopeEl.options).forEach((o) => { if (labels[o.value]) o.textContent = labels[o.value]; });
+  }
+
   function renderPipeline() {
     const board = document.getElementById("pipelineBoard");
     if (!board) return;
     renderAssigneeFilterOptions();
+    updatePipelineScopeLabels();
     const filtered = filterPipelineClients();
 
     board.innerHTML = "";
-    const hasGroup = clients.some((c) => c.grupo === COLD_GROUP && (c.status || "Cold") === "Cold");
-    const columns = [];
-    if (hasGroup) columns.push({ label: COLD_GROUP, stage: "Cold", grupo: COLD_GROUP });
-    PIPELINE_STAGES.forEach((st) => columns.push({ label: st, stage: st, grupo: "" }));
-    columns.forEach((colDef) => {
-      const stage = colDef.stage;
+    PIPELINE_STAGES.forEach((stage) => {
       // Mas reciente (nota, llamada, o arrastrada) arriba de la columna
       const stageClients = filtered
-        .filter((c) => (c.status || "Cold") === stage && (c.grupo === COLD_GROUP && stage === "Cold" ? COLD_GROUP : "") === colDef.grupo)
+        .filter((c) => (c.status || "Cold") === stage)
         .sort((a, b) => lastActivity(b).at - lastActivity(a).at);
       const stageValue = stageClients.reduce((s, c) => s + clientPipelineValue(c), 0);
 
@@ -2573,7 +2587,7 @@
       col.className = "pipeline-col";
       col.innerHTML = `
         <div class="pipeline-col-head">
-          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(colDef.label)}</span>
+          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(stage)}</span>
           <span class="pipeline-col-count">${stageClients.length}</span>
         </div>
         <div class="pipeline-col-value">${stageValue > 0 ? formatMoney(stageValue) : ""}</div>
@@ -2597,7 +2611,7 @@
       body.addEventListener("drop", (e) => {
         e.preventDefault();
         body.classList.remove("drag-over");
-        if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage, colDef.grupo);
+        if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage);
       });
 
       board.appendChild(col);
@@ -2711,7 +2725,7 @@
         <span class="pc-name">${escapeHtml(c.name)}</span>
       </div>
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
-      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}</div>` : ""}
+      ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}${c.grupo === COLD_GROUP ? " · Utah" : ""}</div>` : ""}
       ${lastActivityLineHtml(c)}
       ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
@@ -3912,6 +3926,24 @@
     clientsSortDateBtn.addEventListener("click", () => {
       clientsDateSort = clientsDateSort === "desc" ? "asc" : "desc";
       renderClientsTable();
+    });
+  }
+  try {
+    const sv = localStorage.getItem(PIPELINE_SCOPE_KEY);
+    if (pipelineScopeEl && ["main", "utah", "all"].indexOf(sv) !== -1) pipelineScopeEl.value = sv;
+    const pv = localStorage.getItem(PIPELINE_PERIOD_KEY);
+    if (pipelinePeriodEl && ["", "7", "30", "90"].indexOf(pv) !== -1 && pv !== null) pipelinePeriodEl.value = pv;
+  } catch (e) { /* sin storage: valores por defecto */ }
+  if (pipelineScopeEl) {
+    pipelineScopeEl.addEventListener("change", () => {
+      try { localStorage.setItem(PIPELINE_SCOPE_KEY, pipelineScopeEl.value); } catch (e) {}
+      renderPipeline();
+    });
+  }
+  if (pipelinePeriodEl) {
+    pipelinePeriodEl.addEventListener("change", () => {
+      try { localStorage.setItem(PIPELINE_PERIOD_KEY, pipelinePeriodEl.value); } catch (e) {}
+      renderPipeline();
     });
   }
   pipelineSearch.addEventListener("input", renderPipeline);
