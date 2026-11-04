@@ -60,7 +60,7 @@ async function safeEqual(a: string, b: string): Promise<boolean> {
 }
 
 // Debe quedar igual a PIPELINE_STAGES en tryla-app.js
-const VALID_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost"];
+const VALID_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost", "Trash"];
 
 type IncomingLead = {
   rowId?: string | number;
