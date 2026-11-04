@@ -2379,7 +2379,7 @@
       <div class="pc-actions-row">
         <select class="pc-move" aria-label="Mover a otra etapa"></select>
         <button type="button" class="pc-edit">Editar</button>
-        <button type="button" class="pc-delete" title="Eliminar cliente">🗑</button>
+        <button type="button" class="pc-delete" title="${c.status === "Trash" ? "Eliminar definitivamente" : "Mandar a Trash"}">🗑</button>
       </div>
     `;
 
@@ -2429,6 +2429,12 @@
 
     card.querySelector(".pc-delete").addEventListener("click", (e) => {
       e.stopPropagation();
+      // Fuera de Trash, la basura solo mueve la tarjeta a la columna Trash (se puede recuperar);
+      // dentro de Trash elimina de verdad.
+      if (c.status !== "Trash") {
+        moveClientToStage(c.id, "Trash");
+        return;
+      }
       if (!confirm(`Eliminar al cliente "${c.name}"? Esto no se puede deshacer.`)) return;
       clients = clients.filter((x) => x.id !== c.id);
       persistClients();
