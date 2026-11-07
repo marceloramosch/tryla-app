@@ -139,7 +139,7 @@
     "Esto borrara los datos de la cotizacion actual (no afecta el catalogo, clientes ni cotizaciones guardadas). Continuar?": "This will clear the current quote's data (it doesn't affect the catalog, clients or saved quotes). Continue?",
     "El CSV debe tener una columna 'Nombre' (usa el mismo formato que 'Exportar CSV').": "The CSV must have a 'Nombre' column (use the same format as 'Export CSV').",
     // Blueprints
-    "Seleccionar / mover": "Select / move", "⬉ Mover": "⬉ Move", "✎ Lápiz": "✎ Pencil", "╱ Línea": "╱ Line", "➜ Flecha": "➜ Arrow",
+    "📐 Blueprint de esta cotizacion": "📐 Blueprint from this quote", "Seleccionar / mover": "Select / move", "⬉ Mover": "⬉ Move", "✎ Lápiz": "✎ Pencil", "╱ Línea": "╱ Line", "➜ Flecha": "➜ Arrow",
     "▭ Cuadro": "▭ Box", "◯ Elipse": "◯ Ellipse", "T Texto": "T Text", "Buscar componente…": "Search component…",
     "Pared según el equipo": "Wall by equipment", "Pared derecha": "Right wall", "Pared izquierda": "Left wall",
     "Lista y total": "List & total", "Mostrar precios en la hoja": "Show prices on the sheet", "Agregar a la cotización": "Add to quote",

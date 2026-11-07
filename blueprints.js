@@ -14,19 +14,28 @@
   var W = 1650, MARGIN = 60, PAGE_H = 2135;
   var STORE = "trylaBlueprints";
 
-  var LABEL_FIX = {
-    grill_2: "Plancha / parrilla 2 perillas", grill_4: "Parrilla 4 perillas", hotplate_a: "Hornilla 2 perillas", hotplate_b: "Hornilla 2 perillas",
-    sink_ext_r: "Lavamanos + extintor", rack_ac_r: "Rack de propano + A/C", rack_ac_l: "Rack de propano + A/C", v1_griddle_3: "Plancha 3 pies",
-    v1_stove_4: "Estufa 4 quemadores", c_griddle_3: "Plancha 3 pies", v5_warmer_double: "Calentador doble (2 pans)", v5_sandwich_prep_27: "Sandwich prep 27\"",
-    v5_sandwich_prep_27_l: "Sandwich prep 27\"", v4_grill_4k: "Parrilla 4 perillas", v4_hotplate_4k: "Hornilla 4 quemadores", v4_prep_cabinet: "Mueble con equipo (puertas)",
-    c_prep_cabinet: "Mueble con equipo (puertas)", t12_display_fridge_r: "Refrigerador de vidrio", v4_display_fridge: "Refrigerador de vidrio",
-    c_mesh_panel_r: "Panel de malla (ventilación)", c_range_6_oven: "Estufa 6 quemadores con horno", b_hotplate_4: "Hornilla 4 quemadores",
-    v1_fridge_ss_sandwich: "Refrigerador acero inox con tapa", v2_fridge_ss_legs: "Refrigerador acero inox con patas", b_tv_window_32: "Ventana TV 32\"",
-    v4_sink_handwash_r: "Lavamanos", v4_sink_l: "Lavamanos", hood: "Campana 10 pies", v2_outlet_small_a: "Toma chica", fryer: "Freidora 40 lb",
-    v4_fryer_double: "Freidoras dobles", v5_shelves_wall: "Repisas de pared", v6_freezer_big: "Congelador grande", b_fridge_tall: "Refrigerador alto"
+  var EN_LABEL = {
+    t10_table_4ft_21: "Prep table 4' x 21\"", t10_table_5ft_21: "Prep table 5' x 21\"", t10_window_single_5ft: "Service window 5'", t12_table_6ft_21: "Prep table 6' x 21\"",
+    t12_display_fridge_r: "Glass-door display fridge", t12_window_5ft: "Service window 5'", t12_fridge_prep_top: "Prep fridge with cutting top", fryer: "Fryer 40 lb",
+    grill_2: "Griddle / grill 2 burners", grill_4: "Grill 4 burners", hotplate_a: "Hot plate 2 burners", hotplate_b: "Hot plate 2 burners", table_2ft: "Table 2'",
+    outlet_110v: "110V outlet", extinguisher: "Fire extinguisher", sink_ext_r: "Hand sink + extinguisher", rack_ac_r: "Propane rack + A/C", hood: "Exhaust hood 10'",
+    freezer_a: "Freezer", window: "Service window", table_6ft: "Table 6'", sink_l: "Hand sink", v1_griddle_3: "Griddle 3'", v1_stove_4: "Stove 4 burners",
+    v1_table_kitchen_3ft: "Kitchen table 3'", v1_fridge_ss_sandwich: "Stainless fridge with prep top", v1_hood_8ft: "Exhaust hood 8'", v2_table_4ft_burner: "Table 4' with burner",
+    v2_fridge_ss_legs: "Stainless fridge on legs", v2_tv: "TV", v2_outlet_small_a: "Small outlet", v3_table_4ft_30: "Prep table 4' x 30\"", v5_griddle_4ft: "Griddle 4'",
+    v5_table_3ft_30: "Prep table 3' x 30\"", v5_warmer_double: "Double food warmer (2 pans)", v5_sandwich_prep_27: "Sandwich prep table 27\"", v5_shelves_wall: "Wall shelves",
+    v5_hood_4ft: "Exhaust hood 4'", v5_window_double_5ft_a: "Double service window 5'", v5_window_double_5ft_b: "Double service window 5'", v5_table_3ft_21: "Prep table 3' x 21\"",
+    v5_sandwich_prep_27_l: "Sandwich prep table 27\"", v5_table_2ft_21: "Prep table 2' x 21\"", v4_fryer_double: "Double fryer", v4_grill_4k: "Grill 4 burners",
+    v4_hotplate_4k: "Hot plate 4 burners", v4_prep_cabinet: "Equipment stand with doors", v4_display_fridge: "Glass-door display fridge", v4_table_5ft_a: "Table 5'",
+    v4_window_a: "Service window", v4_window_b: "Service window", v4_hood_10ft: "Exhaust hood 10'", v4_extinguisher: "Fire extinguisher", v4_sink_handwash_r: "Hand sink",
+    v4_rack_ac_r: "Propane rack + A/C", v4_sink_l: "Hand sink", v4_rack_ac_l: "Propane rack + A/C", v6_freezer_big: "Large freezer", v6_fridge_prep_top: "Prep fridge with cutting top",
+    v6_table_2ft_21_side: "Prep table 2' x 21\"", b_hood_5ft: "Exhaust hood 5'", b_hood_8ft: "Exhaust hood 8'", b_partition_wall: "Partition wall", b_tv_window_32: "TV 32\" window",
+    b_window_5ft: "Service window 5'", b_window_4ft: "Service window 4'", b_table_7ft_21: "Prep table 7' x 21\"", b_table_4ft_21: "Prep table 4' x 21\"", b_fridge_tall: "Tall fridge",
+    b_hotplate_4: "Hot plate 4 burners", c_mesh_panel_r: "Mesh vent panel", c_oven_racks: "Oven with trays", c_range_6_oven: "Range 6 burners with oven", c_griddle_3: "Griddle 3'",
+    c_hood_10ft: "Exhaust hood 10'", c_prep_cabinet: "Equipment stand with doors", c_window_6ft: "Service window 6'", c_table_6ft_21: "Prep table 6' x 21\""
   };
-  LIB = LIB.filter(function (l) { return !/^(c_mesh_panel_l|t12_display_fridge_l|v2_outlet_small_b|v4_table_5ft_b|v4_window_b|v4_extinguisher|v4_rack_ac_l)$/.test(l.id) && ["grill_2"].indexOf(l.id) !== -2; });
-  LIB.forEach(function (l) { if (LABEL_FIX[l.id]) l.label = LABEL_FIX[l.id]; });
+  var EN_CAT = { "Mesas": "Tables", "Ventanas y TV": "Windows & TV", "Refrigeración": "Refrigeration", "Cocina": "Kitchen", "Servicios": "Utilities", "Campana": "Hoods" };
+  LIB = LIB.filter(function (l) { return !/^(c_mesh_panel_l|t12_display_fridge_l|v2_outlet_small_b|v4_table_5ft_b|v4_window_b|v4_extinguisher|v4_rack_ac_l)$/.test(l.id); });
+  LIB.forEach(function (l) { if (EN_LABEL[l.id]) l.label = EN_LABEL[l.id]; if (EN_CAT[l.cat]) l.cat = EN_CAT[l.cat]; });
 
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
   function money(n) { return "$" + Math.round(n || 0).toLocaleString("en-US"); }
@@ -35,10 +44,10 @@
   function libById(id) { for (var i = 0; i < LIB.length; i++) if (LIB[i].id === id) return LIB[i]; return null; }
 
   var FICHA = [
-    ["cliente", "Cliente"], ["folio", "Folio"], ["oficina", "Oficina"], ["destino", "Destino"], ["modelo", "Modelo"], ["piso", "Piso"],
-    ["ejes", "Ejes"], ["color", "Color"], ["ac", "A/C"], ["louver", "Louver"], ["plomeria", "Plomería"], ["agua_limpia", "Tanque agua limpia"],
-    ["agua_residual", "Tanque agua residual"], ["generador", "Generador"], ["ventana", "Ventanas"], ["ruedas", "Ruedas"], ["campana", "Campana"],
-    ["bomba", "Bomba de agua"], ["calentador", "Calentador"], ["luz", "Luz exterior"], ["observaciones", "Observaciones"]
+    ["cliente", "Client"], ["folio", "Quote no."], ["oficina", "Office"], ["destino", "Delivery to"], ["modelo", "Model"], ["piso", "Flooring"],
+    ["ejes", "Axles"], ["color", "Color"], ["ac", "A/C"], ["louver", "Louver"], ["plomeria", "Plumbing"], ["agua_limpia", "Fresh water tank"],
+    ["agua_residual", "Grey water tank"], ["generador", "Generator"], ["ventana", "Windows"], ["ruedas", "Wheels"], ["campana", "Hood"],
+    ["bomba", "Water pump"], ["calentador", "Water heater"], ["luz", "Exterior light"], ["observaciones", "Remarks"]
   ];
   var FICHA_SHEET = ["cliente", "folio", "color", "modelo", "ac", "ejes", "ventana", "campana", "agua_limpia", "agua_residual", "generador", "calentador", "observaciones"];
 
@@ -76,11 +85,21 @@
   function numbering() {
     var items = doc.objs.filter(function (o) { return o.t === "comp" || o.t === "fss"; });
     items.sort(function (a, b) { return (a.view === b.view ? 0 : a.view === "right" ? -1 : 1) || a.xft - b.xft; });
+    var auto = {}; items.forEach(function (o, i) { auto[o.id] = i + 1; });
     var map = {};
-    items.forEach(function (o, i) { map[o.id] = i + 1; });
+    items.forEach(function (o) { map[o.id] = o.num != null && o.num !== "" ? o.num : auto[o.id]; });
+    items = items.slice().sort(function (a, b) { var x = String(map[a.id]), y = String(map[b.id]), nx = parseFloat(x), ny = parseFloat(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y, undefined, { numeric: true }) : nx - ny) || auto[a.id] - auto[b.id]; });
     return { items: items, map: map };
   }
-  function objLabel(o) { if (o.t === "fss") return "Sistema contra incendios (FSS)" + (o.ps === 2 ? " · 2 palancas (PS)" : " · 1 palanca (PS)"); return o.label || (libById(o.lib) || {}).label || "Componente"; }
+  // fija numeracion explicita con el orden actual (para poder subir/bajar)
+  function freezeNumbers() { var nm = numbering(); nm.items.forEach(function (o, i) { o.num = i + 1; }); }
+  function moveNumber(id, dir) {
+    freezeNumbers(); var nm = numbering(), i = -1; nm.items.forEach(function (o, k) { if (o.id === id) i = k; });
+    var j = i + dir; if (i < 0 || j < 0 || j >= nm.items.length) return;
+    var a = nm.items[i], b2 = nm.items[j], tmp = a.num; a.num = b2.num; b2.num = tmp; commit();
+  }
+  function autoNumber() { doc.objs.forEach(function (o) { delete o.num; }); commit(); }
+  function objLabel(o) { if (o.t === "fss") return "Fire suppression system (FSS)" + (o.ps === 2 ? " · 2 pull stations (PS)" : " · 1 pull station (PS)"); return o.label || (libById(o.lib) || {}).label || "Component"; }
 
   // ---------- Render ----------
   function R(x) { return Math.round(x * 10) / 10; }
@@ -104,7 +123,7 @@
       var p = toSheet(o, L);
       var tr = o.mirror ? ' transform="translate(' + R(p.x * 2 + p.w) + ',0) scale(-1,1)"' : "";
       s += '<g data-oid="' + o.id + '"' + tr + '><image href="' + ASSET + lib.file + '" x="' + R(p.x) + '" y="' + R(p.y) + '" width="' + R(p.w) + '" height="' + R(p.h) + '" preserveAspectRatio="none"/></g>';
-      if (num) s += '<g data-oid="' + o.id + '"><circle cx="' + R(p.x + p.w / 2) + '" cy="' + R(p.y + p.h + 26) + '" r="17" fill="' + C.navy + '"/>' + t(p.x + p.w / 2, p.y + p.h + 33, num, 20, { fill: "#fff", anchor: "middle", bold: true }) + "</g>";
+      if (num) s += '<g data-badge="' + o.id + '" style="cursor:move">' + badge(p.x + p.w / 2 + (o.bdx || 0), p.y + p.h + 26 + (o.bdy || 0), num) + "</g>";
     } else if (o.t === "fss") {
       var q = toSheet(o, L), cw = q.w * 0.5, ps = o.ps === 2 ? 2 : 1;
       s += '<g data-oid="' + o.id + '">' +
@@ -116,7 +135,7 @@
           t(q.x + cw + q.w * 0.07 + bs / 2, by + bs * 0.62, "PS", Math.max(11, bs * 0.4), { fill: "#fff", anchor: "middle", bold: true });
       }
       s += "</g>";
-      if (num) s += '<g data-oid="' + o.id + '"><circle cx="' + R(q.x + q.w / 2) + '" cy="' + R(q.y + q.h + 26) + '" r="17" fill="' + C.navy + '"/>' + t(q.x + q.w / 2, q.y + q.h + 33, num, 20, { fill: "#fff", anchor: "middle", bold: true }) + "</g>";
+      if (num) s += '<g data-badge="' + o.id + '" style="cursor:move">' + badge(q.x + q.w / 2 + (o.bdx || 0), q.y + q.h + 26 + (o.bdy || 0), num) + "</g>";
     } else if (o.t === "rect") {
       s += '<rect data-oid="' + o.id + '" x="' + R(Math.min(o.x, o.x + o.w)) + '" y="' + R(Math.min(o.y, o.y + o.h)) + '" width="' + R(Math.abs(o.w)) + '" height="' + R(Math.abs(o.h)) + '" fill="' + o.fill + '" stroke="' + o.stroke + '" stroke-width="' + o.sw + '"' + dashAttr(o) + ' fill-opacity="' + (o.fill === "none" ? 0 : 0.35) + '"/>';
     } else if (o.t === "ellipse") {
@@ -144,66 +163,73 @@
     return { x: 0, y: 0, w: 0, h: 0 };
   }
 
+  function badge(cx, cy, n) {
+    return '<circle cx="' + R(cx) + '" cy="' + R(cy) + '" r="15" fill="' + C.navy + '" stroke="#fff" stroke-width="3"/>' + t(cx, cy + 6.5, n, 18, { fill: "#fff", anchor: "middle", bold: true });
+  }
   function sheetSVG(withHandles) {
     var L = layout(doc), b = base(doc), nm = numbering();
     var rows = nm.items.length, fichaVals = FICHA_SHEET.filter(function (k) { return doc.ficha[k]; });
-    var legendY = L.endY + 20, rowH = 46;
-    var needed = legendY + 70 + rows * rowH + 40 + Math.ceil(fichaVals.length / 2) * 40 + (doc.notas ? 120 : 0) + 170;
+    var legendY = L.endY + 10, rowH = 44;
+    var needed = legendY + 60 + (rows + 1) * rowH + 70 + Math.ceil(fichaVals.length / 2) * 38 + (doc.notas ? 40 + Math.min(4, wrapText(doc.notas, 96).length) * 30 : 0) + 230;
     var H = Math.max(PAGE_H, needed);
-    var s = "", ttl = doc.titulo || ("Blueprint · Trailer " + b.label);
+    var s = "", ttl = doc.titulo || ("Food Trailer " + b.label + " · Equipment Layout");
     s += '<rect width="' + W + '" height="' + H + '" fill="#fff"/>';
-    // membrete
+    // letterhead
     s += '<rect width="' + W + '" height="16" fill="' + C.blue + '"/>';
     s += '<image href="../assets/tryla_logo_full.png" x="' + MARGIN + '" y="48" height="86" width="' + R(86 * 4.1) + '" preserveAspectRatio="xMinYMid meet"/>';
-    s += t(W - MARGIN, 80, ttl, 40, { anchor: "end", bold: true });
-    var sub = [doc.ficha.cliente ? "Cliente: " + doc.ficha.cliente : "", doc.ficha.folio ? "Folio: " + doc.ficha.folio : "", new Date().toLocaleDateString("es-MX", { dateStyle: "long" })].filter(Boolean).join("  ·  ");
-    s += t(W - MARGIN, 120, sub, 24, { anchor: "end", fill: C.text2 });
-    s += '<line x1="' + MARGIN + '" y1="160" x2="' + (W - MARGIN) + '" y2="160" stroke="' + C.border + '" stroke-width="3"/>';
-    s += t(MARGIN, 200, "Boceto de referencia para ventas, no es plano de ingeniería. Medidas de equipo de referencia.", 22, { fill: C.text2 });
-    // vistas
-    var names = { right: "VISTA INTERIOR · PARED DERECHA", left: "VISTA INTERIOR · PARED IZQUIERDA" };
+    s += t(W - MARGIN, 82, ttl, 38, { anchor: "end", bold: true });
+    var sub = [doc.ficha.cliente ? "Client: " + doc.ficha.cliente : "", doc.ficha.folio ? "Quote " + doc.ficha.folio : "", new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })].filter(Boolean).join("   ·   ");
+    s += t(W - MARGIN, 122, sub, 23, { anchor: "end", fill: C.text2 });
+    s += '<line x1="' + MARGIN + '" y1="160" x2="' + (W - MARGIN) + '" y2="160" stroke="' + C.border + '" stroke-width="2"/>';
+    // views
+    var names = { right: "RIGHT WALL · INTERIOR VIEW", left: "LEFT WALL · INTERIOR VIEW" };
     ["right", "left"].forEach(function (v) {
       var vw = L.views[v];
-      s += t(MARGIN, vw.y - 22, names[v], 24, { bold: true });
+      s += t(MARGIN, vw.y - 22, names[v], 20, { bold: true, fill: C.blue });
       s += '<image href="' + ASSET + vw.file + '" x="' + R(vw.x) + '" y="' + R(vw.y) + '" width="' + R(vw.w) + '" height="' + R(vw.h) + '"/>';
     });
     doc.objs.forEach(function (o) { s += renderObj(o, L, nm.map[o.id]); });
-    // leyenda
+    // equipment list
     var y = legendY;
-    s += t(MARGIN, y + 6, "LISTA DE EQUIPO", 26, { bold: true });
-    y += 22;
-    s += '<rect x="' + MARGIN + '" y="' + y + '" width="' + (W - MARGIN * 2) + '" height="' + rowH + '" fill="' + C.navy + '"/>' +
-      t(MARGIN + 18, y + 31, "#", 20, { fill: "#fff", bold: true }) + t(MARGIN + 80, y + 31, "COMPONENTE", 20, { fill: "#fff", bold: true }) +
-      t(1010, y + 31, "MEDIDAS REF.", 20, { fill: "#fff", bold: true }) + t(1330, y + 31, doc.showPrices ? "PRECIO" : "PARED", 20, { fill: "#fff", bold: true });
+    s += t(MARGIN, y + 6, "EQUIPMENT LIST", 24, { bold: true });
+    y += 24;
+    var cNum = MARGIN + 16, cName = MARGIN + 84, cSize = 1040, cLast = W - MARGIN - 8;
+    s += '<rect x="' + MARGIN + '" y="' + y + '" width="' + (W - MARGIN * 2) + '" height="' + rowH + '" fill="' + C.light + '"/>' +
+      t(cNum, y + 29, "NO.", 17, { bold: true }) + t(cName, y + 29, "COMPONENT", 17, { bold: true }) +
+      t(cSize, y + 29, "SIZE (W × H)", 17, { bold: true }) + t(cLast, y + 29, doc.showPrices ? "PRICE" : "WALL", 17, { bold: true, anchor: "end" });
     y += rowH;
-    nm.items.forEach(function (o, i) {
-      s += '<rect x="' + MARGIN + '" y="' + y + '" width="' + (W - MARGIN * 2) + '" height="' + rowH + '" fill="' + (i % 2 ? "#fff" : C.light) + '" stroke="' + C.border + '"/>' +
-        '<circle cx="' + (MARGIN + 36) + '" cy="' + (y + rowH / 2) + '" r="15" fill="' + C.navy + '"/>' + t(MARGIN + 36, y + rowH / 2 + 7, i + 1, 18, { fill: "#fff", anchor: "middle", bold: true }) +
-        t(MARGIN + 80, y + 31, objLabel(o), 22, { fill: C.ink }) + t(1010, y + 31, fmtFt(o.wft) + " × " + fmtFt(o.hft), 22, { fill: C.ink }) +
-        t(1330, y + 31, doc.showPrices ? money(o.price) : (o.view === "right" ? "Derecha" : "Izquierda"), 22, { fill: C.ink });
+    nm.items.forEach(function (o) {
+      s += '<line x1="' + MARGIN + '" y1="' + (y + rowH) + '" x2="' + (W - MARGIN) + '" y2="' + (y + rowH) + '" stroke="' + C.border + '" stroke-width="1.5"/>' +
+        badge(MARGIN + 30, y + rowH / 2, nm.map[o.id]) +
+        t(cName, y + 30, objLabel(o), 21, { fill: C.ink }) + t(cSize, y + 30, fmtFt(o.wft) + " × " + fmtFt(o.hft), 21, { fill: C.text2 }) +
+        t(cLast, y + 30, doc.showPrices ? money(o.price) : (o.view === "right" ? "Right" : "Left"), 21, { fill: C.ink, anchor: "end" });
       y += rowH;
     });
-    if (!rows) { s += '<rect x="' + MARGIN + '" y="' + y + '" width="' + (W - MARGIN * 2) + '" height="' + rowH + '" fill="#fff" stroke="' + C.border + '"/>' + t(MARGIN + 18, y + 31, "Aún sin componentes: arrástralos desde la paleta.", 22, { fill: C.text2 }); y += rowH; }
+    if (!rows) { s += t(cName, y + 30, "No equipment yet.", 21, { fill: C.text2 }); y += rowH; }
     if (doc.showPrices && rows) {
       var tot = nm.items.reduce(function (a, o) { return a + (o.price || 0); }, 0);
-      s += '<rect x="' + MARGIN + '" y="' + y + '" width="' + (W - MARGIN * 2) + '" height="' + rowH + '" fill="' + C.light + '" stroke="' + C.border + '"/>' + t(1010, y + 31, "TOTAL EQUIPO", 22, { bold: true }) + t(1330, y + 31, money(tot), 24, { bold: true });
+      s += t(cSize, y + 32, "EQUIPMENT TOTAL", 19, { bold: true }) + t(cLast, y + 32, money(tot), 23, { bold: true, anchor: "end" });
       y += rowH;
     }
-    y += 40;
+    y += 50;
     if (fichaVals.length) {
-      s += t(MARGIN, y, "ESPECIFICACIONES", 26, { bold: true }); y += 20;
+      s += t(MARGIN, y, "SPECIFICATIONS", 24, { bold: true }); y += 14;
       fichaVals.forEach(function (k, i) {
         var col = i % 2, row = Math.floor(i / 2), lab = FICHA.filter(function (f) { return f[0] === k; })[0][1];
         var fx = MARGIN + col * ((W - MARGIN * 2) / 2);
-        s += t(fx, y + 30 + row * 40, lab + ":", 21, { bold: true }) + t(fx + 260, y + 30 + row * 40, String(doc.ficha[k]).slice(0, 44), 21, { fill: C.ink });
+        s += t(fx, y + 30 + row * 38, lab + ":", 20, { bold: true, fill: C.text2 }) + t(fx + 250, y + 30 + row * 38, String(doc.ficha[k]).slice(0, 40), 20, { fill: C.ink });
       });
-      y += Math.ceil(fichaVals.length / 2) * 40 + 30;
+      y += Math.ceil(fichaVals.length / 2) * 38 + 36;
     }
-    if (doc.notas) { wrapText(doc.notas, 100).slice(0, 4).forEach(function (ln, i) { s += t(MARGIN, y + 30 + i * 30, ln, 22, { fill: C.ink }); }); y += 130; }
-    // firmas + pie
+    if (doc.notas) {
+      s += t(MARGIN, y + 6, "NOTES", 24, { bold: true });
+      wrapText(doc.notas, 96).slice(0, 4).forEach(function (ln, i) { s += t(MARGIN, y + 46 + i * 30, ln, 21, { fill: C.ink }); });
+    }
+    // signatures + footer
     var fy = H - 160;
-    s += '<line x1="' + (W - MARGIN - 760) + '" y1="' + fy + '" x2="' + (W - MARGIN - 400) + '" y2="' + fy + '" stroke="' + C.navy + '" stroke-width="2"/>' + t(W - MARGIN - 580, fy + 26, "FIRMA CLIENTE", 18, { anchor: "middle", fill: C.text2 });
-    s += '<line x1="' + (W - MARGIN - 340) + '" y1="' + fy + '" x2="' + (W - MARGIN) + '" y2="' + fy + '" stroke="' + C.navy + '" stroke-width="2"/>' + t(W - MARGIN - 170, fy + 26, "REPRESENTANTE TRYLA", 18, { anchor: "middle", fill: C.text2 });
+    s += t(MARGIN, fy - 28, "Reference sketch for sales purposes, not an engineering drawing. Equipment sizes are approximate.", 17, { fill: C.text2 });
+    s += '<line x1="' + (W - MARGIN - 760) + '" y1="' + fy + '" x2="' + (W - MARGIN - 400) + '" y2="' + fy + '" stroke="' + C.navy + '" stroke-width="2"/>' + t(W - MARGIN - 580, fy + 26, "CLIENT SIGNATURE", 16, { anchor: "middle", fill: C.text2 });
+    s += '<line x1="' + (W - MARGIN - 340) + '" y1="' + fy + '" x2="' + (W - MARGIN) + '" y2="' + fy + '" stroke="' + C.navy + '" stroke-width="2"/>' + t(W - MARGIN - 170, fy + 26, "TRYLA REPRESENTATIVE", 16, { anchor: "middle", fill: C.text2 });
     s += '<rect y="' + (H - 78) + '" width="' + W + '" height="78" fill="' + C.navy + '"/>' +
       t(MARGIN, H - 32, "Marcelo Ramos Schiaffino · +1 (645) 235-3186 · marcelo.ramos@thetryla.com", 24, { fill: "#fff", bold: true }) +
       t(W - MARGIN, H - 32, "1111 Ellenwood St, Dallas, TX 75217", 22, { fill: C.border, anchor: "end" });
@@ -283,7 +309,7 @@
     if (tool !== "select") {
       var o;
       if (tool === "text") {
-        var txt = window.prompt("Texto:", ""); if (!txt) return;
+        var txt = window.prompt("Text:", ""); if (!txt) return;
         doc.objs.push({ id: uid(), t: "text", x: p.x, y: p.y, text: txt, size: style.size, fill: style.stroke, bold: true });
         selId = doc.objs[doc.objs.length - 1].id; tool = "select"; setTool(); commit(); return;
       }
@@ -292,6 +318,8 @@
       else o = { id: uid(), t: tool, x: p.x, y: p.y, w: 0, h: 0, stroke: style.stroke, fill: style.fill, sw: style.sw, dash: style.dash };
       doc.objs.push(o); selId = o.id; drag = { mode: "draw", o: o, sx: p.x, sy: p.y }; e.preventDefault(); return;
     }
+    var bdg = e.target.closest ? e.target.closest("[data-badge]") : null;
+    if (bdg) { var bo = byId(bdg.getAttribute("data-badge")); if (bo) { selId = bo.id; drag = { mode: "badge", o: bo, sx: p.x, sy: p.y, x0: bo.bdx || 0, y0: bo.bdy || 0, moved: false }; draw(); e.preventDefault(); return; } }
     var h = e.target.getAttribute && e.target.getAttribute("data-h");
     var oidEl = e.target.closest ? e.target.closest("[data-oid]") : null;
     if (h && selId) { var so = byId(selId); drag = { mode: "handle", h: h, o: so, sx: p.x, sy: p.y, w0: so.wft, h0: so.hft, ow: so.w, oh: so.h }; e.preventDefault(); return; }
@@ -310,6 +338,8 @@
       if (o.t === "path") o.pts.push([p.x, p.y]);
       else if (o.t === "line") { o.x2 = p.x; o.y2 = p.y; if (e.shiftKey) { if (Math.abs(p.x - o.x1) > Math.abs(p.y - o.y1)) o.y2 = o.y1; else o.x2 = o.x1; } }
       else { o.w = p.x - drag.sx; o.h = p.y - drag.sy; }
+    } else if (drag.mode === "badge") {
+      drag.moved = true; o.bdx = Math.round(drag.x0 + dx); o.bdy = Math.round(drag.y0 + dy);
     } else if (drag.mode === "move") {
       drag.moved = true;
       if (o.t === "comp" || o.t === "fss") setFromSheet(o, drag.bx + dx, drag.by + dy, L, !e.altKey);
@@ -334,13 +364,13 @@
       if (tiny) doc.objs.pop();
       if (o.t === "rect" || o.t === "ellipse") { if (o.w < 0) { o.x += o.w; o.w = -o.w; } if (o.h < 0) { o.y += o.h; o.h = -o.h; } }
       tool = "select"; setTool(); commit();
-    } else if (d.mode === "move") { if (d.moved) commit(); else draw(); }
+    } else if (d.mode === "move" || d.mode === "badge") { if (d.moved) commit(); else draw(); }
     else commit();
   }
   function onDbl(e) {
     var el = e.target.closest ? e.target.closest("[data-oid]") : null; if (!el) return;
     var o = byId(el.getAttribute("data-oid"));
-    if (o && o.t === "text") { var n = window.prompt("Texto:", o.text); if (n != null && n !== "") { o.text = n; commit(); } }
+    if (o && o.t === "text") { var n = window.prompt("Text:", o.text); if (n != null && n !== "") { o.text = n; commit(); } }
   }
   function onKey(e) {
     if (!root || root.closest(".tab-panel") == null || !root.closest(".tab-panel").classList.contains("active")) return;
@@ -373,15 +403,15 @@
   // ---------- Guardar / abrir ----------
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } }
   function saveNamed() {
-    var name = window.prompt("Nombre del blueprint:", doc.ficha.cliente ? (doc.ficha.cliente + " " + base().length + "ft") : ""); if (!name) return;
+    var name = window.prompt("Blueprint name:", doc.ficha.cliente ? (doc.ficha.cliente + " " + base().length + "ft") : ""); if (!name) return;
     var all = loadAll(); all[name] = doc;
-    try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) { alert("No se pudo guardar en este navegador."); return; }
+    try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) { alert("Could not save in this browser."); return; }
     refreshSaved(name);
   }
   function refreshSaved(sel) {
     var s = document.getElementById("bpSaved"); if (!s) return;
     var all = loadAll(), names = Object.keys(all).sort();
-    s.innerHTML = '<option value="">Guardados…</option>' + names.map(function (n) { return '<option value="' + esc(n) + '"' + (n === sel ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("");
+    s.innerHTML = '<option value="">Saved…</option>' + names.map(function (n) { return '<option value="' + esc(n) + '"' + (n === sel ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("");
   }
   function exportJson() {
     var blob = new Blob([JSON.stringify(doc)], { type: "application/json" }), a = document.createElement("a");
@@ -416,14 +446,14 @@
         var ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height);
         cv.toBlob(function (blob) { var l = document.createElement("a"); l.href = URL.createObjectURL(blob); l.download = "tryla-blueprint-" + doc.sizeId + "ft.png"; document.body.appendChild(l); l.click(); l.remove(); setTimeout(function () { URL.revokeObjectURL(l.href); }, 2000); }, "image/png");
       };
-      img.onerror = function () { alert("No se pudo generar el PNG. Prueba con Imprimir / PDF."); };
+      img.onerror = function () { alert("Could not generate the PNG. Try Print / PDF."); };
       img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
       selId = keep; draw();
     });
   }
   function printPdf() {
     var w = window.open("", "_blank");
-    if (!w) { alert("El navegador bloqueó la ventana. Permite ventanas emergentes para imprimir."); return; }
+    if (!w) { alert("The browser blocked the window. Allow pop-ups to print."); return; }
     var keep = selId, r = exportSvgString();
     var abs = r.svg.replace(/href="(\.\.\/assets\/[^"]+)"/g, function (m, p) { return 'href="' + new URL(p, location.href).href + '"'; });
     var fb = new URL("../assets/fonts-pdf/", location.href).href;
@@ -444,9 +474,9 @@
     return rows;
   }
   function addToQuote() {
-    var api = window.TrylaQuote; if (!api || !api.addLineItem) { alert("El cotizador no está listo."); return; }
+    var api = window.TrylaQuote; if (!api || !api.addLineItem) { alert("The quote builder is not ready."); return; }
     var b = base();
-    api.addLineItem("8' x " + b.length + "' Food Trailer - Unidad base", 0, 1);
+    api.addLineItem("8' x " + b.length + "' Food Trailer - Base unit", 0, 1);
     totalRows().forEach(function (r) { api.addLineItem(r.name, r.price, 1); });
     if (doc.ficha.cliente && api.setClient) api.setClient(doc.ficha.cliente);
     if (api.switchTab) api.switchTab("quote");
@@ -472,17 +502,17 @@
     var size = null;
     items.forEach(function (it) { var m = /(\d+)\s*'?\s*x\s*(\d+)\s*'?/i.exec(it.desc) || /food trailer\s*(\d+)/i.exec(it.desc); if (m && !size) { var n = parseInt(m[m.length - 1], 10); if (BASES[n]) size = n; } });
     doc = newDoc(size || 16); doc.ficha.cliente = cliente || ""; doc.ficha.folio = folio || "";
-    var skipped = [], hoodNeed = 0, hoodX = null;
+    var skipped = [], hoodNeed = 0, hoodX = null, n = 0;
     items.forEach(function (it) {
-      var ty = typeOfLine(it.desc || ""); if (!ty) { if (!/unidad base|trailer/i.test(it.desc || "")) skipped.push(it.desc); return; }
-      if (ty === "fss") { var f = addFSS("right"); f.price = it.price || 3700; return; }
+      var ty = typeOfLine(it.desc || ""); if (!ty) { if (!/base unit|unidad base|trailer/i.test(it.desc || "")) skipped.push(it.desc); return; }
+      if (ty === "fss") { var f = addFSS("right"); f.price = it.price || 3700; f.num = ++n; return; }
       var lib = pickLib(ty, wantedWidth(it.desc)); if (!lib) { skipped.push(it.desc); return; }
       var view = (ty === "fridge" || ty === "freezer" || ty === "sink" || ty === "window" || ty === "tv") ? "left" : "right";
       if (ty === "hood") return;
-      var o = addComp(lib.id, view, null, null); o.price = it.price || 0;
+      var o = addComp(lib.id, view, null, null); o.price = it.price || 0; o.num = ++n;
       if (view === "right" && ["griddle", "grill", "fryer", "stove"].indexOf(ty) !== -1) { hoodNeed += o.wft; if (hoodX == null) hoodX = o.xft; }
     });
-    if (hoodNeed > 0) { var h = pickLib("hood", hoodNeed); if (h) { var ho = addComp(h.id, "right", hoodX, h.bottom); ho.price = 0; } }
+    if (hoodNeed > 0) { var h = pickLib("hood", hoodNeed); if (h) { var ho = addComp(h.id, "right", hoodX, h.bottom); ho.price = 0; ho.num = ++n; } }
     selId = null; hist = []; histI = -1; snapshot(); draw(true); autosave();
     return skipped;
   }
@@ -496,80 +526,86 @@
     var q = (document.getElementById("bpSearch").value || "").toLowerCase(), cat = root.dataset.cat || "";
     var list = LIB.filter(function (l) { return (!cat || l.cat === cat) && (!q || l.label.toLowerCase().indexOf(q) !== -1); });
     var host = document.getElementById("bpItems");
-    host.innerHTML = '<button type="button" class="bp-pitem" data-fss="1"><span class="bp-ph" style="color:#C0392B;font-weight:800;font-size:22px">FSS</span><span class="bp-pl">Sistema contra incendios<br><small>1 o 2 palancas · $3,700</small></span></button>' +
+    host.innerHTML = (!cat && (!q || /fire|fss|supp/.test(q)) ? '<button type="button" class="bp-pitem" data-fss="1"><span class="bp-ph" style="color:#C0392B;font-weight:800;font-size:22px">FSS</span><span class="bp-pl">Fire suppression system<br><small>1 or 2 pull stations · $3,700</small></span></button>' : "") +
       list.map(function (l) {
         return '<button type="button" class="bp-pitem" draggable="true" data-lib="' + esc(l.id) + '"><span class="bp-ph"><img src="' + ASSET + esc(l.file) + '" alt="" loading="lazy"></span><span class="bp-pl">' + esc(l.label) + "<br><small>" + fmtFt(l.w) + " × " + fmtFt(l.h) + "</small></span></button>";
       }).join("");
   }
+  var TNAME = { rect: "Rectangle", ellipse: "Ellipse", path: "Drawing", text: "Text" };
   function renderSide() {
     var el = document.getElementById("bpProps"); if (!el) return;
-    var o = selId ? byId(selId) : null, h = "";
-    if (!o) h = '<div class="hint">Selecciona un objeto para editarlo. Teclas: Supr borra, flechas mueven, Ctrl+Z deshace, Ctrl+D duplica. Alt mientras arrastras = sin imán.</div>';
+    var o = selId ? byId(selId) : null, h = "", nm = numbering();
+    if (!o) h = '<div class="hint">Select an object to edit it. Keys: Delete removes, arrows move, Ctrl+Z undoes, Ctrl+D duplicates. Hold Alt while dragging to turn off snapping. Drag a numbered badge to reposition it.</div>';
     else {
-      h += "<b>" + esc(o.t === "comp" || o.t === "fss" ? objLabel(o) : { rect: "Rectángulo", ellipse: "Elipse", line: o.arrow ? "Flecha" : "Línea", path: "Dibujo", text: "Texto" }[o.t]) + "</b>";
+      h += "<b>" + esc(o.t === "comp" || o.t === "fss" ? objLabel(o) : o.t === "line" ? (o.arrow ? "Arrow" : "Line") : TNAME[o.t]) + "</b>";
       if (o.t === "comp" || o.t === "fss") {
-        h += '<label class="bp-m">Precio<input type="number" step="50" min="0" data-p="price" value="' + esc(o.price || 0) + '"></label>';
-        h += '<label class="bp-m">Ancho (pies)<input type="number" step="0.05" min="0.3" data-p="wft" value="' + esc(o.wft) + '"></label><label class="bp-m">Alto (pies)<input type="number" step="0.05" min="0.3" data-p="hft" value="' + esc(o.hft) + '"></label>';
-        h += '<label class="bp-m">Altura sobre el piso (pies)<input type="number" step="0.25" data-p="bft" value="' + esc(o.bft) + '"></label>';
-        if (o.t === "fss") h += '<label class="bp-m">Palancas de activación (PS)<select data-p="ps"><option value="1"' + (o.ps !== 2 ? " selected" : "") + '>1 palanca</option><option value="2"' + (o.ps === 2 ? " selected" : "") + ">2 palancas (doble)</option></select></label>";
-        if (o.t === "comp") h += '<label class="bp-check"><input type="checkbox" data-p="mirror"' + (o.mirror ? " checked" : "") + "> Voltear horizontal</label>";
-        h += '<label class="bp-m">Pared<select data-p="view"><option value="right"' + (o.view === "right" ? " selected" : "") + '>Derecha</option><option value="left"' + (o.view === "left" ? " selected" : "") + ">Izquierda</option></select></label>";
+        h += '<label class="bp-m">Number on sheet<input type="text" inputmode="numeric" data-num="' + o.id + '" value="' + esc(nm.map[o.id]) + '"></label>';
+        h += '<div class="bp-btnrow"><button type="button" class="btn-small" data-mv="up" title="Move up the list">▲ No.</button><button type="button" class="btn-small" data-mv="down" title="Move down the list">▼ No.</button><button type="button" class="btn-small" data-act="badge0">Reset badge</button></div>';
+        h += '<label class="bp-m">Label (shown in the list)<input type="text" data-p="label" value="' + esc(objLabel(o)) + '"' + (o.t === "fss" ? " disabled" : "") + "></label>";
+        h += '<label class="bp-m">Price<input type="number" step="50" min="0" data-p="price" value="' + esc(o.price || 0) + '"></label>';
+        h += '<label class="bp-m">Width (ft)<input type="number" step="0.05" min="0.3" data-p="wft" value="' + esc(o.wft) + '"></label><label class="bp-m">Height (ft)<input type="number" step="0.05" min="0.3" data-p="hft" value="' + esc(o.hft) + '"></label>';
+        h += '<label class="bp-m">Height above floor (ft)<input type="number" step="0.25" data-p="bft" value="' + esc(o.bft) + '"></label>';
+        if (o.t === "fss") h += '<label class="bp-m">Pull stations (PS)<select data-p="ps"><option value="1"' + (o.ps !== 2 ? " selected" : "") + '>1 pull station</option><option value="2"' + (o.ps === 2 ? " selected" : "") + ">2 pull stations (double)</option></select></label>";
+        if (o.t === "comp") h += '<label class="bp-check"><input type="checkbox" data-p="mirror"' + (o.mirror ? " checked" : "") + "> Flip horizontally</label>";
+        h += '<label class="bp-m">Wall<select data-p="view"><option value="right"' + (o.view === "right" ? " selected" : "") + '>Right</option><option value="left"' + (o.view === "left" ? " selected" : "") + ">Left</option></select></label>";
       } else if (o.t === "text") {
-        h += '<label class="bp-m">Texto<textarea data-p="text" rows="2">' + esc(o.text) + '</textarea></label><label class="bp-m">Tamaño<input type="number" min="12" max="120" data-p="size" value="' + esc(o.size) + '"></label><label class="bp-m">Color<input type="color" data-p="fill" value="' + esc(o.fill) + '"></label>';
+        h += '<label class="bp-m">Text<textarea data-p="text" rows="2">' + esc(o.text) + '</textarea></label><label class="bp-m">Size<input type="number" min="12" max="120" data-p="size" value="' + esc(o.size) + '"></label><label class="bp-m">Color<input type="color" data-p="fill" value="' + esc(o.fill) + '"></label>';
       } else {
-        h += '<label class="bp-m">Línea<input type="color" data-p="stroke" value="' + esc(o.stroke) + '"></label><label class="bp-m">Grosor<input type="number" min="1" max="30" data-p="sw" value="' + esc(o.sw) + '"></label>';
-        if (o.t === "rect" || o.t === "ellipse") h += '<label class="bp-m">Relleno<input type="color" data-p="fill" value="' + (o.fill === "none" ? "#ffffff" : esc(o.fill)) + '"></label><label class="bp-check"><input type="checkbox" data-p="nofill"' + (o.fill === "none" ? " checked" : "") + "> Sin relleno</label>";
-        if (o.t !== "path") h += '<label class="bp-check"><input type="checkbox" data-p="dash"' + (o.dash ? " checked" : "") + "> Línea punteada</label>";
+        h += '<label class="bp-m">Line<input type="color" data-p="stroke" value="' + esc(o.stroke) + '"></label><label class="bp-m">Width<input type="number" min="1" max="30" data-p="sw" value="' + esc(o.sw) + '"></label>';
+        if (o.t === "rect" || o.t === "ellipse") h += '<label class="bp-m">Fill<input type="color" data-p="fill" value="' + (o.fill === "none" ? "#ffffff" : esc(o.fill)) + '"></label><label class="bp-check"><input type="checkbox" data-p="nofill"' + (o.fill === "none" ? " checked" : "") + "> No fill</label>";
+        if (o.t !== "path") h += '<label class="bp-check"><input type="checkbox" data-p="dash"' + (o.dash ? " checked" : "") + "> Dashed line</label>";
       }
-      h += '<div class="bp-btnrow"><button type="button" class="btn-small" data-act="dup">Duplicar</button><button type="button" class="btn-small" data-act="front">Al frente</button><button type="button" class="btn-small" data-act="back">Al fondo</button><button type="button" class="btn-small" data-act="del">Borrar</button></div>';
+      h += '<div class="bp-btnrow"><button type="button" class="btn-small" data-act="dup">Duplicate</button><button type="button" class="btn-small" data-act="front">To front</button><button type="button" class="btn-small" data-act="back">To back</button><button type="button" class="btn-small" data-act="del">Delete</button></div>';
     }
     el.innerHTML = h;
-    var nm = numbering(), tot = nm.items.reduce(function (a, x) { return a + (x.price || 0); }, 0);
+    var tot = nm.items.reduce(function (a, x) { return a + (x.price || 0); }, 0);
     var lt = document.getElementById("bpList");
-    lt.innerHTML = nm.items.map(function (x, i) { return '<div class="bp-li" data-sel="' + x.id + '"><span class="bp-num">' + (i + 1) + "</span><span>" + esc(objLabel(x)) + '</span><span class="bp-pr">' + (x.price ? money(x.price) : "—") + "</span></div>"; }).join("") +
-      '<div class="bp-li bp-tot"><span></span><span>Total equipo</span><span class="bp-pr">' + money(tot) + "</span></div>";
-    var b = base();
-    var pl = document.getElementById("bpFit"); if (pl) pl.textContent = "Trailer " + b.label + " · pared útil " + fmtFt(b.length - 1);
+    lt.innerHTML = nm.items.map(function (x) { return '<div class="bp-li' + (x.id === selId ? " bp-on" : "") + '" data-sel="' + x.id + '"><span class="bp-num">' + esc(nm.map[x.id]) + "</span><span>" + esc(objLabel(x)) + '</span><span class="bp-pr">' + (x.price ? money(x.price) : "—") + "</span></div>"; }).join("") +
+      '<div class="bp-li bp-tot"><span></span><span>Equipment total</span><span class="bp-pr">' + money(tot) + "</span></div>";
+    var b = base(), used = 0;
+    doc.objs.forEach(function (x) { if ((x.t === "comp") && x.bft < 0.6 && x.view === "right") used += x.wft; });
+    var pl = document.getElementById("bpFit");
+    if (pl) { pl.textContent = "Trailer " + b.label + " · usable wall " + fmtFt(b.length - 1) + (used > b.length - 1 ? " · ⚠ floor equipment on the right wall is " + fmtFt(used) + " wide" : ""); pl.classList.toggle("bad", used > b.length - 1); }
   }
   function build() {
     root.innerHTML =
       '<div class="bp-top">' +
-      '<select id="bpSize" title="Tamaño del trailer">' + Object.keys(BASES).map(function (k) { return '<option value="' + k + '">Trailer ' + BASES[k].label + "</option>"; }).join("") + "</select>" +
+      '<select id="bpSize" title="Trailer size">' + Object.keys(BASES).map(function (k) { return '<option value="' + k + '">Trailer ' + BASES[k].label + "</option>"; }).join("") + "</select>" +
       '<span class="bp-sep"></span>' +
-      '<button type="button" class="bp-tool" data-tool="select" title="Seleccionar / mover">⬉ Mover</button>' +
-      '<button type="button" class="bp-tool" data-tool="pencil" title="Lápiz">✎ Lápiz</button>' +
-      '<button type="button" class="bp-tool" data-tool="line" title="Línea (Shift = recta)">╱ Línea</button>' +
-      '<button type="button" class="bp-tool" data-tool="arrow" title="Flecha">➜ Flecha</button>' +
-      '<button type="button" class="bp-tool" data-tool="rect" title="Cuadro">▭ Cuadro</button>' +
-      '<button type="button" class="bp-tool" data-tool="ellipse" title="Elipse">◯ Elipse</button>' +
-      '<button type="button" class="bp-tool" data-tool="text" title="Texto">T Texto</button>' +
+      '<button type="button" class="bp-tool" data-tool="select" title="Select / move">⬉ Move</button>' +
+      '<button type="button" class="bp-tool" data-tool="pencil" title="Pencil">✎ Pencil</button>' +
+      '<button type="button" class="bp-tool" data-tool="line" title="Line (Shift = straight)">╱ Line</button>' +
+      '<button type="button" class="bp-tool" data-tool="arrow" title="Arrow">➜ Arrow</button>' +
+      '<button type="button" class="bp-tool" data-tool="rect" title="Box">▭ Box</button>' +
+      '<button type="button" class="bp-tool" data-tool="ellipse" title="Ellipse">◯ Ellipse</button>' +
+      '<button type="button" class="bp-tool" data-tool="text" title="Text">T Text</button>' +
       '<span class="bp-sep"></span>' +
-      '<label class="bp-c" title="Color de línea / texto">Línea <input type="color" id="bpStroke" value="#06038d"></label>' +
-      '<label class="bp-c" title="Relleno">Relleno <input type="color" id="bpFill" value="#5b54ff"></label><label class="bp-c"><input type="checkbox" id="bpNoFill" checked> sin</label>' +
-      '<label class="bp-c" title="Grosor">Grosor <input type="number" id="bpSw" min="1" max="30" value="4" style="width:54px"></label>' +
-      '<label class="bp-c"><input type="checkbox" id="bpDash"> punteada</label>' +
+      '<label class="bp-c" title="Line / text color">Line <input type="color" id="bpStroke" value="#06038d"></label>' +
+      '<label class="bp-c" title="Fill">Fill <input type="color" id="bpFill" value="#5b54ff"></label><label class="bp-c"><input type="checkbox" id="bpNoFill" checked> none</label>' +
+      '<label class="bp-c" title="Width">Width <input type="number" id="bpSw" min="1" max="30" value="4" style="width:54px"></label>' +
+      '<label class="bp-c"><input type="checkbox" id="bpDash"> dashed</label>' +
       '<span class="bp-sep"></span>' +
-      '<button type="button" class="btn-small" id="bpUndo" title="Deshacer (Ctrl+Z)">↶</button><button type="button" class="btn-small" id="bpRedo" title="Rehacer">↷</button>' +
+      '<button type="button" class="btn-small" id="bpUndo" title="Undo (Ctrl+Z)">↶</button><button type="button" class="btn-small" id="bpRedo" title="Redo">↷</button>' +
       "</div>" +
       '<div class="bp-main">' +
-      '<aside class="bp-pal"><input type="search" id="bpSearch" placeholder="Buscar componente…">' +
+      '<aside class="bp-pal"><input type="search" id="bpSearch" placeholder="Search component…">' +
       '<div class="bp-cats" id="bpCats"></div>' +
-      '<label class="bp-m">Agregar en<select id="bpTarget"><option value="auto">Pared según el equipo</option><option value="right">Pared derecha</option><option value="left">Pared izquierda</option></select></label>' +
+      '<label class="bp-m">Add to<select id="bpTarget"><option value="auto">Wall by equipment type</option><option value="right">Right wall</option><option value="left">Left wall</option></select></label>' +
       '<div id="bpItems" class="bp-items"></div></aside>' +
       '<div class="bp-stagewrap"><div id="bpStage"><div id="bpSvgHost"></div></div></div>' +
       '<aside class="bp-side2">' +
-      '<div class="bp-card"><div id="bpFit" class="hint"></div><div id="bpProps"></div></div>' +
-      '<div class="bp-card"><h3 class="bp-h">Lista y total</h3><div id="bpList"></div><label class="bp-check"><input type="checkbox" id="bpShowPrices"> Mostrar precios en la hoja</label>' +
-      '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpAddQuote">Agregar a la cotización</button></div></div>' +
-      '<div class="bp-card"><h3 class="bp-h">Hoja</h3><label class="bp-m">Título<input type="text" id="bpTitulo" placeholder="Blueprint · Trailer 16\' x 7\'"></label>' +
-      '<div class="bp-ficha" id="bpFicha"></div><label class="bp-m">Notas<textarea id="bpNotas" rows="3"></textarea></label></div>' +
-      '<div class="bp-card"><h3 class="bp-h">Guardar y exportar</h3><div class="bp-btnrow"><button type="button" class="btn-small primary" id="bpPrint">Imprimir / PDF</button><button type="button" class="btn-small" id="bpPng">Descargar PNG</button></div>' +
-      '<div class="bp-btnrow"><select id="bpSaved"></select><button type="button" class="btn-small" id="bpSave">Guardar</button><button type="button" class="btn-small" id="bpOpen">Abrir</button><button type="button" class="btn-small" id="bpDelSaved">Borrar</button></div>' +
-      '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpNew">Hoja nueva</button><button type="button" class="btn-small" id="bpFromQuote">Molde desde la cotización</button><button type="button" class="btn-small" id="bpJson">Exportar .json</button></div></div>' +
+      '<div class="bp-card"><button type="button" class="btn-small primary" id="bpFromQuote" style="width:100%">⟳ Build from the current quote</button><div id="bpFit" class="hint" style="margin-top:8px"></div><div id="bpProps"></div></div>' +
+      '<div class="bp-card"><h3 class="bp-h">Equipment list &amp; numbering</h3><div id="bpList"></div><div class="bp-btnrow"><button type="button" class="btn-small" id="bpAutoNum">Auto-number</button></div><label class="bp-check"><input type="checkbox" id="bpShowPrices"> Show prices on the sheet</label>' +
+      '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpAddQuote">Add to quote</button></div></div>' +
+      '<div class="bp-card"><h3 class="bp-h">Sheet</h3><label class="bp-m">Title<input type="text" id="bpTitulo" placeholder="Food Trailer · Equipment Layout"></label>' +
+      '<div class="bp-ficha" id="bpFicha"></div><label class="bp-m">Notes<textarea id="bpNotas" rows="3"></textarea></label></div>' +
+      '<div class="bp-card"><h3 class="bp-h">Save &amp; export</h3><div class="bp-btnrow"><button type="button" class="btn-small primary" id="bpPrint">Print / PDF</button><button type="button" class="btn-small" id="bpPng">Download PNG</button></div>' +
+      '<div class="bp-btnrow"><select id="bpSaved"></select><button type="button" class="btn-small" id="bpSave">Save</button><button type="button" class="btn-small" id="bpOpen">Open</button><button type="button" class="btn-small" id="bpDelSaved">Delete</button></div>' +
+      '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpNew">New sheet</button><button type="button" class="btn-small" id="bpJson">Export .json</button></div></div>' +
       "</aside></div>";
     svgHost = document.getElementById("bpSvgHost");
     var cats = [""].concat(LIB.map(function (l) { return l.cat; }).filter(function (v, i, a) { return a.indexOf(v) === i; }));
-    document.getElementById("bpCats").innerHTML = cats.map(function (c) { return '<button type="button" class="bp-cat' + (c === "" ? " active" : "") + '" data-cat="' + esc(c) + '">' + (c || "Todos") + "</button>"; }).join("");
+    document.getElementById("bpCats").innerHTML = cats.map(function (c) { return '<button type="button" class="bp-cat' + (c === "" ? " active" : "") + '" data-cat="' + esc(c) + '">' + (c || "All") + "</button>"; }).join("");
     document.getElementById("bpFicha").innerHTML = FICHA.map(function (f) { return '<label class="bp-m">' + f[1] + '<input type="text" data-f="' + f[0] + '"></label>'; }).join("");
     renderPalette(); refreshSaved(); setTool();
     wire();
@@ -588,6 +624,8 @@
       if (b.dataset.cat !== undefined && b.classList.contains("bp-cat")) { root.dataset.cat = b.dataset.cat; root.querySelectorAll(".bp-cat").forEach(function (x) { x.classList.toggle("active", x === b); }); renderPalette(); return; }
       if (b.dataset.lib) { addComp(b.dataset.lib); commit(); return; }
       if (b.dataset.fss) { addFSS(); commit(); return; }
+      if (b.dataset.mv) { if (selId) moveNumber(selId, b.dataset.mv === "up" ? -1 : 1); return; }
+      if (b.dataset.act === "badge0") { var bo = selId && byId(selId); if (bo) { delete bo.bdx; delete bo.bdy; commit(); } return; }
       if (b.dataset.act === "del") delObj(); else if (b.dataset.act === "dup") dupObj(); else if (b.dataset.act === "front") reorder(true); else if (b.dataset.act === "back") reorder(false);
     });
     root.addEventListener("dragstart", function (e) { var b = e.target.closest("[data-lib]"); if (b) { e.dataTransfer.setData("text/plain", b.dataset.lib); e.dataTransfer.effectAllowed = "copy"; } });
@@ -616,10 +654,16 @@
       if (p === "nofill") { o.fill = v ? "none" : (document.querySelector('[data-p="fill"]') ? document.querySelector('[data-p="fill"]').value : "#5b54ff"); }
       else if (p === "price" || p === "wft" || p === "hft" || p === "bft" || p === "sw" || p === "size") o[p] = parseFloat(v) || 0;
       else if (p === "ps") o.ps = parseInt(v, 10);
+      else if (p === "label") { o.label = v; }
       else o[p] = v;
-      if (p === "text" || p === "fill" || p === "stroke" || p === "sw" || p === "size" || p === "dash" || p === "mirror" || p === "view" || p === "ps" || p === "wft" || p === "hft" || p === "bft" || p === "price" || p === "nofill") { draw(); autosave(); }
+      if (p === "text" || p === "fill" || p === "stroke" || p === "sw" || p === "size" || p === "dash" || p === "mirror" || p === "view" || p === "ps" || p === "wft" || p === "hft" || p === "bft" || p === "price" || p === "nofill" || p === "label") { draw(); autosave(); }
     });
-    root.addEventListener("change", function (e) { var p = e.target.dataset && e.target.dataset.p; if (p && selId) { snapshot(); } });
+    root.addEventListener("change", function (e) {
+      var d = e.target.dataset || {};
+      if (d.num) { var no = byId(d.num); if (no) { var v = String(e.target.value).trim(); if (v === "") delete no.num; else no.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); commit(); } return; }
+      if (d.p && selId) { snapshot(); }
+    });
+    document.getElementById("bpAutoNum").addEventListener("click", autoNumber);
     ["bpStroke", "bpFill", "bpSw", "bpDash", "bpNoFill"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", function () {
         style.stroke = document.getElementById("bpStroke").value; style.sw = parseInt(document.getElementById("bpSw").value, 10) || 4;
@@ -636,19 +680,20 @@
     document.getElementById("bpAddQuote").addEventListener("click", addToQuote);
     document.getElementById("bpSave").addEventListener("click", saveNamed);
     document.getElementById("bpOpen").addEventListener("click", function () { var n = document.getElementById("bpSaved").value, all = loadAll(); if (n && all[n]) { doc = all[n]; selId = null; hist = []; histI = -1; snapshot(); syncControls(); draw(true); } });
-    document.getElementById("bpDelSaved").addEventListener("click", function () { var n = document.getElementById("bpSaved").value; if (!n || !confirm('¿Borrar "' + n + '"?')) return; var all = loadAll(); delete all[n]; try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) { /* sin storage */ } refreshSaved(); });
-    document.getElementById("bpNew").addEventListener("click", function () { if (doc.objs.length && !confirm("Se descarta la hoja actual (si no la guardaste). ¿Seguir?")) return; doc = newDoc(doc.sizeId); selId = null; hist = []; histI = -1; snapshot(); syncControls(); draw(true); });
+    document.getElementById("bpDelSaved").addEventListener("click", function () { var n = document.getElementById("bpSaved").value; if (!n || !confirm('Delete "' + n + '"?')) return; var all = loadAll(); delete all[n]; try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) { /* sin storage */ } refreshSaved(); });
+    document.getElementById("bpNew").addEventListener("click", function () { if (doc.objs.length && !confirm("The current sheet will be discarded (if you did not save it). Continue?")) return; doc = newDoc(doc.sizeId); selId = null; hist = []; histI = -1; snapshot(); syncControls(); draw(true); });
     document.getElementById("bpFromQuote").addEventListener("click", function () { api.fromQuoteUI(); });
     var origCommit = commit; void origCommit;
   }
 
   var api = {
     fromQuoteUI: function () {
-      var q = window.TrylaQuote; if (!q || !q.getLineItems) { alert("El cotizador no está listo."); return; }
-      var items = q.getLineItems(); if (!items.length) { alert("La cotización no tiene líneas todavía."); return; }
+      var q = window.TrylaQuote; if (!q || !q.getLineItems) { alert("The quote builder is not ready."); return; }
+      if (doc.objs.length && !confirm("Replace the current sheet with a new one built from the quote?")) return;
+      var items = q.getLineItems(); if (!items.length) { alert("The quote has no lines yet."); return; }
       var meta = q.getMeta ? q.getMeta() : {};
-      var skipped = fromQuote(items, meta.cliente, meta.numero); syncControls();
-      if (skipped.length) alert("Armé el molde con lo que pude reconocer.\nNo pude ubicar:\n• " + skipped.slice(0, 12).join("\n• ") + "\n\nAgrégalos a mano desde la paleta.");
+      var skipped = fromQuote(items, meta.cliente, meta.numero); syncControls(); api.open();
+      if (skipped.length) alert("Blueprint built from the quote lines I could recognize.\nNot placed:\n• " + skipped.slice(0, 12).join("\n• ") + "\n\nAdd them by hand from the palette.");
     },
     open: function () { var el = document.querySelector('.tab-btn[data-tab="blueprints"]'); if (el) el.click(); }
   };
@@ -660,6 +705,7 @@
     var saved = null; try { saved = JSON.parse(localStorage.getItem(STORE + "_current") || "null"); } catch (e) { /* vacío */ }
     doc = saved && saved.objs && BASES[saved.sizeId] ? saved : newDoc(16);
     build(); syncControls(); snapshot(); draw(true);
+    var qb = document.getElementById("btnQuoteBp"); if (qb) qb.addEventListener("click", function () { api.fromQuoteUI(); });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();

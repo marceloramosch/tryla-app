@@ -412,15 +412,15 @@
   .bp-top{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px; background:var(--light); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; }
   .bp-top select,.bp-top input[type=number]{ padding:5px 6px; }
   .bp-sep{ width:1px; height:24px; background:var(--border); margin:0 4px; }
-  .bp-tool{ border:1px solid var(--border); background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; }
-  .bp-tool.active{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .bp-tool{ border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; }
+  .bp-tool.active{ background:#06038D; color:#fff; border-color:#06038D; }
   .bp-c{ font-size:12px; display:inline-flex; gap:4px; align-items:center; }
   .bp-main{ display:grid; grid-template-columns:230px minmax(0,1fr) 300px; gap:12px; align-items:start; }
-  .bp-pal,.bp-card{ background:#fff; border:1px solid var(--border); border-radius:10px; padding:10px; }
+  .bp-pal,.bp-card{ color:var(--text); background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:10px; }
   .bp-pal{ max-height:82vh; overflow:auto; position:sticky; top:8px; }
   .bp-pal input[type=search]{ width:100%; margin-bottom:6px; box-sizing:border-box; }
   .bp-cats{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
-  .bp-cat{ border:1px solid var(--border); background:#fff; border-radius:999px; padding:2px 9px; font-size:11px; cursor:pointer; }
+  .bp-cat{ border:1px solid var(--border); background:var(--panel); color:var(--text); border-radius:999px; padding:2px 9px; font-size:11px; cursor:pointer; }
   .bp-cat.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
   .bp-items{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
   .bp-pitem{ border:1px solid var(--border); border-radius:8px; padding:4px; background:var(--light); cursor:grab; text-align:center; font-size:11px; }
@@ -438,7 +438,9 @@
   .bp-ficha{ display:grid; grid-template-columns:1fr 1fr; gap:0 8px; }
   .bp-li{ display:grid; grid-template-columns:22px 1fr auto; gap:6px; font-size:12px; padding:3px 0; border-bottom:1px solid var(--light); }
   .bp-tot{ font-weight:800; }
-  .bp-num{ background:var(--navy); color:#fff; border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; }
+  .bp-li[data-sel]{ cursor:pointer; } .bp-li.bp-on{ background:var(--light); }
+  .bp-card .hint.bad,.bp-fit.bad{ color:#c0392b; font-weight:700; }
+  .bp-num{ background:#06038D; color:#fff; border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; }
   .bp-pr{ text-align:right; }
   @media (max-width: 1100px){ .bp-main{ grid-template-columns:1fr; } .bp-pal{ position:static; max-height:260px; } }
   .status-pill{
@@ -1319,6 +1321,7 @@
             <button class="primary" id="btnPreview" type="button">Generar cotizacion</button>
             <button id="btnPrint" type="button">Imprimir / Guardar PDF</button>
             <button id="btnSave" type="button">Guardar cotizacion</button>
+            <button id="btnQuoteBp" type="button">📐 Blueprint de esta cotizacion</button>
             <button id="btnReset" type="button">Limpiar todo</button>
           </div>
         </div>
@@ -1566,7 +1569,7 @@
 
   <!-- ===================== TAB: LOCATION INTELLIGENCE (TrylApp) ===================== -->
   <!-- ===================== TAB: BLUEPRINTS ===================== -->
-  <div class="tab-panel" id="tab-blueprints">
+  <div class="tab-panel" id="tab-blueprints" data-no-i18n>
     <div class="panel"><div id="bpRoot"></div></div>
   </div>
 
