@@ -3686,6 +3686,18 @@
     }
   }
 
+  // API minima para que otros modulos (Blueprint) agreguen lineas al cotizador
+  window.TrylaQuote = {
+    addLineItem: addLineItem,
+    switchTab: switchTab,
+    setClient: function (name) {
+      if (fCliente && name && !fCliente.value.trim()) {
+        fCliente.value = name;
+        fCliente.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    },
+  };
+
   // ===== Resumen / dashboard =====
   function computeStageReports() {
     const funnelCounts = {};

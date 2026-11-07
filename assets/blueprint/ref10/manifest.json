@@ -1,0 +1,37 @@
+{
+ "source": "Panamerican Trailers 10FT service view",
+ "pt_per_ft": 26.705,
+ "px_per_pt": 8,
+ "components": [
+  {
+   "id": "t10_table_4ft_21",
+   "file": "comps/t10_table_4ft_21.png",
+   "source": "t10",
+   "view": "right",
+   "x_ft": 0.254,
+   "bottom_ft": -0.026,
+   "w_ft": 4.1,
+   "h_ft": 3.183
+  },
+  {
+   "id": "t10_table_5ft_21",
+   "file": "comps/t10_table_5ft_21.png",
+   "source": "t10",
+   "view": "left",
+   "x_ft": 2.931,
+   "bottom_ft": -0.04,
+   "w_ft": 5.022,
+   "h_ft": 2.687
+  },
+  {
+   "id": "t10_window_single_5ft",
+   "file": "comps/t10_window_single_5ft.png",
+   "source": "t10",
+   "view": "left",
+   "x_ft": 2.847,
+   "bottom_ft": 3.348,
+   "w_ft": 5.186,
+   "h_ft": 3.183
+  }
+ ]
+}
