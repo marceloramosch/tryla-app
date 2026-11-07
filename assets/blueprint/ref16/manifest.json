@@ -1,0 +1,419 @@
+{
+ "source": "Panamerican Trailers 16FT service view",
+ "pt_per_ft": 26.247,
+ "px_per_pt": 8,
+ "components": [
+  {
+   "id": "fryer",
+   "file": "comps/fryer.png",
+   "view": "right",
+   "x_ft": -0.012,
+   "bottom_ft": -0.053,
+   "w_ft": 1.457,
+   "h_ft": 4.758,
+   "source": "hoja"
+  },
+  {
+   "id": "grill_2",
+   "file": "comps/grill_2.png",
+   "view": "right",
+   "x_ft": 1.446,
+   "bottom_ft": -0.028,
+   "w_ft": 2.053,
+   "h_ft": 3.391,
+   "source": "hoja"
+  },
+  {
+   "id": "grill_4",
+   "file": "comps/grill_4.png",
+   "view": "right",
+   "x_ft": 3.521,
+   "bottom_ft": -0.033,
+   "w_ft": 4.11,
+   "h_ft": 3.4,
+   "source": "hoja"
+  },
+  {
+   "id": "hotplate_a",
+   "file": "comps/hotplate_a.png",
+   "view": "right",
+   "x_ft": 7.681,
+   "bottom_ft": 0.053,
+   "w_ft": 1.219,
+   "h_ft": 3.243,
+   "source": "hoja"
+  },
+  {
+   "id": "hotplate_b",
+   "file": "comps/hotplate_b.png",
+   "view": "right",
+   "x_ft": 8.903,
+   "bottom_ft": 0.053,
+   "w_ft": 1.038,
+   "h_ft": 3.234,
+   "source": "hoja"
+  },
+  {
+   "id": "table_2ft",
+   "file": "comps/table_2ft.png",
+   "view": "right",
+   "x_ft": 9.975,
+   "bottom_ft": 0.077,
+   "w_ft": 2.076,
+   "h_ft": 3.043,
+   "source": "hoja"
+  },
+  {
+   "id": "outlet_110v",
+   "file": "comps/outlet_110v.png",
+   "view": "right",
+   "x_ft": 10.669,
+   "bottom_ft": 3.999,
+   "w_ft": 0.533,
+   "h_ft": 0.686,
+   "source": "hoja"
+  },
+  {
+   "id": "extinguisher",
+   "file": "comps/extinguisher.png",
+   "view": "right",
+   "x_ft": 13.516,
+   "bottom_ft": 4.567,
+   "w_ft": 0.762,
+   "h_ft": 1.967,
+   "source": "hoja"
+  },
+  {
+   "id": "sink_ext_r",
+   "file": "comps/sink_ext_r.png",
+   "view": "right",
+   "x_ft": 13.665,
+   "bottom_ft": 3.095,
+   "w_ft": 2.038,
+   "h_ft": 2.1,
+   "source": "hoja"
+  },
+  {
+   "id": "rack_ac_r",
+   "file": "comps/rack_ac_r.png",
+   "view": "right",
+   "x_ft": 15.922,
+   "bottom_ft": 0.036,
+   "w_ft": 1.572,
+   "h_ft": 6.32,
+   "source": "hoja"
+  },
+  {
+   "id": "hood",
+   "file": "comps/hood.png",
+   "view": "right",
+   "x_ft": -0.033,
+   "bottom_ft": 5.113,
+   "w_ft": 10.058,
+   "h_ft": 1.9,
+   "source": "hoja"
+  },
+  {
+   "id": "freezer_a",
+   "file": "comps/freezer_a.png",
+   "view": "left",
+   "x_ft": 3.634,
+   "bottom_ft": -0.023,
+   "w_ft": 2.529,
+   "h_ft": 6.505,
+   "source": "hoja"
+  },
+  {
+   "id": "window",
+   "file": "comps/window.png",
+   "view": "left",
+   "x_ft": 6.37,
+   "bottom_ft": 3.443,
+   "w_ft": 6.22,
+   "h_ft": 3.196,
+   "source": "hoja"
+  },
+  {
+   "id": "table_6ft",
+   "file": "comps/table_6ft.png",
+   "view": "left",
+   "x_ft": 6.432,
+   "bottom_ft": 0.001,
+   "w_ft": 6.134,
+   "h_ft": 3.291,
+   "source": "hoja"
+  },
+  {
+   "id": "freezer_b",
+   "file": "comps/freezer_b.png",
+   "view": "left",
+   "x_ft": 12.923,
+   "bottom_ft": -0.037,
+   "w_ft": 2.524,
+   "h_ft": 6.529,
+   "source": "hoja"
+  },
+  {
+   "id": "sink_l",
+   "file": "comps/sink_l.png",
+   "view": "left",
+   "x_ft": 0.098,
+   "bottom_ft": 2.969,
+   "w_ft": 2.038,
+   "h_ft": 2.215,
+   "source": "hoja"
+  },
+  {
+   "id": "rack_ac_l",
+   "file": "comps/rack_ac_l.png",
+   "view": "left",
+   "x_ft": -1.708,
+   "bottom_ft": 0.042,
+   "w_ft": 1.567,
+   "h_ft": 6.32,
+   "source": "hoja"
+  },
+  {
+   "id": "v1_griddle_3",
+   "file": "comps/v1_griddle_3.png",
+   "view": "right",
+   "x_ft": 1.397,
+   "bottom_ft": -0.016,
+   "w_ft": 3.081,
+   "h_ft": 3.391,
+   "source": "hoja"
+  },
+  {
+   "id": "v1_stove_4",
+   "file": "comps/v1_stove_4.png",
+   "view": "right",
+   "x_ft": 4.513,
+   "bottom_ft": 0.003,
+   "w_ft": 2.067,
+   "h_ft": 3.234,
+   "source": "hoja"
+  },
+  {
+   "id": "v1_table_kitchen_3ft",
+   "file": "comps/v1_table_kitchen_3ft.png",
+   "view": "right",
+   "x_ft": 6.509,
+   "bottom_ft": 0.03,
+   "w_ft": 3.191,
+   "h_ft": 3.196,
+   "source": "hoja"
+  },
+  {
+   "id": "v1_fridge_ss_sandwich",
+   "file": "comps/v1_fridge_ss_sandwich.png",
+   "view": "right",
+   "x_ft": 9.676,
+   "bottom_ft": 0.093,
+   "w_ft": 2.395,
+   "h_ft": 3.215,
+   "source": "hoja"
+  },
+  {
+   "id": "v1_hood_8ft",
+   "file": "comps/v1_hood_8ft.png",
+   "view": "right",
+   "x_ft": -0.052,
+   "bottom_ft": 5.137,
+   "w_ft": 8.029,
+   "h_ft": 1.905,
+   "source": "hoja"
+  },
+  {
+   "id": "v2_table_4ft_burner",
+   "file": "comps/v2_table_4ft_burner.png",
+   "view": "right",
+   "x_ft": 4.589,
+   "bottom_ft": -0.096,
+   "w_ft": 4.153,
+   "h_ft": 4.039,
+   "source": "hoja"
+  },
+  {
+   "id": "v2_fridge_ss_legs",
+   "file": "comps/v2_fridge_ss_legs.png",
+   "view": "right",
+   "x_ft": 8.899,
+   "bottom_ft": 0.621,
+   "w_ft": 2.405,
+   "h_ft": 3.234,
+   "source": "hoja"
+  },
+  {
+   "id": "v2_tv",
+   "file": "comps/v2_tv.png",
+   "view": "left",
+   "x_ft": 2.995,
+   "bottom_ft": 4.576,
+   "w_ft": 2.41,
+   "h_ft": 1.529,
+   "source": "hoja"
+  },
+  {
+   "id": "v2_outlet_small_a",
+   "file": "comps/v2_outlet_small_a.png",
+   "view": "right",
+   "x_ft": 5.216,
+   "bottom_ft": 4.604,
+   "w_ft": 0.195,
+   "h_ft": 0.3,
+   "source": "hoja"
+  },
+  {
+   "id": "v2_outlet_small_b",
+   "file": "comps/v2_outlet_small_b.png",
+   "view": "right",
+   "x_ft": 10.004,
+   "bottom_ft": 3.994,
+   "w_ft": 0.195,
+   "h_ft": 0.305,
+   "source": "hoja"
+  },
+  {
+   "id": "v2_hood_8ft",
+   "file": "comps/v2_hood_8ft.png",
+   "view": "right",
+   "x_ft": -0.033,
+   "bottom_ft": 5.103,
+   "w_ft": 8.048,
+   "h_ft": 1.91,
+   "source": "hoja"
+  },
+  {
+   "id": "v3_table_4ft_30",
+   "file": "comps/v3_table_4ft_30.png",
+   "view": "right",
+   "x_ft": 3.886,
+   "bottom_ft": -0.094,
+   "w_ft": 4.115,
+   "h_ft": 3.196,
+   "source": "hoja"
+  },
+  {
+   "id": "v5_griddle_4ft",
+   "file": "comps/v5_griddle_4ft.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": -0.137,
+   "bottom_ft": -0.065,
+   "w_ft": 4.249,
+   "h_ft": 3.377
+  },
+  {
+   "id": "v5_table_3ft_30",
+   "file": "comps/v5_table_3ft_30.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 4.047,
+   "bottom_ft": -0.068,
+   "w_ft": 3.096,
+   "h_ft": 3.182
+  },
+  {
+   "id": "v5_warmer_double",
+   "file": "comps/v5_warmer_double.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 7.202,
+   "bottom_ft": -0.068,
+   "w_ft": 2.743,
+   "h_ft": 3.634
+  },
+  {
+   "id": "v5_sandwich_prep_27",
+   "file": "comps/v5_sandwich_prep_27.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 9.896,
+   "bottom_ft": -0.021,
+   "w_ft": 2.401,
+   "h_ft": 3.22
+  },
+  {
+   "id": "v5_shelves_wall",
+   "file": "comps/v5_shelves_wall.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 8.089,
+   "bottom_ft": 5.082,
+   "w_ft": 4.625,
+   "h_ft": 1.205
+  },
+  {
+   "id": "v5_hood_4ft",
+   "file": "comps/v5_hood_4ft.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": -0.028,
+   "bottom_ft": 5.046,
+   "w_ft": 4.006,
+   "h_ft": 1.881
+  },
+  {
+   "id": "v5_window_double_5ft_a",
+   "file": "comps/v5_window_double_5ft_a.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 3.772,
+   "bottom_ft": 3.052,
+   "w_ft": 5.006,
+   "h_ft": 3.277
+  },
+  {
+   "id": "v5_window_double_5ft_b",
+   "file": "comps/v5_window_double_5ft_b.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 9.465,
+   "bottom_ft": 3.052,
+   "w_ft": 5.897,
+   "h_ft": 3.263
+  },
+  {
+   "id": "v5_table_3ft_21",
+   "file": "comps/v5_table_3ft_21.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 3.389,
+   "bottom_ft": 0.793,
+   "w_ft": 2.096,
+   "h_ft": 2.191
+  },
+  {
+   "id": "v5_sandwich_prep_27_l",
+   "file": "comps/v5_sandwich_prep_27_l.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 7.964,
+   "bottom_ft": 0.655,
+   "w_ft": 2.734,
+   "h_ft": 3.467
+  },
+  {
+   "id": "v5_table_2ft_21",
+   "file": "comps/v5_table_2ft_21.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 12.899,
+   "bottom_ft": 0.793,
+   "w_ft": 2.948,
+   "h_ft": 2.191
+  },
+  {
+   "id": "v5_plan_view",
+   "file": "comps/v5_plan_view.png",
+   "source": "hoja",
+   "view": "other"
+  },
+  {
+   "id": "v1_plan_view_b",
+   "file": "comps/v1_plan_view_b.png",
+   "source": "hoja",
+   "view": "other"
+  }
+ ]
+}

@@ -1,0 +1,127 @@
+{
+ "source": "Panamerican Trailers 22FT service view (patio)",
+ "pt_per_ft": 863.042,
+ "px_per_pt": 0.5,
+ "components": [
+  {
+   "id": "b_hood_5ft",
+   "file": "comps/b_hood_5ft.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 0.388,
+   "bottom_ft": 5.051,
+   "w_ft": 5.214,
+   "h_ft": 1.94
+  },
+  {
+   "id": "b_hood_8ft",
+   "file": "comps/b_hood_8ft.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 5.992,
+   "bottom_ft": 4.884,
+   "w_ft": 8.21,
+   "h_ft": 2.107
+  },
+  {
+   "id": "b_partition_wall",
+   "file": "comps/b_partition_wall.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 5.659,
+   "bottom_ft": -0.166,
+   "w_ft": 0.554,
+   "h_ft": 7.379
+  },
+  {
+   "id": "b_tv_window_32",
+   "file": "comps/b_tv_window_32.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 1.553,
+   "bottom_ft": 4.662,
+   "w_ft": 2.551,
+   "h_ft": 1.884
+  },
+  {
+   "id": "b_window_5ft",
+   "file": "comps/b_window_5ft.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 9.653,
+   "bottom_ft": 3.274,
+   "w_ft": 5.325,
+   "h_ft": 3.272
+  },
+  {
+   "id": "b_window_4ft",
+   "file": "comps/b_window_4ft.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 16.921,
+   "bottom_ft": 3.274,
+   "w_ft": 4.215,
+   "h_ft": 3.272
+  },
+  {
+   "id": "b_table_7ft_21",
+   "file": "comps/b_table_7ft_21.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 8.821,
+   "bottom_ft": -0.055,
+   "w_ft": 7.156,
+   "h_ft": 3.328
+  },
+  {
+   "id": "b_table_4ft_21",
+   "file": "comps/b_table_4ft_21.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 16.976,
+   "bottom_ft": -0.055,
+   "w_ft": 4.16,
+   "h_ft": 3.328
+  },
+  {
+   "id": "b_fridge_tall",
+   "file": "comps/b_fridge_tall.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 6.269,
+   "bottom_ft": 0.002,
+   "w_ft": 2.496,
+   "h_ft": 6.6
+  },
+  {
+   "id": "b_griddle_4ft",
+   "file": "comps/b_griddle_4ft.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 6.019,
+   "bottom_ft": -0.109,
+   "w_ft": 4.132,
+   "h_ft": 3.715
+  },
+  {
+   "id": "b_hotplate_4",
+   "file": "comps/b_hotplate_4.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 10.153,
+   "bottom_ft": -0.111,
+   "w_ft": 2.218,
+   "h_ft": 3.55
+  },
+  {
+   "id": "b_fridge_prep_top",
+   "file": "comps/b_fridge_prep_top.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 14.147,
+   "bottom_ft": -0.165,
+   "w_ft": 2.496,
+   "h_ft": 4.104
+  }
+ ]
+}

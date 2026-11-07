@@ -1,0 +1,67 @@
+{
+ "source": "Panamerican Trailers 12FT service view",
+ "pt_per_ft": 26.509,
+ "px_per_pt": 8,
+ "components": [
+  {
+   "id": "t12_table_6ft_21",
+   "file": "comps/t12_table_6ft_21.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 0.028,
+   "bottom_ft": 0.002,
+   "w_ft": 6.144,
+   "h_ft": 3.202
+  },
+  {
+   "id": "t12_display_fridge_r",
+   "file": "comps/t12_display_fridge_r.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 6.293,
+   "bottom_ft": 0.085,
+   "w_ft": 2.103,
+   "h_ft": 5.668
+  },
+  {
+   "id": "t12_display_fridge_l",
+   "file": "comps/t12_display_fridge_l.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 2.897,
+   "bottom_ft": 0.03,
+   "w_ft": 2.098,
+   "h_ft": 5.663
+  },
+  {
+   "id": "t12_window_5ft",
+   "file": "comps/t12_window_5ft.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 5.094,
+   "bottom_ft": 3.312,
+   "w_ft": 4.286,
+   "h_ft": 3.206
+  },
+  {
+   "id": "t12_table_4ft_21",
+   "file": "comps/t12_table_4ft_21.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 5.136,
+   "bottom_ft": -0.048,
+   "w_ft": 4.117,
+   "h_ft": 3.258
+  },
+  {
+   "id": "t12_fridge_prep_top",
+   "file": "comps/t12_fridge_prep_top.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 9.291,
+   "bottom_ft": 0.774,
+   "w_ft": 2.41,
+   "h_ft": 3.315
+  }
+ ]
+}

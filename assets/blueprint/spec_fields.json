@@ -1,0 +1,212 @@
+{
+ "source": "Hoja de especificaciones Panamerican. Las opciones son las que aparecen en la hoja.",
+ "fields": [
+  {
+   "key": "customer",
+   "label": "CUSTOMER",
+   "example": ""
+  },
+  {
+   "key": "folio",
+   "label": "FOLIO #",
+   "example": ""
+  },
+  {
+   "key": "office",
+   "label": "OFFICE",
+   "example": ""
+  },
+  {
+   "key": "destination",
+   "label": "DESTINATION",
+   "example": ""
+  },
+  {
+   "key": "size",
+   "label": "SIZE",
+   "example": "16X8X7"
+  },
+  {
+   "key": "model",
+   "label": "MODEL",
+   "example": "2025 premium/king"
+  },
+  {
+   "key": "floor",
+   "label": "FLOOR",
+   "example": "Plate Diamond"
+  },
+  {
+   "key": "axles",
+   "label": "AXLES",
+   "example": "Double"
+  },
+  {
+   "key": "color",
+   "label": "COLOR",
+   "example": ""
+  },
+  {
+   "key": "ac",
+   "label": "A / C",
+   "options": [
+    "1 Ton",
+    "2 Ton"
+   ],
+   "example": "1 Ton / 2 Ton"
+  },
+  {
+   "key": "louver",
+   "label": "LOUVER",
+   "options": [
+    "Front",
+    "Back"
+   ],
+   "example": "Front / Back"
+  },
+  {
+   "key": "plumbing",
+   "label": "PLUMBING",
+   "example": "Pex"
+  },
+  {
+   "key": "clean_water_tank",
+   "label": "CLEAN WATER TANK",
+   "options": [
+    "30 Gal",
+    "50 Gal",
+    "Inox",
+    "Plastic"
+   ],
+   "example": "30 / 50 Gal, Inox / Plastic"
+  },
+  {
+   "key": "waste_water_tank",
+   "label": "WASTE WATER TANK",
+   "options": [
+    "40 Gal",
+    "58 Gal",
+    "Inox",
+    "Plastic"
+   ],
+   "example": "40 / 58 Gal, Inox / Plastic"
+  },
+  {
+   "key": "tank_carrier",
+   "label": "TANK CARRIER",
+   "options": [
+    "Cage",
+    "Base"
+   ],
+   "example": "Cage / Base"
+  },
+  {
+   "key": "generator",
+   "label": "GENERATOR",
+   "options": [
+    "Cage",
+    "Base"
+   ],
+   "example": "Cage / Base"
+  },
+  {
+   "key": "window_size",
+   "label": "WINDOW SIZE",
+   "options": [
+    "4'x3'",
+    "5'x3'",
+    "6'x3'"
+   ],
+   "example": "4'x3' | 5'x3' | 6'x3'"
+  },
+  {
+   "key": "window_type",
+   "label": "WINDOW TYPE",
+   "example": "Fix - 6ft (1)"
+  },
+  {
+   "key": "wheels",
+   "label": "WHEELS",
+   "example": "White"
+  },
+  {
+   "key": "vent_hood",
+   "label": "VENT HOOD",
+   "example": "Premium"
+  },
+  {
+   "key": "vent_hood_size",
+   "label": "VENT HOOD SIZE",
+   "example": "8ft"
+  },
+  {
+   "key": "water_pump",
+   "label": "WATER BOMB",
+   "example": "70 Psi 1/2 hp 110v"
+  },
+  {
+   "key": "sink",
+   "label": "SINK | HANDWASH | SPLASHGUARD",
+   "example": "Stainless steel | Commercial"
+  },
+  {
+   "key": "gas_outlets",
+   "label": "GAS OULETS",
+   "example": ""
+  },
+  {
+   "key": "facings",
+   "label": "TOP AND BOTTOM FACINGS",
+   "example": "Alum smooth"
+  },
+  {
+   "key": "corners",
+   "label": "CORNER'S",
+   "example": "No"
+  },
+  {
+   "key": "water_heater",
+   "label": "WATER HEATER",
+   "example": "Electric 4 Gal Instalado"
+  },
+  {
+   "key": "sink_faucet",
+   "label": "SINK FAUCET",
+   "example": "Spring"
+  },
+  {
+   "key": "main_plug",
+   "label": "ELECTRICA MAIN PLUG",
+   "example": "L14-30 - 30A"
+  },
+  {
+   "key": "outlets",
+   "label": "ELECTRIC OUTLETS / VOLTAGE",
+   "example": "0 / 110V | 0 / 220V"
+  },
+  {
+   "key": "exterior_light",
+   "label": "EXTERIOR LIGHT",
+   "example": "Reflector"
+  },
+  {
+   "key": "observations",
+   "label": "OBSERVATIONS",
+   "example": ""
+  }
+ ],
+ "components_list": {
+  "label": "COMPONENTS",
+  "slots": 8,
+  "example": [
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ]
+ }
+}
