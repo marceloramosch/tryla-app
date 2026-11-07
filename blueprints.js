@@ -34,7 +34,7 @@
     c_hood_10ft: "Exhaust hood 10'", c_prep_cabinet: "Equipment stand with doors", c_window_6ft: "Service window 6'", c_table_6ft_21: "Prep table 6' x 21\""
   };
   var EN_CAT = { "Mesas": "Tables", "Ventanas y TV": "Windows & TV", "Refrigeración": "Refrigeration", "Cocina": "Kitchen", "Servicios": "Utilities", "Campana": "Hoods" };
-  LIB = LIB.filter(function (l) { return !/^(c_mesh_panel_l|t12_display_fridge_l|v2_outlet_small_b|v4_table_5ft_b|v4_window_b|v4_extinguisher|v4_rack_ac_l)$/.test(l.id); });
+  LIB = LIB.filter(function (l) { return !/^(c_mesh_panel_l|t12_display_fridge_l|v2_outlet_small_b|v4_table_5ft_b|v4_window_b|v4_extinguisher)$/.test(l.id); });
   LIB.forEach(function (l) { if (EN_LABEL[l.id]) l.label = EN_LABEL[l.id]; if (EN_CAT[l.cat]) l.cat = EN_CAT[l.cat]; });
 
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
@@ -57,9 +57,38 @@
 
   // ---------- Documento ----------
   function newDoc(sizeId) {
-    return {
-      sizeId: String(sizeId || 16), titulo: "", showPrices: false, ficha: {}, objs: [], notas: ""
-    };
+    var d = { sizeId: String(sizeId || 16), titulo: "", showPrices: false, ficha: {}, objs: [], notas: "" };
+    addDefaults(d);
+    return d;
+  }
+  // Piezas estandar de todo trailer (se pueden quitar): lavamanos, rack de tanques + A/C, mesa 6' y ventana 6'
+  function defSpec(key, L) {
+    var x6 = 6.4 + (L - 16) * 0.605;
+    switch (key) {
+      case "sink_r": return L >= 20 ? { lib: "v4_sink_handwash_r", view: "right", x: L - 2.32, label: "Hand sink", grp: "sink" } : { lib: "sink_ext_r", view: "right", x: L - 2.34, label: "Hand sink", grp: "sink" };
+      case "sink_l": return { lib: L >= 20 ? "v4_sink_l" : "sink_l", view: "left", x: 0.1, label: "Hand sink", grp: "sink" };
+      case "rack_r": return { lib: L >= 20 ? "v4_rack_ac_r" : "rack_ac_r", view: "right", x: L - 0.08, label: "Propane tank rack + A/C unit", grp: "rack" };
+      case "rack_l": return { lib: "v4_rack_ac_l", view: "left", x: -1.83, label: "Propane tank rack + A/C unit", grp: "rack" };
+      case "table": return { lib: "table_6ft", view: "left", x: x6, label: "Counter table 6'" };
+      case "window": return { lib: "window", view: "left", x: x6, label: "Service window 6'" };
+    }
+    return null;
+  }
+  var DEF_KEYS = ["sink_r", "sink_l", "rack_r", "rack_l", "table", "window"];
+  function addDefaults(d) {
+    var b = BASES[d.sizeId] || BASES[16], added = 0;
+    DEF_KEYS.forEach(function (k) {
+      if (d.objs.some(function (o) { return o.defk === k; })) return;
+      var sp = defSpec(k, b.length), l = libById(sp.lib); if (!l) return;
+      var o = { id: uid(), t: "comp", lib: l.id, view: sp.view, xft: sp.x, bft: Math.max(0, l.bottom), wft: l.w, hft: l.h, price: 0, label: sp.label, defk: k, def: true };
+      if (sp.grp) o.grp = sp.grp;
+      d.objs.unshift(o); added++;
+    });
+    return added;
+  }
+  function repositionDefaults(d) {
+    var b = BASES[d.sizeId] || BASES[16];
+    d.objs.forEach(function (o) { if (o.defk) { var sp = defSpec(o.defk, b.length); if (sp) { o.xft = sp.x; o.view = sp.view; } } });
   }
   function base(d) { return BASES[(d || doc).sizeId] || BASES[16]; }
 
@@ -83,20 +112,30 @@
     return y < (L.views.right.y + L.views.right.h + 50) ? "right" : "left";
   }
   function numbering() {
-    var items = doc.objs.filter(function (o) { return o.t === "comp" || o.t === "fss"; });
-    items.sort(function (a, b) { return (a.view === b.view ? 0 : a.view === "right" ? -1 : 1) || a.xft - b.xft; });
-    var auto = {}; items.forEach(function (o, i) { auto[o.id] = i + 1; });
-    var map = {};
-    items.forEach(function (o) { map[o.id] = o.num != null && o.num !== "" ? o.num : auto[o.id]; });
-    items = items.slice().sort(function (a, b) { var x = String(map[a.id]), y = String(map[b.id]), nx = parseFloat(x), ny = parseFloat(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y, undefined, { numeric: true }) : nx - ny) || auto[a.id] - auto[b.id]; });
-    return { items: items, map: map };
+    var all = doc.objs.filter(function (o) { return o.t === "comp" || o.t === "fss"; });
+    all.sort(function (a, b) { return (a.view === b.view ? 0 : a.view === "right" ? -1 : 1) || a.xft - b.xft; });
+    var prim = [], seen = {}, groups = {};
+    all.forEach(function (o) {
+      if (o.grp) { if (seen[o.grp]) { groups[seen[o.grp]].push(o); return; } seen[o.grp] = o.id; }
+      prim.push(o); groups[o.id] = [o];
+    });
+    var auto = {}; prim.forEach(function (o, i) { auto[o.id] = i + 1; });
+    var map = {}, numOf = {};
+    prim.forEach(function (o) {
+      var ex = groups[o.id].filter(function (m) { return m.num != null && m.num !== ""; })[0];
+      numOf[o.id] = ex ? ex.num : auto[o.id];
+      groups[o.id].forEach(function (m) { map[m.id] = numOf[o.id]; });
+    });
+    var items = prim.slice().sort(function (a, b) { var x = String(numOf[a.id]), y = String(numOf[b.id]), nx = parseFloat(x), ny = parseFloat(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y, undefined, { numeric: true }) : nx - ny) || auto[a.id] - auto[b.id]; });
+    return { items: items, map: map, groups: groups };
   }
+  function syncGroupNums() { var nm = numbering(); nm.items.forEach(function (o) { nm.groups[o.id].forEach(function (m) { if (o.num == null) delete m.num; else m.num = o.num; }); }); }
   // fija numeracion explicita con el orden actual (para poder subir/bajar)
-  function freezeNumbers() { var nm = numbering(); nm.items.forEach(function (o, i) { o.num = i + 1; }); }
+  function freezeNumbers() { var nm = numbering(); nm.items.forEach(function (o, i) { o.num = i + 1; }); syncGroupNums(); }
   function moveNumber(id, dir) {
     freezeNumbers(); var nm = numbering(), i = -1; nm.items.forEach(function (o, k) { if (o.id === id) i = k; });
     var j = i + dir; if (i < 0 || j < 0 || j >= nm.items.length) return;
-    var a = nm.items[i], b2 = nm.items[j], tmp = a.num; a.num = b2.num; b2.num = tmp; commit();
+    var a = nm.items[i], b2 = nm.items[j], tmp = a.num; a.num = b2.num; b2.num = tmp; syncGroupNums(); commit();
   }
   function autoNumber() { doc.objs.forEach(function (o) { delete o.num; }); commit(); }
   function objLabel(o) { if (o.t === "fss") return "Fire suppression system (FSS)" + (o.ps === 2 ? " · 2 pull stations (PS)" : " · 1 pull station (PS)"); return o.label || (libById(o.lib) || {}).label || "Component"; }
@@ -168,6 +207,10 @@
     return { x: 0, y: 0, w: 0, h: 0 };
   }
 
+  function wallOf(nm, o) {
+    var g = nm.groups[o.id] || [o], v = {}; g.forEach(function (m) { v[m.view] = 1; });
+    return v.right && v.left ? "Both walls" : (o.view === "right" ? "Right" : "Left");
+  }
   function badge(cx, cy, n) {
     return '<circle cx="' + R(cx) + '" cy="' + R(cy) + '" r="15" fill="' + C.navy + '" stroke="#fff" stroke-width="3"/>' + t(cx, cy + 6.5, n, 18, { fill: "#fff", anchor: "middle", bold: true });
   }
@@ -207,7 +250,7 @@
       s += '<line x1="' + MARGIN + '" y1="' + (y + rowH) + '" x2="' + (W - MARGIN) + '" y2="' + (y + rowH) + '" stroke="' + C.border + '" stroke-width="1.5"/>' +
         badge(MARGIN + 30, y + rowH / 2, nm.map[o.id]) +
         t(cName, y + 30, objLabel(o), 21, { fill: C.ink }) + t(cSize, y + 30, fmtFt(o.wft) + " × " + fmtFt(o.hft), 21, { fill: C.text2 }) +
-        t(cLast, y + 30, doc.showPrices ? money(o.price) : (o.view === "right" ? "Right" : "Left"), 21, { fill: C.ink, anchor: "end" });
+        t(cLast, y + 30, doc.showPrices ? money(o.price) : wallOf(nm, o), 21, { fill: C.ink, anchor: "end" });
       y += rowH;
     });
     if (!rows) { s += t(cName, y + 30, "No equipment yet.", 21, { fill: C.text2 }); y += rowH; }
@@ -286,7 +329,7 @@
   // ---------- Agregar objetos ----------
   function nextX(view) {
     var m = 0.5;
-    doc.objs.forEach(function (o) { if ((o.t === "comp" || o.t === "fss") && o.view === view && o.bft < 0.6) m = Math.max(m, o.xft + o.wft); });
+    doc.objs.forEach(function (o) { if ((o.t === "comp" || o.t === "fss") && !o.def && o.view === view && o.bft < 0.6) m = Math.max(m, o.xft + o.wft); });
     return m;
   }
   function clampX(x, w) { var L = base().length; return Math.max(0, Math.min(x, L - w)); }
@@ -427,7 +470,7 @@
   function delObj() { if (!selId) return; doc.objs = doc.objs.filter(function (o) { return o.id !== selId; }); selId = null; commit(); }
   function dupObj() {
     var o = selId && byId(selId); if (!o) return;
-    var c = JSON.parse(JSON.stringify(o)); c.id = uid();
+    var c = JSON.parse(JSON.stringify(o)); c.id = uid(); delete c.def; delete c.defk; delete c.grp; delete c.num;
     if (c.t === "comp" || c.t === "fss") { c.xft += 0.5; } else if (c.t === "line") { c.x1 += 30; c.x2 += 30; c.y1 += 30; c.y2 += 30; } else if (c.t === "path") { c.pts = c.pts.map(function (q) { return [q[0] + 30, q[1] + 30]; }); } else { c.x += 30; c.y += 30; }
     doc.objs.push(c); selId = c.id; commit();
   }
@@ -446,7 +489,7 @@
   function cutObj() { if (copyObj()) delObj(); }
   function pasteObj(at) {
     if (!clip) return;
-    var c = JSON.parse(JSON.stringify(clip)); c.id = uid(); delete c.num; delete c.bdx; delete c.bdy;
+    var c = JSON.parse(JSON.stringify(clip)); c.id = uid(); delete c.num; delete c.bdx; delete c.bdy; delete c.def; delete c.defk; delete c.grp;
     doc.objs.push(c);
     var L = layout(doc), bb = bboxOf(c, L);
     if (at) {
@@ -478,7 +521,7 @@
         if (o.t === "comp") items.push(["✂ Crop (show only part)…", "", function () { startCrop(o); }], ["Reset crop", "", function () { resetCrop(o); }, !hasCrop(o)], ["Flip horizontally", "", function () { o.mirror = !o.mirror; commit(); }]);
         if (o.t === "fss") items.push([o.ps === 2 ? "Use 1 pull station" : "Use 2 pull stations (PS)", "", function () { o.ps = o.ps === 2 ? 1 : 2; commit(); }]);
         items.push(["Edit label…", "", function () { var v = window.prompt("Label shown in the list:", objLabel(o)); if (v != null && v !== "") { o.label = v; commit(); } }, o.t === "fss"]);
-        items.push(["Set number…", "", function () { var v = window.prompt("Number on the sheet (empty = automatic):", numbering().map[o.id]); if (v == null) return; v = String(v).trim(); if (v === "") delete o.num; else o.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); commit(); }]);
+        items.push(["Set number…", "", function () { var v = window.prompt("Number on the sheet (empty = automatic):", numbering().map[o.id]); if (v == null) return; v = String(v).trim(); if (v === "") delete o.num; else o.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); if (o.grp) doc.objs.forEach(function (m) { if (m.grp === o.grp) { if (o.num == null) delete m.num; else m.num = o.num; } }); commit(); }]);
         items.push(["Edit price…", "", function () { var v = window.prompt("Price:", o.price || 0); if (v == null) return; o.price = parseFloat(v) || 0; commit(); }]);
         items.push(["Edit size (ft)…", "", function () { var v = window.prompt("Width x height in feet (e.g. 4.5 x 3):", o.wft + " x " + o.hft); if (!v) return; var m = /([\d.]+)\s*[x×]\s*([\d.]+)/i.exec(v); if (m) { o.wft = parseFloat(m[1]); o.hft = parseFloat(m[2]); commit(); } }]);
         items.push(["Move number badge back", "", function () { delete o.bdx; delete o.bdy; commit(); }, o.bdx == null && o.bdy == null]);
@@ -683,7 +726,7 @@
 
   // ---------- Cotización ----------
   function totalRows() {
-    var nm = numbering(), rows = nm.items.map(function (o) { return { name: objLabel(o), price: o.price || 0 }; });
+    var nm = numbering(), rows = nm.items.filter(function (o) { return !(o.def && !o.price); }).map(function (o) { return { name: objLabel(o), price: o.price || 0 }; });
     return rows;
   }
   function addToQuote() {
@@ -726,6 +769,7 @@
       if (view === "right" && ["griddle", "grill", "fryer", "stove"].indexOf(ty) !== -1) { hoodNeed += o.wft; if (hoodX == null) hoodX = o.xft; }
     });
     if (hoodNeed > 0) { var h = pickLib("hood", hoodNeed); if (h) { var ho = addComp(h.id, "right", hoodX, h.bottom); ho.price = 0; ho.num = ++n; } }
+    var nmq = numbering(); nmq.items.forEach(function (o) { if (o.num == null) { o.num = ++n; } }); syncGroupNums();
     selId = null; hist = []; histI = -1; snapshot(); draw(true); autosave();
     return skipped;
   }
@@ -812,7 +856,7 @@
       '<div class="bp-card"><button type="button" class="btn-small primary" id="bpFromQuote" style="width:100%">⟳ Build from the current quote</button><div id="bpFit" class="hint" style="margin-top:8px"></div><div id="bpProps"></div></div>' +
       '<div class="bp-card"><h3 class="bp-h">Equipment list &amp; numbering</h3><div id="bpList"></div><div class="bp-btnrow"><button type="button" class="btn-small" id="bpAutoNum">Auto-number</button></div><label class="bp-check"><input type="checkbox" id="bpShowPrices"> Show prices on the sheet</label>' +
       '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpAddQuote">Add to quote</button></div></div>' +
-      '<div class="bp-card"><h3 class="bp-h">Sheet</h3><label class="bp-m">Title<input type="text" id="bpTitulo" placeholder="Food Trailer · Equipment Layout"></label>' +
+      '<div class="bp-card"><h3 class="bp-h">Sheet</h3><div class="bp-btnrow"><button type="button" class="btn-small" id="bpDefaults" title="Put back the standard pieces (hand sink, tank rack + A/C, 6-ft counter table and window) if you removed them">Restore standard pieces</button></div><label class="bp-m">Title<input type="text" id="bpTitulo" placeholder="Food Trailer · Equipment Layout"></label>' +
       '<div class="bp-ficha" id="bpFicha"></div><label class="bp-m">Notes<textarea id="bpNotas" rows="3"></textarea></label></div>' +
       '<div class="bp-card"><h3 class="bp-h">Save &amp; download</h3><div class="bp-btnrow"><button type="button" class="btn-small primary" id="bpSave">Save</button><button type="button" class="btn-small primary" id="bpPdf">Download PDF</button><button type="button" class="btn-small" id="bpPng">Download PNG</button></div>' +
       '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpPrint">Print</button><button type="button" class="btn-small" id="bpJson">Export .json</button><button type="button" class="btn-small" id="bpNew">New sheet</button></div></div>' +
@@ -858,7 +902,7 @@
     stage.addEventListener("dblclick", onDbl); stage.addEventListener("contextmenu", function (e) { e.preventDefault(); showMenu(e); }); window.addEventListener("keydown", onKey);
     document.getElementById("bpSearch").addEventListener("input", renderPalette);
     document.getElementById("bpTarget").addEventListener("change", function (e) { selTarget = e.target.value; });
-    document.getElementById("bpSize").addEventListener("change", function (e) { doc.sizeId = e.target.value; commit(); });
+    document.getElementById("bpSize").addEventListener("change", function (e) { doc.sizeId = e.target.value; repositionDefaults(doc); commit(); });
     document.getElementById("bpTitulo").addEventListener("input", function (e) { doc.titulo = e.target.value; draw(); autosave(); });
     document.getElementById("bpNotas").addEventListener("input", function (e) { doc.notas = e.target.value; draw(); autosave(); });
     document.getElementById("bpShowPrices").addEventListener("change", function (e) { doc.showPrices = e.target.checked; commit(); });
@@ -876,10 +920,11 @@
     });
     root.addEventListener("change", function (e) {
       var d = e.target.dataset || {};
-      if (d.num) { var no = byId(d.num); if (no) { var v = String(e.target.value).trim(); if (v === "") delete no.num; else no.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); commit(); } return; }
+      if (d.num) { var no = byId(d.num); if (no) { var v = String(e.target.value).trim(); if (v === "") delete no.num; else no.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); if (no.grp) doc.objs.forEach(function (m) { if (m.grp === no.grp) { if (no.num == null) delete m.num; else m.num = no.num; } }); commit(); } return; }
       if (d.p && selId) { snapshot(); }
     });
     document.getElementById("bpAutoNum").addEventListener("click", autoNumber);
+    document.getElementById("bpDefaults").addEventListener("click", function () { if (addDefaults(doc)) { commit(); } else alert("All standard pieces are already on the sheet."); });
     ["bpStroke", "bpFill", "bpSw", "bpDash", "bpNoFill"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", function () {
         style.stroke = document.getElementById("bpStroke").value; style.sw = parseInt(document.getElementById("bpSw").value, 10) || 4;
