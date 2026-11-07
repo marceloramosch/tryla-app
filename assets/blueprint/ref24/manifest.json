@@ -1,0 +1,117 @@
+{
+ "source": "Panamerican Trailers 24FT service view",
+ "pt_per_ft": 20.618,
+ "px_per_pt": 8,
+ "components": [
+  {
+   "id": "c_mesh_panel_r",
+   "file": "comps/c_mesh_panel_r.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 0.334,
+   "bottom_ft": 3.524,
+   "w_ft": 5.165,
+   "h_ft": 3.243
+  },
+  {
+   "id": "c_oven_racks",
+   "file": "comps/c_oven_racks.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 10.714,
+   "bottom_ft": 2.332,
+   "w_ft": 1.837,
+   "h_ft": 2.589
+  },
+  {
+   "id": "c_range_6_oven",
+   "file": "comps/c_range_6_oven.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 12.621,
+   "bottom_ft": -0.028,
+   "w_ft": 3.062,
+   "h_ft": 3.165
+  },
+  {
+   "id": "c_griddle_3",
+   "file": "comps/c_griddle_3.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 7.46,
+   "bottom_ft": -0.029,
+   "w_ft": 3.146,
+   "h_ft": 3.322
+  },
+  {
+   "id": "c_display_fridge",
+   "file": "comps/c_display_fridge.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 16.222,
+   "bottom_ft": 0.002,
+   "w_ft": 2.504,
+   "h_ft": 6.754
+  },
+  {
+   "id": "c_hood_10ft",
+   "file": "comps/c_hood_10ft.png",
+   "source": "hoja",
+   "view": "right",
+   "x_ft": 6.085,
+   "bottom_ft": 5.082,
+   "w_ft": 9.967,
+   "h_ft": 1.879
+  },
+  {
+   "id": "c_freezer",
+   "file": "comps/c_freezer.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 5.206,
+   "bottom_ft": 0.01,
+   "w_ft": 2.461,
+   "h_ft": 6.445
+  },
+  {
+   "id": "c_prep_cabinet",
+   "file": "comps/c_prep_cabinet.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 7.873,
+   "bottom_ft": 0.78,
+   "w_ft": 3.086,
+   "h_ft": 3.171
+  },
+  {
+   "id": "c_window_6ft",
+   "file": "comps/c_window_6ft.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 11.238,
+   "bottom_ft": 3.463,
+   "w_ft": 5.953,
+   "h_ft": 3.074
+  },
+  {
+   "id": "c_table_6ft_21",
+   "file": "comps/c_table_6ft_21.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 11.238,
+   "bottom_ft": -0.054,
+   "w_ft": 6.069,
+   "h_ft": 3.292
+  },
+  {
+   "id": "c_mesh_panel_l",
+   "file": "comps/c_mesh_panel_l.png",
+   "source": "hoja",
+   "view": "left",
+   "x_ft": 18.437,
+   "bottom_ft": 3.605,
+   "w_ft": 5.171,
+   "h_ft": 3.171
+  }
+ ]
+}
