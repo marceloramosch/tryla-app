@@ -277,7 +277,7 @@
     var l = libById(libId); if (!l) return null;
     view = view || (selTarget !== "auto" ? selTarget : l.view);
     var floorItem = l.bottom < 0.6;
-    var o = { id: uid(), t: "comp", lib: l.id, view: view, xft: clampX(xft != null ? xft : (floorItem ? nextX(view) : 0.5 + (doc.objs.length % 5)), l.w), bft: bft != null ? bft : (floorItem ? 0 : l.bottom), wft: l.w, hft: l.h, price: l.price || 0, label: l.label };
+    var o = { id: uid(), t: "comp", lib: l.id, view: view, xft: xft != null ? xft : clampX(floorItem ? nextX(view) : 0.5 + (doc.objs.length % 5), l.w), bft: bft != null ? bft : (floorItem ? 0 : l.bottom), wft: l.w, hft: l.h, price: l.price || 0, label: l.label };
     doc.objs.push(o); selId = o.id; return o;
   }
   function addFSS(view) {
@@ -296,11 +296,13 @@
   function setFromSheet(o, x, y, L, snapOn) {
     var view = viewAt(L, y + (o.hft || 0) * L.views.right.pxft / 2);
     var v = L.views[view], q = snapOn ? 0.25 : 0.01;
+    // libre: se puede soltar en cualquier parte de la hoja (dentro o fuera del trailer)
+    x = Math.max(0, Math.min(x, W - (o.wft || 0) * v.pxft)); y = Math.max(0, Math.min(y, PAGE_H - (o.hft || 0) * v.pxft));
     var xft = Math.round(((x - v.ox) / v.pxft) / q) * q;
     var bft = ((v.floor - y) / v.pxft) - o.hft;
     bft = Math.round(bft / q) * q;
     if (snapOn && Math.abs(bft) < 0.3) bft = 0;
-    o.view = view; o.xft = Math.max(-1, Math.min(xft, base().length - o.wft + 1)); o.bft = Math.max(-0.5, bft);
+    o.view = view; o.xft = xft; o.bft = bft;
   }
   var drag = null;
   function onDown(e) {
@@ -635,7 +637,7 @@
       e.preventDefault(); var id = e.dataTransfer.getData("text/plain"), l = libById(id); if (!l) return;
       var p = ptr(e), L = layout(doc), view = viewAt(L, p.y), v = L.views[view];
       var xft = Math.round(((p.x - v.ox) / v.pxft - l.w / 2) * 4) / 4, bft = Math.round(((v.floor - p.y) / v.pxft - l.h / 2) * 4) / 4;
-      if (Math.abs(bft) < 0.3 || l.bottom < 0.6) bft = l.bottom < 0.6 ? 0 : bft;
+      if (Math.abs(bft) < 0.3) bft = 0;
       addComp(id, view, xft, bft); commit();
     });
     stage.addEventListener("pointerdown", onDown); window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp);
