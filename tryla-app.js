@@ -3690,6 +3690,8 @@
   window.TrylaQuote = {
     addLineItem: addLineItem,
     switchTab: switchTab,
+    getLineItems: function () { return lineItems.map((l) => ({ desc: l.desc, price: l.price, qty: l.qty })); },
+    getMeta: function () { const n = document.getElementById("fNumero"); return { cliente: fCliente ? fCliente.value.trim() : "", numero: n ? n.value.trim() : "" }; },
     setClient: function (name) {
       if (fCliente && name && !fCliente.value.trim()) {
         fCliente.value = name;
