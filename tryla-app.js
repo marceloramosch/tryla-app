@@ -2344,6 +2344,8 @@
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
     const href = telHref(c.contacto);
+    const bpNums = quotes.filter((q) => q.clientId === c.id).map((q) => q.number);
+    const bpCount = window.TrylaBlueprints && window.TrylaBlueprints.count ? window.TrylaBlueprints.count(c.name, bpNums) : 0;
 
     card.innerHTML = `
       ${stacked ? `<span class="pc-finance-tag">+ Finance</span>` : ""}
@@ -2370,6 +2372,7 @@
           const hasOverdue = open.some((t) => t.dueAt && taskDueLabel(t.dueAt).overdue);
           return `<button type="button" class="pc-task-btn${hasOverdue ? " pc-task-overdue" : ""}" title="${open.length} tarea${open.length === 1 ? "" : "s"} pendiente${open.length === 1 ? "" : "s"}">✅ <span class="pc-task-count">${open.length}</span></button>`;
         })()}
+        <button type="button" class="pc-bp ${bpCount ? "has" : "none"}" title="${bpCount ? "Has a blueprint — click to see it" : "No blueprint yet — click to create one"}">📐</button>
         <button type="button" class="pc-finance-toggle" title="Marcar/quitar que necesita financiamiento">🏦</button>
       </div>
       <div class="pc-note-form" style="display:none;">
@@ -2396,6 +2399,17 @@
       setStatusClass(moveSelect, moveSelect.value);
       moveClientToStage(c.id, moveSelect.value);
     });
+
+    const bpBtn = card.querySelector(".pc-bp");
+    if (bpBtn) {
+      bpBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!window.TrylaBlueprints) return;
+        switchTab("blueprints");
+        if (bpCount) window.TrylaBlueprints.showFor(c.name, bpNums); else window.TrylaBlueprints.newFor(c.name);
+      });
+      bpBtn.addEventListener("mousedown", (e) => e.stopPropagation());
+    }
 
     const financeToggle = card.querySelector(".pc-finance-toggle");
     financeToggle.classList.toggle("active", !!c.needsFinancing);
@@ -3653,6 +3667,9 @@
 
   // ===== Tabs =====
   function switchTab(name) {
+    // El documento (cotizacion / invoice) solo se ve en la pestana donde se genero
+    const prevPanel = document.querySelector(".tab-panel.active");
+    if (prevPanel && prevPanel.id !== `tab-${name}` && previewWrap) previewWrap.classList.remove("show");
     document.querySelectorAll(".tab-btn").forEach((btn) => {
       const isActive = btn.dataset.tab === name;
       btn.classList.toggle("active", isActive);
@@ -3691,7 +3708,7 @@
     addLineItem: addLineItem,
     switchTab: switchTab,
     getLineItems: function () { return lineItems.map((l) => ({ desc: l.desc, price: l.price, qty: l.qty })); },
-    getMeta: function () { const n = document.getElementById("fNumero"); return { cliente: fCliente ? fCliente.value.trim() : "", numero: n ? n.value.trim() : "" }; },
+    getMeta: function () { const n = document.getElementById("fNumero"); return { cliente: fCliente ? fCliente.value.trim() : "", numero: n ? n.value.trim() : "", id: currentQuoteId || null }; },
     setClient: function (name) {
       if (fCliente && name && !fCliente.value.trim()) {
         fCliente.value = name;

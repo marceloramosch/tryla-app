@@ -160,7 +160,8 @@
 
   /* ===== Tabs ===== */
   .tabs-wrap{ position:relative; }
-  .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .tabs{ display:flex; gap:6px; margin-bottom:18px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar{ display:none; }
   .task-reminder{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px auto 0; max-width:1280px; padding:10px 14px; background:#FFF4E0; border:1px solid #F5C77E; border-radius:10px; color:#7A4A00; font-size:14px; font-weight:600; }
   .task-reminder[hidden]{ display:none; }
   :root[data-theme="dark"] .task-reminder{ background:#33260C; border-color:#7A5A1F; color:#FFD99A; }
@@ -192,7 +193,7 @@
   .avisos-ok{ background:#5B54FF; color:#fff; border:0; border-radius:10px; padding:9px 18px; font:inherit; font-weight:700; cursor:pointer; }
   .tab-btn{
     border: 2px solid var(--blue); background:var(--panel); color:var(--blue); font-weight:700;
-    padding: 10px 18px; border-radius:999px; cursor:pointer; font-size:13px;
+    padding: 9px clamp(9px, 1.05vw, 16px); border-radius:999px; cursor:pointer; font-size:clamp(11.5px, .95vw, 13px); white-space:nowrap; flex:0 0 auto;
     transition: background .15s ease, color .15s ease, transform .12s ease, box-shadow .15s ease;
   }
   .tab-btn.active, .tab-btn:hover{ background:var(--blue); color:#fff; }
@@ -409,6 +410,15 @@
   table.crm .actions-cell{ display:flex; gap:5px; flex-wrap:nowrap; align-items:flex-start; white-space:nowrap; }
   table.crm .actions-cell .btn-small{ padding:4px 9px; font-size:11px; }
   /* ---- Blueprint ---- */
+  .bp-views{ display:flex; gap:6px; margin-bottom:10px; }
+  .bp-views .btn-small.active{ background:#06038D; color:#fff; border-color:#06038D; }
+  .bp-listtop{ display:flex; gap:12px; align-items:center; margin-bottom:10px; }
+  .bp-listtop input{ flex:1; max-width:380px; padding:8px 10px; }
+  .bp-empty{ padding:30px; text-align:center; color:var(--text2); border:1px dashed var(--border); border-radius:10px; }
+  .pc-bp{ background:none; border:0; cursor:pointer; font-size:14px; padding:0 2px; }
+  .pc-bp.none{ filter:grayscale(1); opacity:.35; }
+  .pc-bp.has{ filter:none; opacity:1; }
+  .pc-bp.has::after{ content:"✓"; font-size:9px; color:#1a9d4a; font-weight:800; vertical-align:super; }
   .bp-top{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px; background:var(--light); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; }
   .bp-top select,.bp-top input[type=number]{ padding:5px 6px; }
   .bp-sep{ width:1px; height:24px; background:var(--border); margin:0 4px; }
@@ -459,6 +469,8 @@
   .status-Rechazada{ background:#FBE1E1; color:#c0392b; }
 
   /* ===== Pipeline (kanban de leads, estilo HubSpot) ===== */
+  #tab-pipeline > div > .panel:first-child{ position:sticky; top:0; z-index:30; box-shadow:0 6px 14px -8px rgba(6,3,141,.28); }
+  #tab-pipeline > div > .panel:first-child > .hint{ display:none; }
   .pipeline-board{ display:flex; gap:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px; align-items:flex-start; }
   .pipeline-col{
     flex:0 0 240px; width:240px; background:var(--light); border:1px solid var(--border);
@@ -474,8 +486,8 @@
   }
   .pipeline-col-value{ font-size:12.5px; font-weight:700; color:var(--blue); min-height:16px; }
   .pipeline-col-body{
-    display:flex; flex-direction:column; gap:8px; min-height:60px; max-height:520px;
-    overflow-y:auto; border-radius:8px; transition: background .15s ease;
+    display:flex; flex-direction:column; gap:8px; min-height:60px;
+    border-radius:8px; transition: background .15s ease;
   }
   .pipeline-col-body.drag-over{ background:rgba(91,84,255,.1); outline:2px dashed var(--blue); }
   .pipeline-empty{
