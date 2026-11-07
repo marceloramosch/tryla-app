@@ -307,6 +307,7 @@
   var drag = null;
   function onDown(e) {
     var svg = document.getElementById("bpSvg"); if (!svg || !svg.contains(e.target)) return;
+    if (e.button !== 0) return;
     var p = ptr(e), L = layout(doc);
     if (tool !== "select") {
       var o;
@@ -381,6 +382,9 @@
     var o = selId ? byId(selId) : null;
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { undo(e.shiftKey ? 1 : -1); e.preventDefault(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { undo(1); e.preventDefault(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") { if (copyObj()) e.preventDefault(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "x") { if (o) { cutObj(); e.preventDefault(); } return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") { if (clip) { pasteObj(null); e.preventDefault(); } return; }
     if (!o) return;
     if (e.key === "Delete" || e.key === "Backspace") { delObj(); e.preventDefault(); }
     else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") { dupObj(); e.preventDefault(); }
@@ -401,6 +405,88 @@
     doc.objs.push(c); selId = c.id; commit();
   }
   function reorder(front) { var o = selId && byId(selId); if (!o) return; doc.objs = doc.objs.filter(function (x) { return x.id !== o.id; }); if (front) doc.objs.push(o); else doc.objs.unshift(o); commit(); }
+
+  // ---------- Portapapeles y menú de clic derecho ----------
+  var clip = null, menuEl = null;
+  function copyObj() { var o = selId && byId(selId); if (!o) return false; clip = JSON.parse(JSON.stringify(o)); return true; }
+  function cutObj() { if (copyObj()) delObj(); }
+  function pasteObj(at) {
+    if (!clip) return;
+    var c = JSON.parse(JSON.stringify(clip)); c.id = uid(); delete c.num; delete c.bdx; delete c.bdy;
+    doc.objs.push(c);
+    var L = layout(doc), bb = bboxOf(c, L);
+    if (at) {
+      if (c.t === "comp" || c.t === "fss") setFromSheet(c, at.x - bb.w / 2, at.y - bb.h / 2, L, true);
+      else shiftObj(c, at.x - bb.w / 2 - bb.x, at.y - bb.h / 2 - bb.y);
+    } else if (c.t === "comp" || c.t === "fss") c.xft += 0.5; else shiftObj(c, 30, 30);
+    selId = c.id; commit();
+  }
+  function shiftObj(o, dx, dy) {
+    if (o.t === "line") { o.x1 += dx; o.x2 += dx; o.y1 += dy; o.y2 += dy; }
+    else if (o.t === "path") o.pts = o.pts.map(function (q) { return [q[0] + dx, q[1] + dy]; });
+    else { o.x += dx; o.y += dy; }
+  }
+  function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+  function showMenu(e) {
+    closeMenu();
+    var p = ptr(e), el = e.target.closest ? e.target.closest("[data-oid],[data-badge]") : null, o = null;
+    if (el) { o = byId(el.getAttribute("data-oid") || el.getAttribute("data-badge")); }
+    if (o) { selId = o.id; draw(); } else { selId = null; draw(); }
+    var items = [];
+    if (o) {
+      var isEq = o.t === "comp" || o.t === "fss";
+      items.push(["Cut", "Ctrl+X", function () { cutObj(); }], ["Copy", "Ctrl+C", function () { copyObj(); }]);
+      items.push(["Paste here", "Ctrl+V", function () { pasteObj(p); }, !clip]);
+      items.push(["Duplicate", "Ctrl+D", dupObj], ["Delete", "Del", delObj], "-");
+      items.push(["Bring to front", "", function () { reorder(true); }], ["Send to back", "", function () { reorder(false); }]);
+      if (isEq) {
+        items.push("-");
+        if (o.t === "comp") items.push(["Flip horizontally", "", function () { o.mirror = !o.mirror; commit(); }]);
+        if (o.t === "fss") items.push([o.ps === 2 ? "Use 1 pull station" : "Use 2 pull stations (PS)", "", function () { o.ps = o.ps === 2 ? 1 : 2; commit(); }]);
+        items.push(["Edit label…", "", function () { var v = window.prompt("Label shown in the list:", objLabel(o)); if (v != null && v !== "") { o.label = v; commit(); } }, o.t === "fss"]);
+        items.push(["Set number…", "", function () { var v = window.prompt("Number on the sheet (empty = automatic):", numbering().map[o.id]); if (v == null) return; v = String(v).trim(); if (v === "") delete o.num; else o.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); commit(); }]);
+        items.push(["Edit price…", "", function () { var v = window.prompt("Price:", o.price || 0); if (v == null) return; o.price = parseFloat(v) || 0; commit(); }]);
+        items.push(["Edit size (ft)…", "", function () { var v = window.prompt("Width x height in feet (e.g. 4.5 x 3):", o.wft + " x " + o.hft); if (!v) return; var m = /([\d.]+)\s*[x×]\s*([\d.]+)/i.exec(v); if (m) { o.wft = parseFloat(m[1]); o.hft = parseFloat(m[2]); commit(); } }]);
+        items.push(["Move number badge back", "", function () { delete o.bdx; delete o.bdy; commit(); }, o.bdx == null && o.bdy == null]);
+        items.push(["Move to " + (o.view === "right" ? "left" : "right") + " wall", "", function () { o.view = o.view === "right" ? "left" : "right"; commit(); }]);
+      } else if (o.t === "text") {
+        items.push("-", ["Edit text…", "", function () { var n = window.prompt("Text:", o.text); if (n != null && n !== "") { o.text = n; commit(); } }]);
+        items.push(["Bigger", "", function () { o.size = Math.round(o.size * 1.15); commit(); }], ["Smaller", "", function () { o.size = Math.max(10, Math.round(o.size / 1.15)); commit(); }]);
+        items.push(["Bold on/off", "", function () { o.bold = !o.bold; commit(); }]);
+      } else {
+        items.push("-");
+        if ("dash" in o || o.t === "line" || o.t === "rect" || o.t === "ellipse") items.push([o.dash ? "Solid line" : "Dashed line", "", function () { o.dash = !o.dash; commit(); }]);
+        items.push(["Thicker", "", function () { o.sw = Math.min(30, o.sw + 2); commit(); }], ["Thinner", "", function () { o.sw = Math.max(1, o.sw - 2); commit(); }]);
+        items.push(["Use current line color", "", function () { o.stroke = style.stroke; commit(); }]);
+        if (o.t === "rect" || o.t === "ellipse") items.push(["Use current fill", "", function () { o.fill = style.fill; commit(); }], ["No fill", "", function () { o.fill = "none"; commit(); }]);
+        if (o.t === "line") items.push(["Arrow head on/off", "", function () { o.arrow = !o.arrow; commit(); }]);
+      }
+    } else {
+      items.push(["Paste here", "Ctrl+V", function () { pasteObj(p); }, !clip], ["Undo", "Ctrl+Z", function () { undo(-1); }], ["Redo", "", function () { undo(1); }]);
+    }
+    menuEl = document.createElement("div"); menuEl.className = "bp-ctx";
+    items.forEach(function (it) {
+      if (it === "-") { var hr = document.createElement("div"); hr.className = "bp-ctx-sep"; menuEl.appendChild(hr); return; }
+      var b = document.createElement("button"); b.type = "button"; b.disabled = !!it[3];
+      b.innerHTML = "<span>" + esc(it[0]) + "</span><kbd>" + esc(it[1]) + "</kbd>";
+      b.addEventListener("click", function (ev) { ev.stopPropagation(); closeMenu(); it[2](); });
+      menuEl.appendChild(b);
+    });
+    document.body.appendChild(menuEl);
+    var w = menuEl.offsetWidth, h = menuEl.offsetHeight;
+    menuEl.style.left = Math.max(4, Math.min(e.clientX, window.innerWidth - w - 4)) + "px";
+    menuEl.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - h - 4)) + "px";
+  }
+  (function () {
+    var st = document.createElement("style");
+    st.textContent = ".bp-ctx{position:fixed;z-index:99999;min-width:220px;background:#fff;color:#1B1D2A;border:1px solid #D6D3FF;border-radius:10px;box-shadow:0 8px 28px rgba(6,3,141,.25);padding:6px;font:13px Barlow,Arial,sans-serif}" +
+      ".bp-ctx button{display:flex;justify-content:space-between;gap:18px;width:100%;border:0;background:none;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;color:inherit;font:inherit}" +
+      ".bp-ctx button:hover:not(:disabled){background:#F1F0FF}.bp-ctx button:disabled{opacity:.4;cursor:default}.bp-ctx kbd{color:#7c8aa6;font:11px monospace}" +
+      ".bp-ctx-sep{height:1px;background:#EEEDFF;margin:5px 4px}";
+    document.head.appendChild(st);
+    document.addEventListener("click", closeMenu); window.addEventListener("scroll", closeMenu, true); window.addEventListener("resize", closeMenu);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMenu(); });
+  })();
 
   // ---------- Guardar / abrir ----------
   function loadAll() { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } }
@@ -537,7 +623,7 @@
   function renderSide() {
     var el = document.getElementById("bpProps"); if (!el) return;
     var o = selId ? byId(selId) : null, h = "", nm = numbering();
-    if (!o) h = '<div class="hint">Select an object to edit it. Keys: Delete removes, arrows move, Ctrl+Z undoes, Ctrl+D duplicates. Hold Alt while dragging to turn off snapping. Drag a numbered badge to reposition it.</div>';
+    if (!o) h = '<div class="hint">Select an object to edit it. Keys: Delete removes, arrows move, Ctrl+Z undoes, Ctrl+D duplicates. Right-click an element for all options (cut, copy, paste, flip, edit…). Hold Alt while dragging to turn off snapping. Drag a numbered badge to reposition it.</div>';
     else {
       h += "<b>" + esc(o.t === "comp" || o.t === "fss" ? objLabel(o) : o.t === "line" ? (o.arrow ? "Arrow" : "Line") : TNAME[o.t]) + "</b>";
       if (o.t === "comp" || o.t === "fss") {
@@ -641,7 +727,7 @@
       addComp(id, view, xft, bft); commit();
     });
     stage.addEventListener("pointerdown", onDown); window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp);
-    stage.addEventListener("dblclick", onDbl); window.addEventListener("keydown", onKey);
+    stage.addEventListener("dblclick", onDbl); stage.addEventListener("contextmenu", function (e) { e.preventDefault(); showMenu(e); }); window.addEventListener("keydown", onKey);
     document.getElementById("bpSearch").addEventListener("input", renderPalette);
     document.getElementById("bpTarget").addEventListener("change", function (e) { selTarget = e.target.value; });
     document.getElementById("bpSize").addEventListener("change", function (e) { doc.sizeId = e.target.value; commit(); });
