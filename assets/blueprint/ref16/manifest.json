@@ -391,6 +391,122 @@
    "file": "comps/v5_plan_view.png",
    "source": "rein3",
    "view": "other"
+  },
+  {
+   "id": "rein_griddle_4ft",
+   "file": "comps/rein_griddle_4ft.png",
+   "source": "rein2",
+   "view": "right",
+   "x_ft": -0.137,
+   "bottom_ft": -0.065,
+   "w_ft": 4.249,
+   "h_ft": 3.377
+  },
+  {
+   "id": "rein_table_3ft_30",
+   "file": "comps/rein_table_3ft_30.png",
+   "source": "rein2",
+   "view": "right",
+   "x_ft": 4.047,
+   "bottom_ft": -0.068,
+   "w_ft": 3.096,
+   "h_ft": 3.182
+  },
+  {
+   "id": "rein_warmer_double",
+   "file": "comps/rein_warmer_double.png",
+   "source": "rein2",
+   "view": "right",
+   "x_ft": 7.202,
+   "bottom_ft": -0.068,
+   "w_ft": 2.743,
+   "h_ft": 3.634
+  },
+  {
+   "id": "rein_sandwich_prep_27",
+   "file": "comps/rein_sandwich_prep_27.png",
+   "source": "rein2",
+   "view": "right",
+   "x_ft": 9.896,
+   "bottom_ft": -0.021,
+   "w_ft": 2.401,
+   "h_ft": 3.22
+  },
+  {
+   "id": "rein_shelves_wall",
+   "file": "comps/rein_shelves_wall.png",
+   "source": "rein2",
+   "view": "right",
+   "x_ft": 8.089,
+   "bottom_ft": 5.082,
+   "w_ft": 4.625,
+   "h_ft": 1.205
+  },
+  {
+   "id": "rein_hood_4ft",
+   "file": "comps/rein_hood_4ft.png",
+   "source": "rein2",
+   "view": "right",
+   "x_ft": -0.028,
+   "bottom_ft": 5.046,
+   "w_ft": 4.006,
+   "h_ft": 1.881
+  },
+  {
+   "id": "rein_window_double_5ft_a",
+   "file": "comps/rein_window_double_5ft_a.png",
+   "source": "rein2",
+   "view": "left",
+   "x_ft": 3.772,
+   "bottom_ft": 3.052,
+   "w_ft": 5.006,
+   "h_ft": 3.277
+  },
+  {
+   "id": "rein_window_double_5ft_b",
+   "file": "comps/rein_window_double_5ft_b.png",
+   "source": "rein2",
+   "view": "left",
+   "x_ft": 9.465,
+   "bottom_ft": 3.052,
+   "w_ft": 5.897,
+   "h_ft": 3.263
+  },
+  {
+   "id": "rein_table_3ft_21",
+   "file": "comps/rein_table_3ft_21.png",
+   "source": "rein2",
+   "view": "left",
+   "x_ft": 3.389,
+   "bottom_ft": 0.793,
+   "w_ft": 2.096,
+   "h_ft": 2.191
+  },
+  {
+   "id": "rein_sandwich_prep_27_l",
+   "file": "comps/rein_sandwich_prep_27_l.png",
+   "source": "rein2",
+   "view": "left",
+   "x_ft": 7.964,
+   "bottom_ft": 0.655,
+   "w_ft": 2.734,
+   "h_ft": 3.467
+  },
+  {
+   "id": "rein_table_2ft_21",
+   "file": "comps/rein_table_2ft_21.png",
+   "source": "rein2",
+   "view": "left",
+   "x_ft": 12.899,
+   "bottom_ft": 0.793,
+   "w_ft": 2.948,
+   "h_ft": 2.191
+  },
+  {
+   "id": "rein_plan_view",
+   "file": "comps/rein_plan_view.png",
+   "source": "rein3",
+   "view": "other"
   }
  ]
 }
