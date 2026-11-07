@@ -12,7 +12,7 @@
   var FONT = "Barlow, Arial, sans-serif";
   var C = { blue: "#5B54FF", navy: "#06038D", light: "#F1F0FF", border: "#D6D3FF", text2: "#5C6270", ink: "#1B1D2A", red: "#C0392B" };
   var W = 1650, MARGIN = 60, PAGE_H = 2135;
-  var STORE = "trylaBlueprints";
+  var STORE = "trylaBlueprints", STORE_KEY = "novaBlueprints";
 
   var EN_LABEL = {
     t10_table_4ft_21: "Prep table 4' x 21\"", t10_table_5ft_21: "Prep table 5' x 21\"", t10_window_single_5ft: "Service window 5'", t12_table_6ft_21: "Prep table 6' x 21\"",
@@ -34,7 +34,7 @@
     c_hood_10ft: "Exhaust hood 10'", c_prep_cabinet: "Equipment stand with doors", c_window_6ft: "Service window 6'", c_table_6ft_21: "Prep table 6' x 21\""
   };
   var EN_CAT = { "Mesas": "Tables", "Ventanas y TV": "Windows & TV", "Refrigeración": "Refrigeration", "Cocina": "Kitchen", "Servicios": "Utilities", "Campana": "Hoods" };
-  LIB = LIB.filter(function (l) { return !/^(c_mesh_panel_l|t12_display_fridge_l|v2_outlet_small_b|v4_table_5ft_b|v4_window_b|v4_extinguisher|v4_rack_ac_l)$/.test(l.id); });
+  LIB = LIB.filter(function (l) { return !/^(c_mesh_panel_l|t12_display_fridge_l|v2_outlet_small_b|v4_table_5ft_b|v4_window_b|v4_extinguisher)$/.test(l.id); });
   LIB.forEach(function (l) { if (EN_LABEL[l.id]) l.label = EN_LABEL[l.id]; if (EN_CAT[l.cat]) l.cat = EN_CAT[l.cat]; });
 
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
@@ -51,15 +51,44 @@
   ];
   var FICHA_SHEET = ["cliente", "folio", "color", "modelo", "ac", "ejes", "ventana", "campana", "agua_limpia", "agua_residual", "generador", "calentador", "observaciones"];
 
-  var doc = null, selId = null, tool = "select", hist = [], histI = -1;
+  var doc = null, selId = null, tool = "select", hist = [], histI = -1, cropMode = false;
   var style = { stroke: "#06038D", fill: "none", sw: 4, dash: false, size: 34 };
   var root, svgHost, selTarget = "auto";
 
   // ---------- Documento ----------
   function newDoc(sizeId) {
-    return {
-      sizeId: String(sizeId || 16), titulo: "", showPrices: false, ficha: {}, objs: [], notas: ""
-    };
+    var d = { sizeId: String(sizeId || 16), titulo: "", showPrices: false, ficha: {}, objs: [], notas: "" };
+    addDefaults(d);
+    return d;
+  }
+  // Piezas estandar de todo trailer (se pueden quitar): lavamanos, rack de tanques + A/C, mesa 6' y ventana 6'
+  function defSpec(key, L) {
+    var x6 = 6.4 + (L - 16) * 0.605;
+    switch (key) {
+      case "sink_r": return L >= 20 ? { lib: "v4_sink_handwash_r", view: "right", x: L - 2.32, label: "Hand sink", grp: "sink" } : { lib: "sink_ext_r", view: "right", x: L - 2.34, label: "Hand sink", grp: "sink" };
+      case "sink_l": return { lib: L >= 20 ? "v4_sink_l" : "sink_l", view: "left", x: 0.1, label: "Hand sink", grp: "sink" };
+      case "rack_r": return { lib: L >= 20 ? "v4_rack_ac_r" : "rack_ac_r", view: "right", x: L - 0.08, label: "Propane tank rack + A/C unit", grp: "rack" };
+      case "rack_l": return { lib: "v4_rack_ac_l", view: "left", x: -1.83, label: "Propane tank rack + A/C unit", grp: "rack" };
+      case "table": return { lib: "table_6ft", view: "left", x: x6, label: "Counter table 6'" };
+      case "window": return { lib: "window", view: "left", x: x6, label: "Service window 6'" };
+    }
+    return null;
+  }
+  var DEF_KEYS = ["sink_r", "sink_l", "rack_r", "rack_l", "table", "window"];
+  function addDefaults(d) {
+    var b = BASES[d.sizeId] || BASES[16], added = 0;
+    DEF_KEYS.forEach(function (k) {
+      if (d.objs.some(function (o) { return o.defk === k; })) return;
+      var sp = defSpec(k, b.length), l = libById(sp.lib); if (!l) return;
+      var o = { id: uid(), t: "comp", lib: l.id, view: sp.view, xft: sp.x, bft: Math.max(0, l.bottom), wft: l.w, hft: l.h, price: 0, label: sp.label, defk: k, def: true };
+      if (sp.grp) o.grp = sp.grp;
+      d.objs.unshift(o); added++;
+    });
+    return added;
+  }
+  function repositionDefaults(d) {
+    var b = BASES[d.sizeId] || BASES[16];
+    d.objs.forEach(function (o) { if (o.defk) { var sp = defSpec(o.defk, b.length); if (sp) { o.xft = sp.x; o.view = sp.view; } } });
   }
   function base(d) { return BASES[(d || doc).sizeId] || BASES[16]; }
 
@@ -83,20 +112,30 @@
     return y < (L.views.right.y + L.views.right.h + 50) ? "right" : "left";
   }
   function numbering() {
-    var items = doc.objs.filter(function (o) { return o.t === "comp" || o.t === "fss"; });
-    items.sort(function (a, b) { return (a.view === b.view ? 0 : a.view === "right" ? -1 : 1) || a.xft - b.xft; });
-    var auto = {}; items.forEach(function (o, i) { auto[o.id] = i + 1; });
-    var map = {};
-    items.forEach(function (o) { map[o.id] = o.num != null && o.num !== "" ? o.num : auto[o.id]; });
-    items = items.slice().sort(function (a, b) { var x = String(map[a.id]), y = String(map[b.id]), nx = parseFloat(x), ny = parseFloat(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y, undefined, { numeric: true }) : nx - ny) || auto[a.id] - auto[b.id]; });
-    return { items: items, map: map };
+    var all = doc.objs.filter(function (o) { return o.t === "comp" || o.t === "fss"; });
+    all.sort(function (a, b) { return (a.view === b.view ? 0 : a.view === "right" ? -1 : 1) || a.xft - b.xft; });
+    var prim = [], seen = {}, groups = {};
+    all.forEach(function (o) {
+      if (o.grp) { if (seen[o.grp]) { groups[seen[o.grp]].push(o); return; } seen[o.grp] = o.id; }
+      prim.push(o); groups[o.id] = [o];
+    });
+    var auto = {}; prim.forEach(function (o, i) { auto[o.id] = i + 1; });
+    var map = {}, numOf = {};
+    prim.forEach(function (o) {
+      var ex = groups[o.id].filter(function (m) { return m.num != null && m.num !== ""; })[0];
+      numOf[o.id] = ex ? ex.num : auto[o.id];
+      groups[o.id].forEach(function (m) { map[m.id] = numOf[o.id]; });
+    });
+    var items = prim.slice().sort(function (a, b) { var x = String(numOf[a.id]), y = String(numOf[b.id]), nx = parseFloat(x), ny = parseFloat(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y, undefined, { numeric: true }) : nx - ny) || auto[a.id] - auto[b.id]; });
+    return { items: items, map: map, groups: groups };
   }
+  function syncGroupNums() { var nm = numbering(); nm.items.forEach(function (o) { nm.groups[o.id].forEach(function (m) { if (o.num == null) delete m.num; else m.num = o.num; }); }); }
   // fija numeracion explicita con el orden actual (para poder subir/bajar)
-  function freezeNumbers() { var nm = numbering(); nm.items.forEach(function (o, i) { o.num = i + 1; }); }
+  function freezeNumbers() { var nm = numbering(); nm.items.forEach(function (o, i) { o.num = i + 1; }); syncGroupNums(); }
   function moveNumber(id, dir) {
     freezeNumbers(); var nm = numbering(), i = -1; nm.items.forEach(function (o, k) { if (o.id === id) i = k; });
     var j = i + dir; if (i < 0 || j < 0 || j >= nm.items.length) return;
-    var a = nm.items[i], b2 = nm.items[j], tmp = a.num; a.num = b2.num; b2.num = tmp; commit();
+    var a = nm.items[i], b2 = nm.items[j], tmp = a.num; a.num = b2.num; b2.num = tmp; syncGroupNums(); commit();
   }
   function autoNumber() { doc.objs.forEach(function (o) { delete o.num; }); commit(); }
   function objLabel(o) { if (o.t === "fss") return "Fire suppression system (FSS)" + (o.ps === 2 ? " · 2 pull stations (PS)" : " · 1 pull station (PS)"); return o.label || (libById(o.lib) || {}).label || "Component"; }
@@ -122,6 +161,11 @@
       var lib = libById(o.lib); if (!lib) return "";
       var p = toSheet(o, L);
       var tr = o.mirror ? ' transform="translate(' + R(p.x * 2 + p.w) + ',0) scale(-1,1)"' : "";
+      var cr = o.crop || {}, cl = cr.l || 0, ct = cr.t || 0, crr = cr.r || 0, cb = cr.b || 0;
+      if (cl || ct || crr || cb) {
+        var fw = p.w / (1 - cl - crr), fh = p.h / (1 - ct - cb);
+        s += '<g data-oid="' + o.id + '"' + tr + '><svg x="' + R(p.x) + '" y="' + R(p.y) + '" width="' + R(p.w) + '" height="' + R(p.h) + '" viewBox="0 0 ' + R(p.w) + " " + R(p.h) + '" overflow="hidden"><image href="' + ASSET + lib.file + '" x="' + R(-cl * fw) + '" y="' + R(-ct * fh) + '" width="' + R(fw) + '" height="' + R(fh) + '" preserveAspectRatio="none"/></svg></g>';
+      } else
       s += '<g data-oid="' + o.id + '"' + tr + '><image href="' + ASSET + lib.file + '" x="' + R(p.x) + '" y="' + R(p.y) + '" width="' + R(p.w) + '" height="' + R(p.h) + '" preserveAspectRatio="none"/></g>';
       if (num) s += '<g data-badge="' + o.id + '" style="cursor:move">' + badge(p.x + p.w / 2 + (o.bdx || 0), p.y + p.h + 26 + (o.bdy || 0), num) + "</g>";
     } else if (o.t === "fss") {
@@ -163,6 +207,10 @@
     return { x: 0, y: 0, w: 0, h: 0 };
   }
 
+  function wallOf(nm, o) {
+    var g = nm.groups[o.id] || [o], v = {}; g.forEach(function (m) { v[m.view] = 1; });
+    return v.right && v.left ? "Both walls" : (o.view === "right" ? "Right" : "Left");
+  }
   function badge(cx, cy, n) {
     return '<circle cx="' + R(cx) + '" cy="' + R(cy) + '" r="15" fill="' + C.navy + '" stroke="#fff" stroke-width="3"/>' + t(cx, cy + 6.5, n, 18, { fill: "#fff", anchor: "middle", bold: true });
   }
@@ -202,7 +250,7 @@
       s += '<line x1="' + MARGIN + '" y1="' + (y + rowH) + '" x2="' + (W - MARGIN) + '" y2="' + (y + rowH) + '" stroke="' + C.border + '" stroke-width="1.5"/>' +
         badge(MARGIN + 30, y + rowH / 2, nm.map[o.id]) +
         t(cName, y + 30, objLabel(o), 21, { fill: C.ink }) + t(cSize, y + 30, fmtFt(o.wft) + " × " + fmtFt(o.hft), 21, { fill: C.text2 }) +
-        t(cLast, y + 30, doc.showPrices ? money(o.price) : (o.view === "right" ? "Right" : "Left"), 21, { fill: C.ink, anchor: "end" });
+        t(cLast, y + 30, doc.showPrices ? money(o.price) : wallOf(nm, o), 21, { fill: C.ink, anchor: "end" });
       y += rowH;
     });
     if (!rows) { s += t(cName, y + 30, "No equipment yet.", 21, { fill: C.text2 }); y += rowH; }
@@ -238,7 +286,19 @@
       if (so) {
         var bb = bboxOf(so, L);
         s += '<rect class="bp-sel" x="' + R(bb.x - 6) + '" y="' + R(bb.y - 6) + '" width="' + R(bb.w + 12) + '" height="' + R(bb.h + 12) + '" fill="none" stroke="#1A73E8" stroke-width="2.5" stroke-dasharray="8 5" pointer-events="none"/>';
-        if (so.t === "line") {
+        if (cropMode && so.t === "comp") {
+          var lb = libById(so.lib), cc = so.crop || {}, ccl = cc.l || 0, cct = cc.t || 0, ccr = cc.r || 0, ccb = cc.b || 0;
+          if (lb) {
+            var gw = bb.w / (1 - ccl - ccr), gh = bb.h / (1 - cct - ccb), gx = so.mirror ? bb.x - ccr * gw : bb.x - ccl * gw, gy = bb.y - cct * gh;
+            if (so.mirror) gx = bb.x - ccr * gw;
+            s += '<image href="' + ASSET + lb.file + '" x="' + R(gx) + '" y="' + R(gy) + '" width="' + R(gw) + '" height="' + R(gh) + '" preserveAspectRatio="none" opacity="0.22" pointer-events="none"' + (so.mirror ? ' transform="translate(' + R(gx * 2 + gw) + ',0) scale(-1,1)"' : "") + "/>";
+          }
+          var hs = 22, mx = bb.x + bb.w / 2 - hs / 2, my = bb.y + bb.h / 2 - hs / 2;
+          [["cl", bb.x - hs / 2, my], ["cr", bb.x + bb.w - hs / 2, my], ["ct", mx, bb.y - hs / 2], ["cb", mx, bb.y + bb.h - hs / 2]].forEach(function (h) {
+            s += '<rect class="bp-h" data-h="' + h[0] + '" x="' + R(h[1]) + '" y="' + R(h[2]) + '" width="' + hs + '" height="' + hs + '" rx="5" fill="#FF8A00" stroke="#fff" stroke-width="3" style="cursor:' + (h[0] === "cl" || h[0] === "cr" ? "ew-resize" : "ns-resize") + '"/>';
+          });
+          s += t(bb.x, bb.y - 24, "CROP: drag the orange handles · click outside to finish", 17, { fill: "#FF8A00", bold: true });
+        } else if (so.t === "line") {
           s += '<circle class="bp-h" data-h="p1" cx="' + so.x1 + '" cy="' + so.y1 + '" r="10" fill="#1A73E8"/><circle class="bp-h" data-h="p2" cx="' + so.x2 + '" cy="' + so.y2 + '" r="10" fill="#1A73E8"/>';
         } else if (so.t !== "text" && so.t !== "path") {
           s += '<rect class="bp-h" data-h="se" x="' + R(bb.x + bb.w - 6) + '" y="' + R(bb.y + bb.h - 6) + '" width="20" height="20" fill="#1A73E8" stroke="#fff" stroke-width="2"/>';
@@ -269,7 +329,7 @@
   // ---------- Agregar objetos ----------
   function nextX(view) {
     var m = 0.5;
-    doc.objs.forEach(function (o) { if ((o.t === "comp" || o.t === "fss") && o.view === view && o.bft < 0.6) m = Math.max(m, o.xft + o.wft); });
+    doc.objs.forEach(function (o) { if ((o.t === "comp" || o.t === "fss") && !o.def && o.view === view && o.bft < 0.6) m = Math.max(m, o.xft + o.wft); });
     return m;
   }
   function clampX(x, w) { var L = base().length; return Math.max(0, Math.min(x, L - w)); }
@@ -324,8 +384,9 @@
     var bdg = e.target.closest ? e.target.closest("[data-badge]") : null;
     if (bdg) { var bo = byId(bdg.getAttribute("data-badge")); if (bo) { selId = bo.id; drag = { mode: "badge", o: bo, sx: p.x, sy: p.y, x0: bo.bdx || 0, y0: bo.bdy || 0, moved: false }; draw(); e.preventDefault(); return; } }
     var h = e.target.getAttribute && e.target.getAttribute("data-h");
+    if (!h && cropMode) cropMode = false;
     var oidEl = e.target.closest ? e.target.closest("[data-oid]") : null;
-    if (h && selId) { var so = byId(selId); drag = { mode: "handle", h: h, o: so, sx: p.x, sy: p.y, w0: so.wft, h0: so.hft, ow: so.w, oh: so.h }; e.preventDefault(); return; }
+    if (h && selId) { var so = byId(selId); var c0 = null; if (so.t === "comp") { var cc0 = so.crop || {}; c0 = { l: cc0.l || 0, t: cc0.t || 0, r: cc0.r || 0, b: cc0.b || 0, w: so.wft, h: so.hft, x: so.xft, bb: so.bft }; } drag = { mode: "handle", h: h, o: so, sx: p.x, sy: p.y, w0: so.wft, h0: so.hft, ow: so.w, oh: so.h, c0: c0 }; e.preventDefault(); return; }
     if (oidEl) {
       var obj = byId(oidEl.getAttribute("data-oid"));
       selId = obj.id;
@@ -350,7 +411,16 @@
       else if (o.t === "path") { var c2 = JSON.parse(drag.copy); o.pts = c2.pts.map(function (q) { return [q[0] + dx, q[1] + dy]; }); }
       else { var c3 = JSON.parse(drag.copy); o.x = c3.x + dx; o.y = c3.y + dy; }
     } else if (drag.mode === "handle") {
-      if (o.t === "comp" || o.t === "fss") {
+      if (/^c[lrtb]$/.test(drag.h) && drag.c0) {
+        var v0 = L.views[o.view], c0 = drag.c0, dxf = dx / v0.pxft, dyf = dy / v0.pxft, Wf = c0.w / (1 - c0.l - c0.r), Hf = c0.h / (1 - c0.t - c0.b), MIN = 0.06;
+        var cro = { l: c0.l, t: c0.t, r: c0.r, b: c0.b };
+        function fld(side) { return o.mirror ? (side === "l" ? "r" : "l") : side; }
+        if (drag.h === "cl") { var f = fld("l"), oth = fld("r"), nv = Math.max(0, Math.min(1 - cro[oth] - MIN, c0[f] + dxf / Wf)); cro[f] = nv; o.wft = Wf * (1 - nv - cro[oth]); o.xft = c0.x + (nv - c0[f]) * Wf; }
+        else if (drag.h === "cr") { var f2 = fld("r"), oth2 = fld("l"), nv2 = Math.max(0, Math.min(1 - cro[oth2] - MIN, c0[f2] - dxf / Wf)); cro[f2] = nv2; o.wft = Wf * (1 - nv2 - cro[oth2]); }
+        else if (drag.h === "ct") { var nt = Math.max(0, Math.min(1 - c0.b - MIN, c0.t + dyf / Hf)); cro.t = nt; o.hft = Hf * (1 - nt - c0.b); }
+        else { var nb = Math.max(0, Math.min(1 - c0.t - MIN, c0.b - dyf / Hf)); cro.b = nb; o.hft = Hf * (1 - c0.t - nb); o.bft = c0.bb + (nb - c0.b) * Hf; }
+        o.crop = cro; o.wft = Math.round(o.wft * 100) / 100; o.hft = Math.round(o.hft * 100) / 100;
+      } else if (o.t === "comp" || o.t === "fss") {
         var v = L.views[o.view], nw = Math.max(0.3, drag.w0 + dx / v.pxft), k = nw / drag.w0;
         o.wft = Math.round(nw * 20) / 20; o.hft = Math.round(drag.h0 * k * 20) / 20;
       } else if (o.t === "line") { if (drag.h === "p1") { o.x1 = p.x; o.y1 = p.y; } else { o.x2 = p.x; o.y2 = p.y; } }
@@ -400,19 +470,26 @@
   function delObj() { if (!selId) return; doc.objs = doc.objs.filter(function (o) { return o.id !== selId; }); selId = null; commit(); }
   function dupObj() {
     var o = selId && byId(selId); if (!o) return;
-    var c = JSON.parse(JSON.stringify(o)); c.id = uid();
+    var c = JSON.parse(JSON.stringify(o)); c.id = uid(); delete c.def; delete c.defk; delete c.grp; delete c.num;
     if (c.t === "comp" || c.t === "fss") { c.xft += 0.5; } else if (c.t === "line") { c.x1 += 30; c.x2 += 30; c.y1 += 30; c.y2 += 30; } else if (c.t === "path") { c.pts = c.pts.map(function (q) { return [q[0] + 30, q[1] + 30]; }); } else { c.x += 30; c.y += 30; }
     doc.objs.push(c); selId = c.id; commit();
   }
   function reorder(front) { var o = selId && byId(selId); if (!o) return; doc.objs = doc.objs.filter(function (x) { return x.id !== o.id; }); if (front) doc.objs.push(o); else doc.objs.unshift(o); commit(); }
 
+  function startCrop(o) { if (!o || o.t !== "comp") return; selId = o.id; cropMode = true; draw(); }
+  function hasCrop(o) { var c = o && o.crop; return !!(c && (c.l || c.t || c.r || c.b)); }
+  function resetCrop(o) {
+    if (!hasCrop(o)) return; var c = o.crop, Wf = o.wft / (1 - (c.l || 0) - (c.r || 0)), Hf = o.hft / (1 - (c.t || 0) - (c.b || 0));
+    var visLeft = o.mirror ? (c.r || 0) : (c.l || 0);
+    o.xft -= visLeft * Wf; o.bft -= (c.b || 0) * Hf; o.wft = Math.round(Wf * 100) / 100; o.hft = Math.round(Hf * 100) / 100; delete o.crop; cropMode = false; commit();
+  }
   // ---------- Portapapeles y menú de clic derecho ----------
   var clip = null, menuEl = null;
   function copyObj() { var o = selId && byId(selId); if (!o) return false; clip = JSON.parse(JSON.stringify(o)); return true; }
   function cutObj() { if (copyObj()) delObj(); }
   function pasteObj(at) {
     if (!clip) return;
-    var c = JSON.parse(JSON.stringify(clip)); c.id = uid(); delete c.num; delete c.bdx; delete c.bdy;
+    var c = JSON.parse(JSON.stringify(clip)); c.id = uid(); delete c.num; delete c.bdx; delete c.bdy; delete c.def; delete c.defk; delete c.grp;
     doc.objs.push(c);
     var L = layout(doc), bb = bboxOf(c, L);
     if (at) {
@@ -441,10 +518,10 @@
       items.push(["Bring to front", "", function () { reorder(true); }], ["Send to back", "", function () { reorder(false); }]);
       if (isEq) {
         items.push("-");
-        if (o.t === "comp") items.push(["Flip horizontally", "", function () { o.mirror = !o.mirror; commit(); }]);
+        if (o.t === "comp") items.push(["✂ Crop (show only part)…", "", function () { startCrop(o); }], ["Reset crop", "", function () { resetCrop(o); }, !hasCrop(o)], ["Flip horizontally", "", function () { o.mirror = !o.mirror; commit(); }]);
         if (o.t === "fss") items.push([o.ps === 2 ? "Use 1 pull station" : "Use 2 pull stations (PS)", "", function () { o.ps = o.ps === 2 ? 1 : 2; commit(); }]);
         items.push(["Edit label…", "", function () { var v = window.prompt("Label shown in the list:", objLabel(o)); if (v != null && v !== "") { o.label = v; commit(); } }, o.t === "fss"]);
-        items.push(["Set number…", "", function () { var v = window.prompt("Number on the sheet (empty = automatic):", numbering().map[o.id]); if (v == null) return; v = String(v).trim(); if (v === "") delete o.num; else o.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); commit(); }]);
+        items.push(["Set number…", "", function () { var v = window.prompt("Number on the sheet (empty = automatic):", numbering().map[o.id]); if (v == null) return; v = String(v).trim(); if (v === "") delete o.num; else o.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); if (o.grp) doc.objs.forEach(function (m) { if (m.grp === o.grp) { if (o.num == null) delete m.num; else m.num = o.num; } }); commit(); }]);
         items.push(["Edit price…", "", function () { var v = window.prompt("Price:", o.price || 0); if (v == null) return; o.price = parseFloat(v) || 0; commit(); }]);
         items.push(["Edit size (ft)…", "", function () { var v = window.prompt("Width x height in feet (e.g. 4.5 x 3):", o.wft + " x " + o.hft); if (!v) return; var m = /([\d.]+)\s*[x×]\s*([\d.]+)/i.exec(v); if (m) { o.wft = parseFloat(m[1]); o.hft = parseFloat(m[2]); commit(); } }]);
         items.push(["Move number badge back", "", function () { delete o.bdx; delete o.bdy; commit(); }, o.bdx == null && o.bdy == null]);
@@ -485,21 +562,72 @@
       ".bp-ctx-sep{height:1px;background:#EEEDFF;margin:5px 4px}";
     document.head.appendChild(st);
     document.addEventListener("click", closeMenu); window.addEventListener("scroll", closeMenu, true); window.addEventListener("resize", closeMenu);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeMenu(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeMenu(); if (cropMode) { cropMode = false; draw(); } } });
   })();
 
   // ---------- Guardar / abrir ----------
-  function loadAll() { try { return JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { return {}; } }
-  function saveNamed() {
-    var name = window.prompt("Blueprint name:", doc.ficha.cliente ? (doc.ficha.cliente + " " + base().length + "ft") : ""); if (!name) return;
-    var all = loadAll(); all[name] = doc;
-    try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) { alert("Could not save in this browser."); return; }
-    refreshSaved(name);
+  function loadAll() {
+    try { var cur = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); if (cur && typeof cur === "object") return cur; } catch (e) { /* vacío */ }
+    var out = {}, old = {};
+    try { old = JSON.parse(localStorage.getItem(STORE) || "{}"); } catch (e) { /* vacío */ }
+    Object.keys(old).forEach(function (n) { var d = old[n]; if (!d || !d.objs) return; d.bid = d.bid || uid(); d.updated = d.updated || Date.now(); d.ficha = d.ficha || {}; if (!d.ficha.cliente) d.ficha.cliente = n; out[d.bid] = d; });
+    return out;
   }
-  function refreshSaved(sel) {
-    var s = document.getElementById("bpSaved"); if (!s) return;
-    var all = loadAll(), names = Object.keys(all).sort();
-    s.innerHTML = '<option value="">Saved…</option>' + names.map(function (n) { return '<option value="' + esc(n) + '"' + (n === sel ? " selected" : "") + ">" + esc(n) + "</option>"; }).join("");
+  function persistAll(all) {
+    var v = JSON.stringify(all);
+    try { localStorage.setItem(STORE_KEY, v); } catch (e) { alert("Could not save in this browser."); return false; }
+    if (window.NovaCloud && window.NovaCloud.enabled && window.NovaCloud.push) { try { window.NovaCloud.push(STORE_KEY, v); } catch (e) { /* offline */ } }
+    return true;
+  }
+  function saveCurrent(silent) {
+    var cl = String(doc.ficha.cliente || "").trim();
+    if (!cl) { cl = window.prompt("Client name for this blueprint:", ""); if (!cl || !cl.trim()) return false; doc.ficha.cliente = cl.trim(); syncControls(); }
+    doc.bid = doc.bid || uid(); doc.updated = Date.now();
+    var all = loadAll(); all[doc.bid] = JSON.parse(JSON.stringify(doc));
+    if (!persistAll(all)) return false;
+    autosave(); updateListBadge();
+    if (!silent) { var b = document.getElementById("bpSave"); if (b) { var t0 = b.textContent; b.textContent = "Saved ✓"; setTimeout(function () { b.textContent = t0; }, 1400); } }
+    return true;
+  }
+  function matchesDoc(d, name, nums) {
+    var n = String(name || "").trim().toLowerCase(), c = String((d.ficha && d.ficha.cliente) || "").trim().toLowerCase(), f = String((d.ficha && d.ficha.folio) || "").trim().toLowerCase();
+    if (n && c && n === c) return true;
+    return !!(f && (nums || []).some(function (x) { return String(x || "").trim().toLowerCase() === f; }));
+  }
+  function docsFor(name, nums) { var all = loadAll(); return Object.keys(all).map(function (k) { return all[k]; }).filter(function (d) { return matchesDoc(d, name, nums); }); }
+  function fmtDate(ts) { try { return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } }
+  function fileBase(d) { return String((d.ficha && d.ficha.cliente) || "blueprint").trim().replace(/[^\w\- ]+/g, "").replace(/\s+/g, "-") || "blueprint"; }
+  var listFilter = "";
+  function updateListBadge() { var b = root && root.querySelector('[data-bpview="list"]'); if (b) b.textContent = "My blueprints (" + Object.keys(loadAll()).length + ")"; }
+  function showView(v) {
+    var ed = document.getElementById("bpEditor"), li = document.getElementById("bpListView"); if (!ed || !li) return;
+    ed.style.display = v === "list" ? "none" : ""; li.style.display = v === "list" ? "" : "none";
+    root.querySelectorAll("[data-bpview]").forEach(function (b) { b.classList.toggle("active", b.dataset.bpview === v); });
+    if (v === "list") renderList(); else draw(true);
+  }
+  function renderList() {
+    var host = document.getElementById("bpListView"); if (!host) return;
+    var all = loadAll(), arr = Object.keys(all).map(function (k) { return all[k]; });
+    var q = listFilter.trim().toLowerCase();
+    if (q) arr = arr.filter(function (d) { return (String(d.ficha.cliente || "") + " " + String(d.ficha.folio || "") + " " + d.sizeId).toLowerCase().indexOf(q) !== -1; });
+    arr.sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); });
+    host.innerHTML = '<div class="bp-listtop"><input type="search" id="bpListSearch" placeholder="Search by client, quote or size…" value="' + esc(listFilter) + '"><span class="hint">' + arr.length + " blueprint" + (arr.length === 1 ? "" : "s") + "</span></div>" +
+      (arr.length ? '<div class="table-scroll"><table class="crm"><thead><tr><th>Client</th><th>Trailer</th><th>Linked quote</th><th>Equipment</th><th>Last edited</th><th></th></tr></thead><tbody>' +
+      arr.map(function (d) {
+        var n = d.objs.filter(function (o) { return o.t === "comp" || o.t === "fss"; }).length, sz = (BASES[d.sizeId] || {}).label || d.sizeId + " ft";
+        return '<tr data-bid="' + esc(d.bid) + '"><td><b>' + esc(d.ficha.cliente || "—") + "</b></td><td>" + esc(sz) + "</td><td>" + (d.ficha.folio ? "Quote " + esc(d.ficha.folio) : '<span class="hint">not linked</span>') + "</td><td>" + n + "</td><td>" + esc(fmtDate(d.updated)) + "</td>" +
+          '<td class="actions-cell"><button type="button" class="btn-small primary" data-la="open">Open</button><button type="button" class="btn-small" data-la="pdf">PDF</button><button type="button" class="btn-small" data-la="png">PNG</button><button type="button" class="btn-small" data-la="del">Delete</button></td></tr>';
+      }).join("") + "</tbody></table></div>" : '<div class="bp-empty">No blueprints saved yet. Build one in the editor and press Save.</div>');
+    var si = document.getElementById("bpListSearch"); if (si) si.addEventListener("input", function () { listFilter = si.value; var pos = si.selectionStart; renderList(); var n = document.getElementById("bpListSearch"); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
+    host.querySelectorAll("[data-la]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var bid = b.closest("tr").dataset.bid, all2 = loadAll(), d = all2[bid]; if (!d) return;
+        if (b.dataset.la === "open") { doc = JSON.parse(JSON.stringify(d)); selId = null; cropMode = false; hist = []; histI = -1; snapshot(); syncControls(); showView("editor"); autosave(); }
+        else if (b.dataset.la === "pdf") downloadPdf(d);
+        else if (b.dataset.la === "png") downloadPng(d);
+        else if (b.dataset.la === "del") { if (!confirm('Delete the blueprint for "' + (d.ficha.cliente || "this client") + '"?')) return; delete all2[bid]; persistAll(all2); if (doc.bid === bid) delete doc.bid; renderList(); updateListBadge(); }
+      });
+    });
   }
   function exportJson() {
     var blob = new Blob([JSON.stringify(doc)], { type: "application/json" }), a = document.createElement("a");
@@ -523,21 +651,61 @@
       return svgStr;
     });
   }
-  function downloadPng() {
-    var keep = selId, r = exportSvgString(), svgStr = r.svg;
-    Promise.all([inlineAssets(svgStr), fetchB64("../assets/fonts-pdf/Barlow-400.ttf"), fetchB64("../assets/fonts-pdf/Barlow-700.ttf")]).then(function (a) {
+  function withDoc(d, fn) {
+    var sd = doc, ss = selId, sc = cropMode; doc = d; selId = null; cropMode = false;
+    try { return fn(); } finally { doc = sd; selId = ss; cropMode = sc; }
+  }
+  function buildCanvas(d, scale) {
+    var r = withDoc(d, function () { return sheetSVG(false); });
+    return Promise.all([inlineAssets(r.svg), fetchB64("../assets/fonts-pdf/Barlow-400.ttf"), fetchB64("../assets/fonts-pdf/Barlow-700.ttf")]).then(function (a) {
       var css = (a[1] ? "@font-face{font-family:Barlow;font-weight:400;src:url(data:font/ttf;base64," + a[1] + ")}" : "") + (a[2] ? "@font-face{font-family:Barlow;font-weight:700;src:url(data:font/ttf;base64," + a[2] + ")}" : "");
-      var s = a[0].replace(/(<svg[^>]*>)/, "$1<defs><style>" + css + "</style></defs>");
-      var img = new Image();
-      img.onload = function () {
-        var cv = document.createElement("canvas"); cv.width = W * 1.5; cv.height = r.H * 1.5;
-        var ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height);
-        cv.toBlob(function (blob) { var l = document.createElement("a"); l.href = URL.createObjectURL(blob); l.download = "tryla-blueprint-" + doc.sizeId + "ft.png"; document.body.appendChild(l); l.click(); l.remove(); setTimeout(function () { URL.revokeObjectURL(l.href); }, 2000); }, "image/png");
-      };
-      img.onerror = function () { alert("Could not generate the PNG. Try Print / PDF."); };
-      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
-      selId = keep; draw();
+      var sv = a[0].replace(/(<svg[^>]*>)/, "$1<defs><style>" + css + "</style></defs>");
+      return new Promise(function (res, rej) {
+        var img = new Image();
+        img.onload = function () {
+          var cv = document.createElement("canvas"); cv.width = Math.round(W * scale); cv.height = Math.round(r.H * scale);
+          var ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+          res(cv);
+        };
+        img.onerror = function () { rej(new Error("render")); };
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(sv);
+      });
     });
+  }
+  function saveBlob(blob, name) {
+    var l = document.createElement("a"); l.href = URL.createObjectURL(blob); l.download = name; document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(function () { URL.revokeObjectURL(l.href); }, 4000);
+  }
+  function downloadPng(d) {
+    d = d && d.objs ? d : doc;
+    buildCanvas(d, 1.5).then(function (cv) { cv.toBlob(function (blob) { saveBlob(blob, fileBase(d) + "-blueprint-" + d.sizeId + "ft.png"); }, "image/png"); })
+      .catch(function () { alert("Could not generate the PNG."); });
+    draw();
+  }
+  function makePdf(jpg, pw, ph) {
+    var enc = new TextEncoder(), parts = [], offs = [], len = 0, Wpt = 612, Hpt = Math.round(612 * ph / pw * 100) / 100;
+    function push(x) { var b = typeof x === "string" ? enc.encode(x) : x; parts.push(b); len += b.length; }
+    push("%PDF-1.4\n");
+    offs[1] = len; push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    offs[2] = len; push("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+    offs[3] = len; push("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + Wpt + " " + Hpt + "] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n");
+    offs[4] = len; push("4 0 obj\n<< /Type /XObject /Subtype /Image /Width " + pw + " /Height " + ph + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + jpg.length + " >>\nstream\n"); push(jpg); push("\nendstream\nendobj\n");
+    var cs = "q " + Wpt + " 0 0 " + Hpt + " 0 0 cm /Im0 Do Q";
+    offs[5] = len; push("5 0 obj\n<< /Length " + cs.length + " >>\nstream\n" + cs + "\nendstream\nendobj\n");
+    var xr = len, x = "xref\n0 6\n0000000000 65535 f \n";
+    for (var i = 1; i <= 5; i++) x += ("0000000000" + offs[i]).slice(-10) + " 00000 n \n";
+    push(x + "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" + xr + "\n%%EOF");
+    var out = new Uint8Array(len), pos = 0; parts.forEach(function (b) { out.set(b, pos); pos += b.length; });
+    return out;
+  }
+  function downloadPdf(d) {
+    d = d && d.objs ? d : doc;
+    buildCanvas(d, 2).then(function (cv) {
+      var b64 = cv.toDataURL("image/jpeg", 0.92).split(",")[1], bin = atob(b64), u = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      saveBlob(new Blob([makePdf(u, cv.width, cv.height)], { type: "application/pdf" }), fileBase(d) + "-blueprint-" + d.sizeId + "ft.pdf");
+    }).catch(function () { alert("Could not generate the PDF."); });
+    draw();
   }
   function printPdf() {
     var w = window.open("", "_blank");
@@ -558,7 +726,7 @@
 
   // ---------- Cotización ----------
   function totalRows() {
-    var nm = numbering(), rows = nm.items.map(function (o) { return { name: objLabel(o), price: o.price || 0 }; });
+    var nm = numbering(), rows = nm.items.filter(function (o) { return !(o.def && !o.price); }).map(function (o) { return { name: objLabel(o), price: o.price || 0 }; });
     return rows;
   }
   function addToQuote() {
@@ -586,10 +754,10 @@
     var c = LIB.filter(function (l) { return l.type === type; }); if (!c.length) return null;
     c.sort(function (a, b) { return Math.abs(a.w - (w || a.w)) - Math.abs(b.w - (w || b.w)); }); return c[0];
   }
-  function fromQuote(items, cliente, folio) {
+  function fromQuote(items, cliente, folio, quoteId) {
     var size = null;
     items.forEach(function (it) { var m = /(\d+)\s*'?\s*x\s*(\d+)\s*'?/i.exec(it.desc) || /food trailer\s*(\d+)/i.exec(it.desc); if (m && !size) { var n = parseInt(m[m.length - 1], 10); if (BASES[n]) size = n; } });
-    doc = newDoc(size || 16); doc.ficha.cliente = cliente || ""; doc.ficha.folio = folio || "";
+    doc = newDoc(size || 16); doc.ficha.cliente = cliente || ""; doc.ficha.folio = folio || ""; if (quoteId) doc.quoteId = quoteId;
     var skipped = [], hoodNeed = 0, hoodX = null, n = 0;
     items.forEach(function (it) {
       var ty = typeOfLine(it.desc || ""); if (!ty) { if (!/base unit|unidad base|trailer/i.test(it.desc || "")) skipped.push(it.desc); return; }
@@ -601,6 +769,7 @@
       if (view === "right" && ["griddle", "grill", "fryer", "stove"].indexOf(ty) !== -1) { hoodNeed += o.wft; if (hoodX == null) hoodX = o.xft; }
     });
     if (hoodNeed > 0) { var h = pickLib("hood", hoodNeed); if (h) { var ho = addComp(h.id, "right", hoodX, h.bottom); ho.price = 0; ho.num = ++n; } }
+    var nmq = numbering(); nmq.items.forEach(function (o) { if (o.num == null) { o.num = ++n; } }); syncGroupNums();
     selId = null; hist = []; histI = -1; snapshot(); draw(true); autosave();
     return skipped;
   }
@@ -634,6 +803,7 @@
         h += '<label class="bp-m">Width (ft)<input type="number" step="0.05" min="0.3" data-p="wft" value="' + esc(o.wft) + '"></label><label class="bp-m">Height (ft)<input type="number" step="0.05" min="0.3" data-p="hft" value="' + esc(o.hft) + '"></label>';
         h += '<label class="bp-m">Height above floor (ft)<input type="number" step="0.25" data-p="bft" value="' + esc(o.bft) + '"></label>';
         if (o.t === "fss") h += '<label class="bp-m">Pull stations (PS)<select data-p="ps"><option value="1"' + (o.ps !== 2 ? " selected" : "") + '>1 pull station</option><option value="2"' + (o.ps === 2 ? " selected" : "") + ">2 pull stations (double)</option></select></label>";
+        if (o.t === "comp") h += '<div class="bp-btnrow"><button type="button" class="btn-small" data-act="crop">✂ Crop</button><button type="button" class="btn-small" data-act="uncrop"' + (hasCrop(o) ? "" : " disabled") + '>Reset crop</button></div>';
         if (o.t === "comp") h += '<label class="bp-check"><input type="checkbox" data-p="mirror"' + (o.mirror ? " checked" : "") + "> Flip horizontally</label>";
         h += '<label class="bp-m">Wall<select data-p="view"><option value="right"' + (o.view === "right" ? " selected" : "") + '>Right</option><option value="left"' + (o.view === "left" ? " selected" : "") + ">Left</option></select></label>";
       } else if (o.t === "text") {
@@ -657,7 +827,8 @@
   }
   function build() {
     root.innerHTML =
-      '<div class="bp-top">' +
+      '<div class="bp-views"><button type="button" class="btn-small active" data-bpview="editor">Editor</button><button type="button" class="btn-small" data-bpview="list">My blueprints</button></div>' +
+      '<div id="bpEditor"><div class="bp-top">' +
       '<select id="bpSize" title="Trailer size">' + Object.keys(BASES).map(function (k) { return '<option value="' + k + '">Trailer ' + BASES[k].label + "</option>"; }).join("") + "</select>" +
       '<span class="bp-sep"></span>' +
       '<button type="button" class="bp-tool" data-tool="select" title="Select / move">⬉ Move</button>' +
@@ -685,17 +856,16 @@
       '<div class="bp-card"><button type="button" class="btn-small primary" id="bpFromQuote" style="width:100%">⟳ Build from the current quote</button><div id="bpFit" class="hint" style="margin-top:8px"></div><div id="bpProps"></div></div>' +
       '<div class="bp-card"><h3 class="bp-h">Equipment list &amp; numbering</h3><div id="bpList"></div><div class="bp-btnrow"><button type="button" class="btn-small" id="bpAutoNum">Auto-number</button></div><label class="bp-check"><input type="checkbox" id="bpShowPrices"> Show prices on the sheet</label>' +
       '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpAddQuote">Add to quote</button></div></div>' +
-      '<div class="bp-card"><h3 class="bp-h">Sheet</h3><label class="bp-m">Title<input type="text" id="bpTitulo" placeholder="Food Trailer · Equipment Layout"></label>' +
+      '<div class="bp-card"><h3 class="bp-h">Sheet</h3><div class="bp-btnrow"><button type="button" class="btn-small" id="bpDefaults" title="Put back the standard pieces (hand sink, tank rack + A/C, 6-ft counter table and window) if you removed them">Restore standard pieces</button></div><label class="bp-m">Title<input type="text" id="bpTitulo" placeholder="Food Trailer · Equipment Layout"></label>' +
       '<div class="bp-ficha" id="bpFicha"></div><label class="bp-m">Notes<textarea id="bpNotas" rows="3"></textarea></label></div>' +
-      '<div class="bp-card"><h3 class="bp-h">Save &amp; export</h3><div class="bp-btnrow"><button type="button" class="btn-small primary" id="bpPrint">Print / PDF</button><button type="button" class="btn-small" id="bpPng">Download PNG</button></div>' +
-      '<div class="bp-btnrow"><select id="bpSaved"></select><button type="button" class="btn-small" id="bpSave">Save</button><button type="button" class="btn-small" id="bpOpen">Open</button><button type="button" class="btn-small" id="bpDelSaved">Delete</button></div>' +
-      '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpNew">New sheet</button><button type="button" class="btn-small" id="bpJson">Export .json</button></div></div>' +
-      "</aside></div>";
+      '<div class="bp-card"><h3 class="bp-h">Save &amp; download</h3><div class="bp-btnrow"><button type="button" class="btn-small primary" id="bpSave">Save</button><button type="button" class="btn-small primary" id="bpPdf">Download PDF</button><button type="button" class="btn-small" id="bpPng">Download PNG</button></div>' +
+      '<div class="bp-btnrow"><button type="button" class="btn-small" id="bpPrint">Print</button><button type="button" class="btn-small" id="bpJson">Export .json</button><button type="button" class="btn-small" id="bpNew">New sheet</button></div></div>' +
+      '</aside></div></div><div id="bpListView" style="display:none"></div>';
     svgHost = document.getElementById("bpSvgHost");
     var cats = [""].concat(LIB.map(function (l) { return l.cat; }).filter(function (v, i, a) { return a.indexOf(v) === i; }));
     document.getElementById("bpCats").innerHTML = cats.map(function (c) { return '<button type="button" class="bp-cat' + (c === "" ? " active" : "") + '" data-cat="' + esc(c) + '">' + (c || "All") + "</button>"; }).join("");
     document.getElementById("bpFicha").innerHTML = FICHA.map(function (f) { return '<label class="bp-m">' + f[1] + '<input type="text" data-f="' + f[0] + '"></label>'; }).join("");
-    renderPalette(); refreshSaved(); setTool();
+    renderPalette(); updateListBadge(); setTool();
     wire();
   }
   function syncControls() {
@@ -713,6 +883,8 @@
       if (b.dataset.lib) { addComp(b.dataset.lib); commit(); return; }
       if (b.dataset.fss) { addFSS(); commit(); return; }
       if (b.dataset.mv) { if (selId) moveNumber(selId, b.dataset.mv === "up" ? -1 : 1); return; }
+      if (b.dataset.act === "crop") { startCrop(selId && byId(selId)); return; }
+      if (b.dataset.act === "uncrop") { resetCrop(selId && byId(selId)); return; }
       if (b.dataset.act === "badge0") { var bo = selId && byId(selId); if (bo) { delete bo.bdx; delete bo.bdy; commit(); } return; }
       if (b.dataset.act === "del") delObj(); else if (b.dataset.act === "dup") dupObj(); else if (b.dataset.act === "front") reorder(true); else if (b.dataset.act === "back") reorder(false);
     });
@@ -730,7 +902,7 @@
     stage.addEventListener("dblclick", onDbl); stage.addEventListener("contextmenu", function (e) { e.preventDefault(); showMenu(e); }); window.addEventListener("keydown", onKey);
     document.getElementById("bpSearch").addEventListener("input", renderPalette);
     document.getElementById("bpTarget").addEventListener("change", function (e) { selTarget = e.target.value; });
-    document.getElementById("bpSize").addEventListener("change", function (e) { doc.sizeId = e.target.value; commit(); });
+    document.getElementById("bpSize").addEventListener("change", function (e) { doc.sizeId = e.target.value; repositionDefaults(doc); commit(); });
     document.getElementById("bpTitulo").addEventListener("input", function (e) { doc.titulo = e.target.value; draw(); autosave(); });
     document.getElementById("bpNotas").addEventListener("input", function (e) { doc.notas = e.target.value; draw(); autosave(); });
     document.getElementById("bpShowPrices").addEventListener("change", function (e) { doc.showPrices = e.target.checked; commit(); });
@@ -748,10 +920,11 @@
     });
     root.addEventListener("change", function (e) {
       var d = e.target.dataset || {};
-      if (d.num) { var no = byId(d.num); if (no) { var v = String(e.target.value).trim(); if (v === "") delete no.num; else no.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); commit(); } return; }
+      if (d.num) { var no = byId(d.num); if (no) { var v = String(e.target.value).trim(); if (v === "") delete no.num; else no.num = /^\d+$/.test(v) ? parseInt(v, 10) : v.slice(0, 4); if (no.grp) doc.objs.forEach(function (m) { if (m.grp === no.grp) { if (no.num == null) delete m.num; else m.num = no.num; } }); commit(); } return; }
       if (d.p && selId) { snapshot(); }
     });
     document.getElementById("bpAutoNum").addEventListener("click", autoNumber);
+    document.getElementById("bpDefaults").addEventListener("click", function () { if (addDefaults(doc)) { commit(); } else alert("All standard pieces are already on the sheet."); });
     ["bpStroke", "bpFill", "bpSw", "bpDash", "bpNoFill"].forEach(function (id) {
       document.getElementById(id).addEventListener("input", function () {
         style.stroke = document.getElementById("bpStroke").value; style.sw = parseInt(document.getElementById("bpSw").value, 10) || 4;
@@ -763,13 +936,13 @@
     document.getElementById("bpUndo").addEventListener("click", function () { undo(-1); });
     document.getElementById("bpRedo").addEventListener("click", function () { undo(1); });
     document.getElementById("bpPrint").addEventListener("click", printPdf);
-    document.getElementById("bpPng").addEventListener("click", downloadPng);
+    document.getElementById("bpPdf").addEventListener("click", function () { downloadPdf(); });
+    document.getElementById("bpSave").addEventListener("click", function () { saveCurrent(); });
+    root.querySelectorAll("[data-bpview]").forEach(function (b) { b.addEventListener("click", function () { showView(b.dataset.bpview); }); });
+    document.getElementById("bpPng").addEventListener("click", function () { downloadPng(); });
     document.getElementById("bpJson").addEventListener("click", exportJson);
     document.getElementById("bpAddQuote").addEventListener("click", addToQuote);
-    document.getElementById("bpSave").addEventListener("click", saveNamed);
-    document.getElementById("bpOpen").addEventListener("click", function () { var n = document.getElementById("bpSaved").value, all = loadAll(); if (n && all[n]) { doc = all[n]; selId = null; hist = []; histI = -1; snapshot(); syncControls(); draw(true); } });
-    document.getElementById("bpDelSaved").addEventListener("click", function () { var n = document.getElementById("bpSaved").value; if (!n || !confirm('Delete "' + n + '"?')) return; var all = loadAll(); delete all[n]; try { localStorage.setItem(STORE, JSON.stringify(all)); } catch (e) { /* sin storage */ } refreshSaved(); });
-    document.getElementById("bpNew").addEventListener("click", function () { if (doc.objs.length && !confirm("The current sheet will be discarded (if you did not save it). Continue?")) return; doc = newDoc(doc.sizeId); selId = null; hist = []; histI = -1; snapshot(); syncControls(); draw(true); });
+                document.getElementById("bpNew").addEventListener("click", function () { if (doc.objs.length && !confirm("The current sheet will be discarded (if you did not save it). Continue?")) return; doc = newDoc(doc.sizeId); selId = null; hist = []; histI = -1; snapshot(); syncControls(); draw(true); });
     document.getElementById("bpFromQuote").addEventListener("click", function () { api.fromQuoteUI(); });
     var origCommit = commit; void origCommit;
   }
@@ -780,8 +953,16 @@
       if (doc.objs.length && !confirm("Replace the current sheet with a new one built from the quote?")) return;
       var items = q.getLineItems(); if (!items.length) { alert("The quote has no lines yet."); return; }
       var meta = q.getMeta ? q.getMeta() : {};
-      var skipped = fromQuote(items, meta.cliente, meta.numero); syncControls(); api.open();
+      var ex = docsFor(meta.cliente, meta.numero ? [meta.numero] : []).filter(function (d) { return !meta.numero || String(d.ficha.folio || "").toLowerCase() === String(meta.numero).toLowerCase(); });
+      if (ex.length && confirm("A blueprint for this quote/client already exists (" + (ex[0].ficha.cliente || "") + (ex[0].ficha.folio ? ", quote " + ex[0].ficha.folio : "") + ").\n\nOK = open the saved one\nCancel = build a new one from the quote lines")) { doc = JSON.parse(JSON.stringify(ex[0])); selId = null; cropMode = false; hist = []; histI = -1; snapshot(); syncControls(); autosave(); api.open(); showView("editor"); return; }
+      var skipped = fromQuote(items, meta.cliente, meta.numero, meta.id); syncControls(); api.open(); showView("editor");
       if (skipped.length) alert("Blueprint built from the quote lines I could recognize.\nNot placed:\n• " + skipped.slice(0, 12).join("\n• ") + "\n\nAdd them by hand from the palette.");
+    },
+    count: function (name, nums) { return docsFor(name, nums).length; },
+    showFor: function (name, nums) { listFilter = String(name || ""); api.open(); showView("list"); },
+    newFor: function (name) {
+      if (!root) return; if (doc.objs.length && !confirm("Start a new blueprint for " + name + "? The sheet currently open will be replaced (save it first if you need it).")) return;
+      doc = newDoc(doc.sizeId); doc.ficha.cliente = name || ""; selId = null; cropMode = false; hist = []; histI = -1; snapshot(); syncControls(); autosave(); api.open(); showView("editor");
     },
     open: function () { var el = document.querySelector('.tab-btn[data-tab="blueprints"]'); if (el) el.click(); }
   };
