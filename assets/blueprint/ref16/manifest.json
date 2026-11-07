@@ -408,6 +408,12 @@
    "file": "comps/v5_plan_view.png",
    "source": "hoja",
    "view": "other"
+  },
+  {
+   "id": "v1_plan_view_b",
+   "file": "comps/v1_plan_view_b.png",
+   "source": "hoja",
+   "view": "other"
   }
  ]
 }
