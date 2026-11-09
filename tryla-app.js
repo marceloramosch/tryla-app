@@ -2591,9 +2591,21 @@
     Array.from(pipelineScopeEl.options).forEach((o) => { if (labels[o.value]) o.textContent = labels[o.value]; });
   }
 
+  // Cada columna del tablero tiene su propia barra de scroll, con el alto que
+  // queda de pantalla debajo del encabezado fijo del pipeline.
+  function fitPipelineColumns() {
+    const board = document.getElementById("pipelineBoard");
+    const panel = document.querySelector("#tab-pipeline > div > .panel");
+    if (!board || !panel) return;
+    const h = Math.max(260, window.innerHeight - panel.offsetHeight - 150);
+    board.style.setProperty("--pl-body-h", h + "px");
+  }
+  window.addEventListener("resize", fitPipelineColumns);
+
   function renderPipeline() {
     const board = document.getElementById("pipelineBoard");
     if (!board) return;
+    fitPipelineColumns();
     renderAssigneeFilterOptions();
     updatePipelineScopeLabels();
     const filtered = filterPipelineClients();
