@@ -171,6 +171,9 @@
   const COLD_GROUP = "Utah Colds";
   const PIPELINE_SCOPE_KEY = "trylaPipelineScope";
   const PIPELINE_PERIOD_KEY = "trylaPipelinePeriod";
+  const PIPELINE_LIMIT_KEY = "trylaPipelineLimit";
+  const pipelineLimitEl = document.getElementById("pipelineLimit");
+  const pipelineExtra = {}; // etapa -> tarjetas extra mostradas con "Ver mas"
   const pipelineScopeEl = document.getElementById("pipelineScope");
   const pipelinePeriodEl = document.getElementById("pipelinePeriod");
 
@@ -2611,6 +2614,7 @@
     const filtered = filterPipelineClients();
 
     board.innerHTML = "";
+    board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit");
     PIPELINE_STAGES.forEach((stage) => {
       // Mas reciente (nota, llamada, o arrastrada) arriba de la columna
       const stageClients = filtered
@@ -2633,7 +2637,21 @@
       if (stageClients.length === 0) {
         body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
       } else {
-        stageClients.forEach((c) => body.appendChild(buildPipelineCard(c)));
+        const mode = pipelineLimitEl ? pipelineLimitEl.value : "fit";
+        const baseLimit = /^\d+$/.test(mode) ? parseInt(mode, 10) : Infinity;
+        const shown = baseLimit === Infinity ? stageClients.length : Math.min(stageClients.length, baseLimit + (pipelineExtra[stage] || 0));
+        stageClients.slice(0, shown).forEach((c) => body.appendChild(buildPipelineCard(c)));
+        if (shown < stageClients.length) {
+          const left = stageClients.length - shown;
+          const more = document.createElement("div");
+          more.className = "pc-more";
+          more.innerHTML = `<button type="button" data-n="25">Ver mas (+${Math.min(25, left)})</button><button type="button" data-n="all">Ver todos (${left} mas)</button>`;
+          more.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+            pipelineExtra[stage] = (pipelineExtra[stage] || 0) + (b.dataset.n === "all" ? left : 25);
+            renderPipeline();
+          }));
+          body.appendChild(more);
+        }
       }
 
       body.addEventListener("dragover", (e) => {
@@ -3990,6 +4008,15 @@
   if (pipelineScopeEl) {
     pipelineScopeEl.addEventListener("change", () => {
       try { localStorage.setItem(PIPELINE_SCOPE_KEY, pipelineScopeEl.value); } catch (e) {}
+      renderPipeline();
+    });
+  }
+  if (pipelineLimitEl) {
+    const lv = localStorage.getItem(PIPELINE_LIMIT_KEY);
+    if (lv && ["fit", "10", "25", "50", "all"].indexOf(lv) !== -1) pipelineLimitEl.value = lv;
+    pipelineLimitEl.addEventListener("change", () => {
+      try { localStorage.setItem(PIPELINE_LIMIT_KEY, pipelineLimitEl.value); } catch (e) {}
+      Object.keys(pipelineExtra).forEach((k) => delete pipelineExtra[k]);
       renderPipeline();
     });
   }
