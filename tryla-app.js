@@ -2597,7 +2597,7 @@
     const board = document.getElementById("pipelineBoard");
     const panel = document.querySelector("#tab-pipeline > div > .panel");
     if (!board || !panel) return;
-    const h = Math.max(260, window.innerHeight - panel.offsetHeight - 150);
+    const h = Math.max(260, window.innerHeight - panel.offsetHeight - 200);
     board.style.setProperty("--pl-body-h", h + "px");
   }
   window.addEventListener("resize", fitPipelineColumns);
