@@ -2534,9 +2534,11 @@
   // como actividad y la tarjeta sube al tope de su columna.
   // ===== Sub-etapas del metodo comercial (data/method.js) =====
   const METHOD = window.TRYLA_METHOD || { columns: {}, stages: {} };
-  const SUBS_KEY = "trylaPipelineSubs";
-  let subsClosed = {};
-  try { subsClosed = JSON.parse(localStorage.getItem(SUBS_KEY) || "{}") || {}; } catch (e) { subsClosed = {}; }
+  const VIEWS_KEY = "trylaPipelineSubView";
+  let subViews = {};
+  try { subViews = JSON.parse(localStorage.getItem(VIEWS_KEY) || "{}") || {}; } catch (e) { subViews = {}; }
+  const viewOf = (stage) => subViews[stage] || (subViews[stage] = { expanded: false, filter: null, sel: null });
+  const saveViews = () => { try { localStorage.setItem(VIEWS_KEY, JSON.stringify(subViews)); } catch (e) {} };
   const subsRulesOpen = {};
   function subsFor(stage) { return METHOD.columns[stage] || []; }
   function clientSub(c) {
@@ -2647,10 +2649,13 @@
     document.body.classList.toggle("pl-fit", fit && pipelineOpen);
     // Alto: lo que queda de pantalla debajo de las pestanas y el encabezado fijos,
     // menos lo que ocupan el titulo y los paddings de la columna (se mide en vivo).
-    const col = board.querySelector(".pipeline-col");
-    const colBody = col && col.querySelector(".pipeline-col-body");
-    let extra = 100;
-    if (col && colBody) extra = Math.max(60, col.offsetHeight - colBody.clientHeight);
+    let extra = 0;
+    Array.from(board.children).forEach((top) => {
+      const bd = top.querySelector(".pipeline-col-body");
+      if (bd) extra = Math.max(extra, top.offsetHeight - bd.clientHeight);
+    });
+    if (!extra) extra = 100;
+    extra = Math.max(60, extra);
     const fitH = Math.max(260, window.innerHeight - stuck - panel.offsetHeight - extra - 40);
     // "tall": cada columna es mucho mas alta que la pantalla (la pagina baja para verlas) y aun asi tiene su propia barra
     const h = pipelineLimitEl && pipelineLimitEl.value === "tall" ? Math.max(fitH, window.innerHeight * 3) : fitH;
@@ -2668,114 +2673,148 @@
 
     board.innerHTML = "";
     board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit" && pipelineLimitEl.value !== "tall");
+    const mode = pipelineLimitEl ? pipelineLimitEl.value : "fit";
+    const baseLimit = /^\d+$/.test(mode) ? parseInt(mode, 10) : Infinity;
+    const appendCards = (container, list, key) => {
+      const shown = baseLimit === Infinity ? list.length : Math.min(list.length, baseLimit + (pipelineExtra[key] || 0));
+      list.slice(0, shown).forEach((c) => container.appendChild(buildPipelineCard(c)));
+      if (shown < list.length) {
+        const left = list.length - shown;
+        const more = document.createElement("div");
+        more.className = "pc-more";
+        more.innerHTML = `<button type="button" data-n="25">Ver mas (+${Math.min(25, left)})</button><button type="button" data-n="all">Ver todos (${left} mas)</button>`;
+        more.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+          pipelineExtra[key] = (pipelineExtra[key] || 0) + (b.dataset.n === "all" ? left : 25);
+          renderPipeline();
+        }));
+        container.appendChild(more);
+      }
+    };
+    const rulesHtml = (keys) => keys.map((k) => {
+      const st = METHOD.stages[k] || {};
+      const rows = [
+        ["Quienes llegan", st.llegan], ["Objetivo", st.objetivo], ["Responsable", st.responsable],
+        ["Maximo de negocios", st.maxNegocios ? String(st.maxNegocios) : (st.llegan ? "Ilimitado" : "")],
+        ["Tiempo maximo en la etapa", st.maxDias ? st.maxDias + " dias" : ""], ["Tiempo de descuido", st.descuido],
+        ["Actividades antes de enviar a perdido", st.actividades], ["Tipificaciones de perdidos", st.perdidos],
+        ["Entregables al cliente", st.entregables], ["Recibimos del cliente", st.recibimos], ["Automatizaciones", st.automatizaciones],
+        ["Tasa de conversion a la siguiente", st.conversion ? Math.round(st.conversion * 100) + "%" : ""],
+      ].filter((r) => r[1]);
+      return `<div class="pc-rule-block"><h4>${escapeHtml(k)}</h4>${rows.map((r) => `<b>${escapeHtml(r[0])}</b>${escapeHtml(r[1])}`).join("")}</div>`;
+    }).join("");
+
+    // Una columna (completa o sub-etapa) con su encabezado, info "i", cuerpo con scroll y zona de arrastre
+    const makeCol = (o) => {
+      const col = document.createElement("div");
+      col.className = "pipeline-col" + (o.sub ? " pipeline-subcol" : "");
+      const maxN = o.max || 0;
+      const over = maxN && o.list.length > maxN;
+      const late = o.list.filter((c) => subDaysOver(c) > 0).length;
+      const hasInfo = o.infoKeys && o.infoKeys.some((k) => METHOD.stages[k]);
+      col.innerHTML = `
+        <div class="pipeline-col-head">
+          <span class="pipeline-col-title ${o.sub ? "sub-title" : "status-" + escapeHtml(o.stage)}">${escapeHtml(o.title)}</span>
+          ${late ? `<span class="pc-over" title="${late} lead(s) pasaron el tiempo maximo de esta etapa">&#9201; ${late}</span>` : ""}
+          ${hasInfo ? '<button type="button" class="pc-info" title="Ver reglas del metodo comercial">i</button>' : ""}
+          ${o.canExpand ? '<button type="button" class="pc-expand" title="Desplegar las sub-etapas como columnas">&#8644;</button>' : ""}
+          ${o.canCollapse ? '<button type="button" class="pc-expand on" title="Plegar las sub-etapas en una sola columna">&#8646;</button>' : ""}
+          <span class="pipeline-col-count${over ? " over" : ""}" title="${over ? "Pasaste el maximo de negocios de esta etapa" : "Leads"}">${o.list.length}${maxN ? "/" + maxN : ""}</span>
+        </div>
+        <div class="pipeline-col-value">${o.value > 0 ? formatMoney(o.value) : ""}</div>
+        <div class="pc-rules-panel" ${subsRulesOpen[o.key] ? "" : "hidden"}>${hasInfo ? rulesHtml(o.infoKeys) : ""}</div>
+        <div class="pipeline-col-body"></div>
+      `;
+      if (o.chips) col.querySelector(".pipeline-col-value").after(o.chips);
+      const body = col.querySelector(".pipeline-col-body");
+      if (!o.list.length) body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
+      else appendCards(body, o.list, o.key);
+      const info = col.querySelector(".pc-info");
+      if (info) info.addEventListener("click", () => {
+        subsRulesOpen[o.key] = !subsRulesOpen[o.key];
+        col.querySelector(".pc-rules-panel").hidden = !subsRulesOpen[o.key];
+      });
+      const ex = col.querySelector(".pc-expand");
+      if (ex) ex.addEventListener("click", () => { const v = viewOf(o.stage); v.expanded = !v.expanded; saveViews(); renderPipeline(); });
+      body.addEventListener("dragover", (e) => { e.preventDefault(); body.classList.add("drag-over"); });
+      body.addEventListener("dragleave", () => body.classList.remove("drag-over"));
+      body.addEventListener("drop", (e) => {
+        e.preventDefault();
+        body.classList.remove("drag-over");
+        if (dragSrcClientId) moveClientToStage(dragSrcClientId, o.stage, o.dropSub || null);
+      });
+      return col;
+    };
+
     PIPELINE_STAGES.forEach((stage) => {
       // Mas reciente (nota, llamada, o arrastrada) arriba de la columna
       const stageClients = filtered
         .filter((c) => (c.status || "Cold") === stage)
         .sort((a, b) => lastActivity(b).at - lastActivity(a).at);
-      const stageValue = stageClients.reduce((s, c) => s + clientPipelineValue(c), 0);
-
-      const col = document.createElement("div");
-      col.className = "pipeline-col";
-      col.innerHTML = `
-        <div class="pipeline-col-head">
-          <span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(stage)}</span>
-          <span class="pipeline-col-count">${stageClients.length}</span>
-        </div>
-        <div class="pipeline-col-value">${stageValue > 0 ? formatMoney(stageValue) : ""}</div>
-        <div class="pipeline-col-body"></div>
-      `;
-
-      const body = col.querySelector(".pipeline-col-body");
-      const mode = pipelineLimitEl ? pipelineLimitEl.value : "fit";
-      const baseLimit = /^\d+$/.test(mode) ? parseInt(mode, 10) : Infinity;
-      const appendCards = (container, list, key) => {
-        const shown = baseLimit === Infinity ? list.length : Math.min(list.length, baseLimit + (pipelineExtra[key] || 0));
-        list.slice(0, shown).forEach((c) => container.appendChild(buildPipelineCard(c)));
-        if (shown < list.length) {
-          const left = list.length - shown;
-          const more = document.createElement("div");
-          more.className = "pc-more";
-          more.innerHTML = `<button type="button" data-n="25">Ver mas (+${Math.min(25, left)})</button><button type="button" data-n="all">Ver todos (${left} mas)</button>`;
-          more.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
-            pipelineExtra[key] = (pipelineExtra[key] || 0) + (b.dataset.n === "all" ? left : 25);
-            renderPipeline();
-          }));
-          container.appendChild(more);
-        }
-      };
+      const sumValue = (list) => list.reduce((s, c) => s + clientPipelineValue(c), 0);
       const subs = subsFor(stage);
-      if (subs.length) {
-        subs.forEach((sub) => {
-          const list = stageClients.filter((c) => clientSub(c) === sub);
-          const st = METHOD.stages[sub] || {};
-          const key = `${stage}|${sub}`;
-          const overCount = st.maxNegocios && list.length > st.maxNegocios;
-          const lateCount = list.filter((c) => subDaysOver(c) > 0).length;
-          const sec = document.createElement("div");
-          sec.className = "pc-sub" + (subsClosed[key] ? " closed" : "") + (subsRulesOpen[key] ? " rules-open" : "");
-          const rows = [
-            ["Quienes llegan", st.llegan], ["Objetivo", st.objetivo], ["Responsable", st.responsable],
-            ["Maximo de negocios", st.maxNegocios ? String(st.maxNegocios) : (st.llegan ? "Ilimitado" : "")],
-            ["Tiempo maximo en la etapa", st.maxDias ? st.maxDias + " dias" : ""], ["Tiempo de descuido", st.descuido],
-            ["Actividades antes de enviar a perdido", st.actividades], ["Tipificaciones de perdidos", st.perdidos],
-            ["Entregables al cliente", st.entregables], ["Recibimos del cliente", st.recibimos], ["Automatizaciones", st.automatizaciones],
-            ["Tasa de conversion a la siguiente", st.conversion ? Math.round(st.conversion * 100) + "%" : ""],
-          ].filter((r) => r[1]);
-          sec.innerHTML = `
-            <button type="button" class="pc-sub-head" aria-expanded="${subsClosed[key] ? "false" : "true"}">
-              <span class="caret">&#9662;</span>
-              <span class="nm">${escapeHtml(sub)}</span>
-              ${lateCount ? `<span class="pc-over" title="${lateCount} lead(s) pasaron el tiempo maximo en esta etapa">&#9201; ${lateCount}</span>` : ""}
-              <span class="cnt${overCount ? " over" : ""}" title="${overCount ? "Pasaste el maximo de negocios de esta etapa" : "Leads en esta sub-etapa"}">${list.length}${st.maxNegocios ? "/" + st.maxNegocios : ""}</span>
-              ${rows.length ? '<span class="info" role="button" title="Ver reglas de esta etapa">i</span>' : ""}
-            </button>
-            <div class="pc-rules">${rows.map((r) => `<b>${escapeHtml(r[0])}</b>${escapeHtml(r[1])}`).join("")}</div>
-            <div class="pc-sub-body"></div>`;
-          const sbody = sec.querySelector(".pc-sub-body");
-          if (list.length === 0) sbody.innerHTML = '<div class="pc-sub-empty">Sin leads</div>';
-          else appendCards(sbody, list, key);
-          sec.querySelector(".pc-sub-head").addEventListener("click", (e) => {
-            if (e.target.closest(".info")) {
-              subsRulesOpen[key] = !subsRulesOpen[key];
-              sec.classList.toggle("rules-open", !!subsRulesOpen[key]);
-              if (subsRulesOpen[key]) { sec.classList.remove("closed"); delete subsClosed[key]; try { localStorage.setItem(SUBS_KEY, JSON.stringify(subsClosed)); } catch (er) {} }
-              return;
-            }
-            const closed = sec.classList.toggle("closed");
-            if (closed) subsClosed[key] = true; else delete subsClosed[key];
-            try { localStorage.setItem(SUBS_KEY, JSON.stringify(subsClosed)); } catch (er) {}
-            e.currentTarget.setAttribute("aria-expanded", closed ? "false" : "true");
-          });
-          sec.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); sec.classList.add("drag-over"); });
-          sec.addEventListener("dragleave", (e) => { if (!sec.contains(e.relatedTarget)) sec.classList.remove("drag-over"); });
-          sec.addEventListener("drop", (e) => {
-            e.preventDefault(); e.stopPropagation();
-            sec.classList.remove("drag-over");
-            if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage, sub);
-          });
-          body.appendChild(sec);
-        });
-      } else if (stageClients.length === 0) {
-        body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
+      const infoKeys = METHOD.info && METHOD.info[stage] ? METHOD.info[stage] : subs;
+      if (!subs.length) {
+        board.appendChild(makeCol({ stage, title: stage, key: stage, list: stageClients, value: sumValue(stageClients), infoKeys }));
+        return;
+      }
+      const view = viewOf(stage);
+      const counts = {};
+      subs.forEach((sb) => { counts[sb] = stageClients.filter((c) => clientSub(c) === sb).length; });
+      // Selector de sub-etapas: filtra (columna plegada) o elige que columnas ver (desplegada)
+      const chips = document.createElement("div");
+      chips.className = "pc-chips";
+      const visible = view.sel && view.sel.length ? subs.filter((sb) => view.sel.indexOf(sb) !== -1) : subs.slice();
+      const addChip = (label, active, onClick, title) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pc-chip" + (active ? " on" : "");
+        b.textContent = label;
+        if (title) b.title = title;
+        b.addEventListener("click", onClick);
+        chips.appendChild(b);
+      };
+      if (view.expanded) {
+        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, visible.indexOf(sb) !== -1, () => {
+          const cur = visible.slice();
+          const i = cur.indexOf(sb);
+          if (i !== -1) { if (cur.length > 1) cur.splice(i, 1); } else cur.push(sb);
+          view.sel = cur.length === subs.length ? null : cur;
+          saveViews(); renderPipeline();
+        }, "Mostrar u ocultar esta columna"));
       } else {
-        appendCards(body, stageClients, stage);
+        addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; saveViews(); renderPipeline(); });
+        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
       }
 
-      body.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        body.classList.add("drag-over");
+      if (!view.expanded) {
+        const flat = view.filter ? stageClients.filter((c) => clientSub(c) === view.filter) : stageClients;
+        board.appendChild(makeCol({ stage, title: stage, key: stage, list: flat, value: sumValue(flat), chips, canExpand: true, dropSub: view.filter, infoKeys: view.filter ? [view.filter] : subs }));
+        return;
+      }
+      // Desplegada: cada sub-etapa es una columna al lado, con el mismo tamano
+      const group = document.createElement("div");
+      group.className = "pipeline-group";
+      const head = document.createElement("div");
+      head.className = "pipeline-group-head";
+      head.innerHTML = `<span class="pipeline-col-title status-${escapeHtml(stage)}">${escapeHtml(stage)}</span><span class="pipeline-col-count">${stageClients.length}</span>`;
+      const back = document.createElement("button");
+      back.type = "button";
+      back.className = "pc-expand on";
+      back.title = "Plegar las sub-etapas en una sola columna";
+      back.innerHTML = "&#8646; Plegar";
+      back.addEventListener("click", () => { view.expanded = false; saveViews(); renderPipeline(); });
+      head.appendChild(back);
+      head.appendChild(chips);
+      group.appendChild(head);
+      const cols = document.createElement("div");
+      cols.className = "pipeline-group-cols";
+      visible.forEach((sb) => {
+        const list = stageClients.filter((c) => clientSub(c) === sb);
+        const st = METHOD.stages[sb] || {};
+        cols.appendChild(makeCol({ stage, sub: sb, title: sb, key: `${stage}|${sb}`, list, value: sumValue(list), max: st.maxNegocios, dropSub: sb, infoKeys: [sb] }));
       });
-      body.addEventListener("dragleave", () => {
-        body.classList.remove("drag-over");
-      });
-      body.addEventListener("drop", (e) => {
-        e.preventDefault();
-        body.classList.remove("drag-over");
-        if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage);
-      });
-
-      board.appendChild(col);
+      group.appendChild(cols);
+      board.appendChild(group);
     });
 
     fitPipelineColumns();
