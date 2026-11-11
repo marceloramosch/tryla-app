@@ -5,9 +5,9 @@ window.TRYLA_METHOD = {
     Cold: ["Potencial", "Interesado", "Contactado"],
     Warm: ["Calificado", "Agendado"],
     HOT: ["Cita o Videollamada", "Cotizacion Realizada"],
-    Cash: ["Pagado"],
-    Lost: ["Perdido"],
   },
+  // Columnas sin sub-etapas: solo muestran la "i" con las reglas (Closed = pagado)
+  info: { Closed: ["Pagado"], Lost: ["Perdido"] },
   stages: {
     "Potencial": {
       llegan: "Son todos los que creo que pueden comprar mi producto",
