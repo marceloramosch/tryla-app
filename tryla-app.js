@@ -2603,8 +2603,17 @@
     const tabsWrap = document.querySelector(".tabs-wrap");
     const stuck = window.innerWidth > 900 && tabsWrap ? tabsWrap.offsetHeight : 0;
     document.documentElement.style.setProperty("--pl-top", stuck + "px");
-    // alto que queda de pantalla con pestanas y encabezado del pipeline fijos arriba
-    const h = Math.max(260, window.innerHeight - stuck - panel.offsetHeight - 38);
+    const fit = !pipelineLimitEl || pipelineLimitEl.value === "fit";
+    const pipelineOpen = !!document.querySelector("#tab-pipeline.active");
+    // En modo "Ajustar" el pie de pagina se oculta para que las columnas lleguen hasta abajo
+    document.body.classList.toggle("pl-fit", fit && pipelineOpen);
+    // Alto: lo que queda de pantalla debajo de las pestanas y el encabezado fijos,
+    // menos lo que ocupan el titulo y los paddings de la columna (se mide en vivo).
+    const col = board.querySelector(".pipeline-col");
+    const colBody = col && col.querySelector(".pipeline-col-body");
+    let extra = 100;
+    if (col && colBody) extra = Math.max(60, col.offsetHeight - colBody.clientHeight);
+    const h = Math.max(260, window.innerHeight - stuck - panel.offsetHeight - extra - 40);
     board.style.setProperty("--pl-body-h", h + "px");
   }
   window.addEventListener("resize", fitPipelineColumns);
@@ -2674,6 +2683,7 @@
       board.appendChild(col);
     });
 
+    fitPipelineColumns();
     renderPipelineList();
   }
 
@@ -3729,6 +3739,7 @@
 
     if (name === "dashboard") renderDashboard();
     if (name === "pipeline") renderPipeline();
+    else document.body.classList.remove("pl-fit");
     if (name === "tasks") renderTasksTab();
     if (name === "intel") {
       requestAnimationFrame(() => {
