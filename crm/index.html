@@ -491,6 +491,26 @@
     max-height:var(--pl-body-h, calc(100vh - 380px)); overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; padding:0 2px 18px 0;
     border-radius:8px; transition: background .15s ease;
   }
+  .pc-sub{ border:1px solid var(--border); border-radius:10px; background:var(--panel); }
+  .pc-sub-head{ display:flex; align-items:center; gap:6px; width:100%; border:0; background:none; cursor:pointer; padding:7px 9px; color:var(--text); font:inherit; font-weight:700; font-size:12.5px; text-align:left; }
+  .pc-sub-head .caret{ width:12px; color:var(--blue); transition:transform .15s; }
+  .pc-sub.closed .caret{ transform:rotate(-90deg); }
+  .pc-sub-head .nm{ flex:1; min-width:0; }
+  .pc-sub-head .cnt{ background:var(--border); border-radius:999px; padding:1px 8px; font-size:11px; }
+  .pc-sub-head .cnt.over{ background:#c0392b; color:#fff; }
+  .pc-sub-head .info{ border:1px solid var(--border); border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; color:var(--blue); background:var(--panel); }
+  .pc-sub-body{ display:flex; flex-direction:column; gap:8px; padding:0 8px 8px; }
+  .pc-sub.closed .pc-sub-body, .pc-sub.closed .pc-rules{ display:none; }
+  .pc-rules{ display:none; } .pc-sub.rules-open:not(.closed) .pc-rules{ display:block; }
+  .pc-sub.drag-over{ outline:2px dashed var(--blue); background:rgba(91,84,255,.08); }
+  .pc-rules{ margin:0 8px 8px; padding:8px 10px; border-radius:8px; background:var(--light); font-size:11.5px; line-height:1.4; color:var(--text); }
+  :root[data-theme="dark"] .pc-rules{ background:var(--bg); }
+  .pc-rules b{ display:block; margin-top:5px; font-size:10.5px; letter-spacing:.4px; text-transform:uppercase; color:var(--blue); }
+  .pc-rules b:first-child{ margin-top:0; }
+  .pc-sub-empty{ font-size:11px; color:var(--text2); text-align:center; padding:4px 0; }
+  .pc-over{ display:inline-block; font-size:10.5px; font-weight:800; color:#fff; background:#c0392b; border-radius:999px; padding:1px 7px; margin-left:4px; }
+  .pc-actions-row{ flex-wrap:wrap; }
+  .pc-sub-select{ order:-1; flex:1 1 100%; max-width:none; font-size:11px; padding:3px 4px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--text); }
   body.pl-fit footer{ display:none; }
   body.pl-fit main{ padding-bottom:12px; }
   .pipeline-board.pl-expanded .pipeline-col-body{ max-height:none; overflow:visible; padding-bottom:6px; }
@@ -2156,6 +2176,7 @@
 <script src="../blueprints.js"></script>
 <script src="../crm-i18n.js"></script>
 <script src="../data/equipment-i18n.js"></script>
+<script src="../data/method.js"></script>
 <script src="../tryla-app.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
 <script src="../location-intel.js"></script>
