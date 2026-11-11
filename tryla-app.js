@@ -2360,7 +2360,7 @@
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}${c.grupo === COLD_GROUP ? " · Utah" : ""}</div>` : ""}
       ${lastActivityLineHtml(c)}
-      ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}</div>` : ""}
+      ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}${subDaysOver(c) ? `<span class="pc-over" title="Paso el tiempo maximo de la etapa ${escapeHtml(clientSub(c) || "")}">&#9201; +${subDaysOver(c)}d</span>` : ""}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       <div class="pc-finance" style="display:none;">
         <span class="pc-finance-label">🏦 Financiamiento</span>
@@ -2384,6 +2384,7 @@
       </div>
       <div class="pc-actions-row">
         <select class="pc-move" aria-label="Mover a otra etapa"></select>
+        ${subsFor(c.status || "Cold").length ? '<select class="pc-sub-select" aria-label="Sub-etapa"></select>' : ""}
         <button type="button" class="pc-edit">Editar</button>
         <button type="button" class="pc-delete" title="${c.status === "Trash" ? "Eliminar definitivamente" : "Mandar a Trash"}">🗑</button>
       </div>
@@ -2397,6 +2398,17 @@
       if (s === c.status) o.selected = true;
       moveSelect.appendChild(o);
     });
+    const subSelect = card.querySelector(".pc-sub-select");
+    if (subSelect) {
+      subsFor(c.status || "Cold").forEach((sb) => {
+        const o = document.createElement("option");
+        o.value = sb;
+        o.textContent = sb;
+        if (sb === clientSub(c)) o.selected = true;
+        subSelect.appendChild(o);
+      });
+      subSelect.addEventListener("change", () => moveClientToStage(c.id, c.status || "Cold", subSelect.value));
+    }
     setStatusClass(moveSelect, c.status || "Cold");
     moveSelect.addEventListener("change", () => {
       setStatusClass(moveSelect, moveSelect.value);
@@ -2520,18 +2532,44 @@
   // clientId, stage -- se llama tanto al cambiar de etapa (select o soltar en otra
   // columna) como al soltar en la MISMA columna (reordenar) -- en ambos casos cuenta
   // como actividad y la tarjeta sube al tope de su columna.
-  function moveClientToStage(clientId, stage) {
+  // ===== Sub-etapas del metodo comercial (data/method.js) =====
+  const METHOD = window.TRYLA_METHOD || { columns: {}, stages: {} };
+  const SUBS_KEY = "trylaPipelineSubs";
+  let subsClosed = {};
+  try { subsClosed = JSON.parse(localStorage.getItem(SUBS_KEY) || "{}") || {}; } catch (e) { subsClosed = {}; }
+  const subsRulesOpen = {};
+  function subsFor(stage) { return METHOD.columns[stage] || []; }
+  function clientSub(c) {
+    const subs = subsFor(c.status || "Cold");
+    if (!subs.length) return null;
+    return subs.indexOf(c.substage) !== -1 ? c.substage : subs[0];
+  }
+  function subDaysOver(c) {
+    const sub = clientSub(c);
+    const st = sub && METHOD.stages[sub];
+    if (!st || !st.maxDias || !c.subAt) return 0;
+    const d = (Date.now() - c.subAt) / 86400000;
+    return d > st.maxDias ? Math.floor(d - st.maxDias) : 0;
+  }
+
+  function moveClientToStage(clientId, stage, sub) {
     const c = clients.find((x) => x.id === clientId);
     if (!c) return;
     const stageChanged = c.status !== stage;
+    const prevSub = clientSub(c);
     c.status = stage;
+    const subs = subsFor(stage);
+    c.substage = subs.length ? (subs.indexOf(sub) !== -1 ? sub : subs[0]) : null;
+    const subChanged = (c.substage || null) !== (stageChanged ? null : prevSub);
+    if (stageChanged || subChanged) c.subAt = Date.now();
     c.movedAt = Date.now();
     if (stageChanged) {
       c.stageHistory = c.stageHistory || [];
       c.stageHistory.push({ stage, at: Date.now() });
     }
     persistClients();
-    if (stageChanged) logActivity(`Movio a "${c.name}" a la etapa "${stage}"`);
+    if (stageChanged) logActivity(`Movio a "${c.name}" a la etapa "${stage}"${c.substage ? " (" + c.substage + ")" : ""}`);
+    else if (subChanged) logActivity(`Movio a "${c.name}" a la sub-etapa "${c.substage}"`);
     lastMovedClientId = clientId;
     renderPipeline();
     renderClientsTable();
@@ -2649,24 +2687,79 @@
       `;
 
       const body = col.querySelector(".pipeline-col-body");
-      if (stageClients.length === 0) {
-        body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
-      } else {
-        const mode = pipelineLimitEl ? pipelineLimitEl.value : "fit";
-        const baseLimit = /^\d+$/.test(mode) ? parseInt(mode, 10) : Infinity;
-        const shown = baseLimit === Infinity ? stageClients.length : Math.min(stageClients.length, baseLimit + (pipelineExtra[stage] || 0));
-        stageClients.slice(0, shown).forEach((c) => body.appendChild(buildPipelineCard(c)));
-        if (shown < stageClients.length) {
-          const left = stageClients.length - shown;
+      const mode = pipelineLimitEl ? pipelineLimitEl.value : "fit";
+      const baseLimit = /^\d+$/.test(mode) ? parseInt(mode, 10) : Infinity;
+      const appendCards = (container, list, key) => {
+        const shown = baseLimit === Infinity ? list.length : Math.min(list.length, baseLimit + (pipelineExtra[key] || 0));
+        list.slice(0, shown).forEach((c) => container.appendChild(buildPipelineCard(c)));
+        if (shown < list.length) {
+          const left = list.length - shown;
           const more = document.createElement("div");
           more.className = "pc-more";
           more.innerHTML = `<button type="button" data-n="25">Ver mas (+${Math.min(25, left)})</button><button type="button" data-n="all">Ver todos (${left} mas)</button>`;
           more.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
-            pipelineExtra[stage] = (pipelineExtra[stage] || 0) + (b.dataset.n === "all" ? left : 25);
+            pipelineExtra[key] = (pipelineExtra[key] || 0) + (b.dataset.n === "all" ? left : 25);
             renderPipeline();
           }));
-          body.appendChild(more);
+          container.appendChild(more);
         }
+      };
+      const subs = subsFor(stage);
+      if (subs.length) {
+        subs.forEach((sub) => {
+          const list = stageClients.filter((c) => clientSub(c) === sub);
+          const st = METHOD.stages[sub] || {};
+          const key = `${stage}|${sub}`;
+          const overCount = st.maxNegocios && list.length > st.maxNegocios;
+          const lateCount = list.filter((c) => subDaysOver(c) > 0).length;
+          const sec = document.createElement("div");
+          sec.className = "pc-sub" + (subsClosed[key] ? " closed" : "") + (subsRulesOpen[key] ? " rules-open" : "");
+          const rows = [
+            ["Quienes llegan", st.llegan], ["Objetivo", st.objetivo], ["Responsable", st.responsable],
+            ["Maximo de negocios", st.maxNegocios ? String(st.maxNegocios) : (st.llegan ? "Ilimitado" : "")],
+            ["Tiempo maximo en la etapa", st.maxDias ? st.maxDias + " dias" : ""], ["Tiempo de descuido", st.descuido],
+            ["Actividades antes de enviar a perdido", st.actividades], ["Tipificaciones de perdidos", st.perdidos],
+            ["Entregables al cliente", st.entregables], ["Recibimos del cliente", st.recibimos], ["Automatizaciones", st.automatizaciones],
+            ["Tasa de conversion a la siguiente", st.conversion ? Math.round(st.conversion * 100) + "%" : ""],
+          ].filter((r) => r[1]);
+          sec.innerHTML = `
+            <button type="button" class="pc-sub-head" aria-expanded="${subsClosed[key] ? "false" : "true"}">
+              <span class="caret">&#9662;</span>
+              <span class="nm">${escapeHtml(sub)}</span>
+              ${lateCount ? `<span class="pc-over" title="${lateCount} lead(s) pasaron el tiempo maximo en esta etapa">&#9201; ${lateCount}</span>` : ""}
+              <span class="cnt${overCount ? " over" : ""}" title="${overCount ? "Pasaste el maximo de negocios de esta etapa" : "Leads en esta sub-etapa"}">${list.length}${st.maxNegocios ? "/" + st.maxNegocios : ""}</span>
+              ${rows.length ? '<span class="info" role="button" title="Ver reglas de esta etapa">i</span>' : ""}
+            </button>
+            <div class="pc-rules">${rows.map((r) => `<b>${escapeHtml(r[0])}</b>${escapeHtml(r[1])}`).join("")}</div>
+            <div class="pc-sub-body"></div>`;
+          const sbody = sec.querySelector(".pc-sub-body");
+          if (list.length === 0) sbody.innerHTML = '<div class="pc-sub-empty">Sin leads</div>';
+          else appendCards(sbody, list, key);
+          sec.querySelector(".pc-sub-head").addEventListener("click", (e) => {
+            if (e.target.closest(".info")) {
+              subsRulesOpen[key] = !subsRulesOpen[key];
+              sec.classList.toggle("rules-open", !!subsRulesOpen[key]);
+              if (subsRulesOpen[key]) { sec.classList.remove("closed"); delete subsClosed[key]; try { localStorage.setItem(SUBS_KEY, JSON.stringify(subsClosed)); } catch (er) {} }
+              return;
+            }
+            const closed = sec.classList.toggle("closed");
+            if (closed) subsClosed[key] = true; else delete subsClosed[key];
+            try { localStorage.setItem(SUBS_KEY, JSON.stringify(subsClosed)); } catch (er) {}
+            e.currentTarget.setAttribute("aria-expanded", closed ? "false" : "true");
+          });
+          sec.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); sec.classList.add("drag-over"); });
+          sec.addEventListener("dragleave", (e) => { if (!sec.contains(e.relatedTarget)) sec.classList.remove("drag-over"); });
+          sec.addEventListener("drop", (e) => {
+            e.preventDefault(); e.stopPropagation();
+            sec.classList.remove("drag-over");
+            if (dragSrcClientId) moveClientToStage(dragSrcClientId, stage, sub);
+          });
+          body.appendChild(sec);
+        });
+      } else if (stageClients.length === 0) {
+        body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
+      } else {
+        appendCards(body, stageClients, stage);
       }
 
       body.addEventListener("dragover", (e) => {
