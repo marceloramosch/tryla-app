@@ -160,6 +160,7 @@
 
   /* ===== Tabs ===== */
   .tabs-wrap{ position:relative; }
+  @media (min-width: 901px){ .tabs-wrap{ position:sticky; top:0; z-index:40; background:var(--bg); padding:8px 0 2px; margin-bottom:8px; } .tabs-wrap .tabs{ margin-bottom:8px; } }
   .tabs{ display:flex; gap:6px; margin-bottom:18px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
   .tabs::-webkit-scrollbar{ display:none; }
   .task-reminder{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px auto 0; max-width:1280px; padding:10px 14px; background:#FFF4E0; border:1px solid #F5C77E; border-radius:10px; color:#7A4A00; font-size:14px; font-weight:600; }
@@ -469,7 +470,7 @@
   .status-Rechazada{ background:#FBE1E1; color:#c0392b; }
 
   /* ===== Pipeline (kanban de leads, estilo HubSpot) ===== */
-  #tab-pipeline > div > .panel:first-child{ position:sticky; top:0; z-index:30; box-shadow:0 6px 14px -8px rgba(6,3,141,.28); }
+  #tab-pipeline > div > .panel:first-child{ position:sticky; top:var(--pl-top, 64px); z-index:30; box-shadow:0 6px 14px -8px rgba(6,3,141,.28); }
   #tab-pipeline > div > .panel:first-child > .hint{ display:none; }
   .pipeline-board{ display:flex; gap:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px; align-items:flex-start; }
   .pipeline-col{

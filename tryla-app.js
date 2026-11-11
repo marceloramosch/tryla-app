@@ -2600,7 +2600,11 @@
     const board = document.getElementById("pipelineBoard");
     const panel = document.querySelector("#tab-pipeline > div > .panel");
     if (!board || !panel) return;
-    const h = Math.max(260, window.innerHeight - panel.offsetHeight - 200);
+    const tabsWrap = document.querySelector(".tabs-wrap");
+    const stuck = window.innerWidth > 900 && tabsWrap ? tabsWrap.offsetHeight : 0;
+    document.documentElement.style.setProperty("--pl-top", stuck + "px");
+    // alto que queda de pantalla con pestanas y encabezado del pipeline fijos arriba
+    const h = Math.max(260, window.innerHeight - stuck - panel.offsetHeight - 38);
     board.style.setProperty("--pl-body-h", h + "px");
   }
   window.addEventListener("resize", fitPipelineColumns);
