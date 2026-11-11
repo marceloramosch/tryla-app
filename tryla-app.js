@@ -2613,7 +2613,9 @@
     const colBody = col && col.querySelector(".pipeline-col-body");
     let extra = 100;
     if (col && colBody) extra = Math.max(60, col.offsetHeight - colBody.clientHeight);
-    const h = Math.max(260, window.innerHeight - stuck - panel.offsetHeight - extra - 40);
+    const fitH = Math.max(260, window.innerHeight - stuck - panel.offsetHeight - extra - 40);
+    // "tall": cada columna es mucho mas alta que la pantalla (la pagina baja para verlas) y aun asi tiene su propia barra
+    const h = pipelineLimitEl && pipelineLimitEl.value === "tall" ? Math.max(fitH, window.innerHeight * 3) : fitH;
     board.style.setProperty("--pl-body-h", h + "px");
   }
   window.addEventListener("resize", fitPipelineColumns);
@@ -2627,7 +2629,7 @@
     const filtered = filterPipelineClients();
 
     board.innerHTML = "";
-    board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit");
+    board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit" && pipelineLimitEl.value !== "tall");
     PIPELINE_STAGES.forEach((stage) => {
       // Mas reciente (nota, llamada, o arrastrada) arriba de la columna
       const stageClients = filtered
@@ -4028,7 +4030,7 @@
   }
   if (pipelineLimitEl) {
     const lv = localStorage.getItem(PIPELINE_LIMIT_KEY);
-    if (lv && ["fit", "10", "25", "50", "all"].indexOf(lv) !== -1) pipelineLimitEl.value = lv;
+    if (lv && ["tall", "fit", "10", "25", "50", "all"].indexOf(lv) !== -1) pipelineLimitEl.value = lv;
     pipelineLimitEl.addEventListener("change", () => {
       try { localStorage.setItem(PIPELINE_LIMIT_KEY, pipelineLimitEl.value); } catch (e) {}
       Object.keys(pipelineExtra).forEach((k) => delete pipelineExtra[k]);
