@@ -2680,6 +2680,11 @@
     updatePipelineScopeLabels();
     const filtered = filterPipelineClients();
 
+    // Conservar la posicion al repintar: scroll de la pagina, del tablero y de cada columna
+    const keepY = window.scrollY, keepX = board.scrollLeft;
+    const keepCols = {};
+    board.querySelectorAll(".pipeline-col-body[data-key]").forEach((b) => { keepCols[b.dataset.key] = b.scrollTop; });
+    board.style.minHeight = board.offsetHeight + "px";
     board.innerHTML = "";
     board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit" && pipelineLimitEl.value !== "tall");
     const mode = pipelineLimitEl ? pipelineLimitEl.value : "fit";
@@ -2735,6 +2740,7 @@
       `;
       if (o.chips) col.querySelector(".pipeline-col-value").after(o.chips);
       const body = col.querySelector(".pipeline-col-body");
+      body.dataset.key = o.key;
       if (!o.list.length) body.innerHTML = '<div class="pipeline-empty">Sin leads aqui</div>';
       else appendCards(body, o.list, o.key);
       const info = col.querySelector(".pc-info");
@@ -2838,9 +2844,21 @@
     } else if (plAnim === "filter") {
       board.querySelectorAll(".pipeline-col-body").forEach((b) => b.classList.add("anim-fade"));
     }
+    // Restaurar posiciones (sin saltos) y, si se desplego/plego, acercar la columna de forma horizontal
+    board.querySelectorAll(".pipeline-col-body[data-key]").forEach((b) => { if (keepCols[b.dataset.key]) b.scrollTop = keepCols[b.dataset.key]; });
+    board.style.minHeight = "";
+    window.scrollTo(0, keepY);
+    board.style.scrollBehavior = "auto";
+    board.scrollLeft = keepX;
+    board.style.scrollBehavior = "";
     if (plScrollTo) {
       const target = Array.from(board.children).find((c) => c.querySelector(".status-" + plScrollTo));
-      if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+      if (target) {
+        const bl = board.getBoundingClientRect().left, tl = target.getBoundingClientRect().left - bl + board.scrollLeft;
+        const want = Math.max(0, Math.min(tl - 12, board.scrollWidth - board.clientWidth));
+        const tr = target.getBoundingClientRect().right - bl + board.scrollLeft;
+        if (tl < board.scrollLeft || tr > board.scrollLeft + board.clientWidth) board.scrollTo({ left: want, behavior: "smooth" });
+      }
     }
     plAnim = null;
     plScrollTo = null;
