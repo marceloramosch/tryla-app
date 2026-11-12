@@ -174,8 +174,9 @@
   const PIPELINE_LIMIT_KEY = "trylaPipelineLimit";
   const pipelineLimitEl = document.getElementById("pipelineLimit");
   const pipelineQuoteEl = document.getElementById("pipelineQuote");
-  if (pipelineQuoteEl) pipelineQuoteEl.addEventListener("change", () => { plAnim = "filter"; renderPipeline(); });
+  if (pipelineQuoteEl) pipelineQuoteEl.addEventListener("change", () => { renderPipeline(); });
   let plScrollTo = null;
+  let plAnimStage = null; // columna a la que se le aplica la animacion
   let plAnim = null; // animacion de la siguiente render: "expand" | "collapse" | "filter"
   const pipelineExtra = {}; // etapa -> tarjetas extra mostradas con "Ver mas"
   const pipelineScopeEl = document.getElementById("pipelineScope");
@@ -2749,7 +2750,7 @@
         col.querySelector(".pc-rules-panel").classList.toggle("open", !!subsRulesOpen[o.key]);
       });
       const ex = col.querySelector(".pc-expand");
-      if (ex) ex.addEventListener("click", () => { const v = viewOf(o.stage); v.expanded = !v.expanded; plAnim = v.expanded ? "expand" : "collapse"; plScrollTo = o.stage; saveViews(); renderPipeline(); });
+      if (ex) ex.addEventListener("click", () => { const v = viewOf(o.stage); v.expanded = !v.expanded; plAnim = v.expanded ? "expand" : "collapse"; plAnimStage = o.stage; plScrollTo = o.stage; saveViews(); renderPipeline(); });
       body.addEventListener("dragover", (e) => { e.preventDefault(); body.classList.add("drag-over"); });
       body.addEventListener("dragleave", () => body.classList.remove("drag-over"));
       body.addEventListener("drop", (e) => {
@@ -2794,11 +2795,11 @@
           const i = cur.indexOf(sb);
           if (i !== -1) { if (cur.length > 1) cur.splice(i, 1); } else cur.push(sb);
           view.sel = cur.length === subs.length ? null : cur;
-          plAnim = "filter"; saveViews(); renderPipeline();
+          plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline();
         }, "Mostrar u ocultar esta columna"));
       } else {
-        addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; plAnim = "filter"; saveViews(); renderPipeline(); });
-        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; plAnim = "filter"; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
+        addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline(); });
+        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
       }
 
       if (!view.expanded) {
@@ -2817,7 +2818,7 @@
       back.className = "pc-expand on";
       back.title = "Plegar las sub-etapas en una sola columna";
       back.innerHTML = "&#8646; Plegar";
-      back.addEventListener("click", () => { view.expanded = false; plAnim = "collapse"; plScrollTo = stage; saveViews(); renderPipeline(); });
+      back.addEventListener("click", () => { view.expanded = false; plAnim = "collapse"; plAnimStage = stage; plScrollTo = stage; saveViews(); renderPipeline(); });
       head.appendChild(back);
       head.appendChild(chips);
       group.appendChild(head);
@@ -2837,12 +2838,13 @@
 
     fitPipelineColumns();
     // Animaciones suaves segun lo que se hizo
-    if (plAnim === "expand") {
-      board.querySelectorAll(".pipeline-group").forEach((g) => g.classList.add("anim-in"));
-    } else if (plAnim === "collapse") {
-      Array.from(board.children).forEach((c) => { if (c.classList.contains("pipeline-col") && plScrollTo && c.querySelector(".status-" + plScrollTo)) c.classList.add("anim-in"); });
-    } else if (plAnim === "filter") {
-      board.querySelectorAll(".pipeline-col-body").forEach((b) => b.classList.add("anim-fade"));
+    if (plAnim && plAnimStage) {
+      const mine = Array.from(board.children).filter((c) => c.querySelector(".status-" + plAnimStage));
+      mine.forEach((c) => {
+        if (plAnim === "expand" && c.classList.contains("pipeline-group")) c.classList.add("anim-in");
+        else if (plAnim === "collapse" && c.classList.contains("pipeline-col")) c.classList.add("anim-in");
+        else if (plAnim === "filter") c.querySelectorAll(".pipeline-col-body").forEach((b) => b.classList.add("anim-fade"));
+      });
     }
     // Restaurar posiciones (sin saltos) y, si se desplego/plego, acercar la columna de forma horizontal
     board.querySelectorAll(".pipeline-col-body[data-key]").forEach((b) => { if (keepCols[b.dataset.key]) b.scrollTop = keepCols[b.dataset.key]; });
@@ -2861,6 +2863,7 @@
       }
     }
     plAnim = null;
+    plAnimStage = null;
     plScrollTo = null;
     renderPipelineList();
   }
