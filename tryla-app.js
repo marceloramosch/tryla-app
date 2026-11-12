@@ -173,6 +173,10 @@
   const PIPELINE_PERIOD_KEY = "trylaPipelinePeriod";
   const PIPELINE_LIMIT_KEY = "trylaPipelineLimit";
   const pipelineLimitEl = document.getElementById("pipelineLimit");
+  const pipelineQuoteEl = document.getElementById("pipelineQuote");
+  if (pipelineQuoteEl) pipelineQuoteEl.addEventListener("change", () => { plAnim = "filter"; renderPipeline(); });
+  let plScrollTo = null;
+  let plAnim = null; // animacion de la siguiente render: "expand" | "collapse" | "filter"
   const pipelineExtra = {}; // etapa -> tarjetas extra mostradas con "Ver mas"
   const pipelineScopeEl = document.getElementById("pipelineScope");
   const pipelinePeriodEl = document.getElementById("pipelinePeriod");
@@ -2360,7 +2364,7 @@
       ${c.negocio ? `<div class="pc-negocio">${escapeHtml(c.negocio)}</div>` : ""}
       ${c.ciudad || c.fuente ? `<div class="pc-meta">${escapeHtml(c.ciudad || "")}${c.ciudad && c.fuente ? " · " : ""}${escapeHtml(c.fuente || "")}${c.grupo === COLD_GROUP ? " · Utah" : ""}</div>` : ""}
       ${lastActivityLineHtml(c)}
-      ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}${subDaysOver(c) ? `<span class="pc-over" title="Paso el tiempo maximo de la etapa ${escapeHtml(clientSub(c) || "")}">&#9201; +${subDaysOver(c)}d</span>` : ""}</div>` : ""}
+      ${c.createdAt ? `<div class="pc-date">${formatClientDate(c)}${quoteCount ? '<span class="pc-quoted" title="Ya tiene cotizacion">&#128196; Cotizado</span>' : ""}${subDaysOver(c) ? `<span class="pc-over" title="Paso el tiempo maximo de la etapa ${escapeHtml(clientSub(c) || "")}">&#9201; +${subDaysOver(c)}d</span>` : ""}</div>` : ""}
       ${value > 0 ? `<div class="pc-value">${formatMoney(value)}</div>` : ""}
       <div class="pc-finance" style="display:none;">
         <span class="pc-finance-label">🏦 Financiamiento</span>
@@ -2595,6 +2599,11 @@
       const matchesSearch = !q || [c.name, c.contacto, c.negocio, c.ciudad, c.notas, c.fuente].some((f) => (f || "").toLowerCase().includes(q));
       const matchesAssignee = !assignee || c.assignedTo === assignee;
       const matchesMine = !pipelineMyLeadsOnly || (myEmail && c.assignedTo === myEmail);
+      const qf = pipelineQuoteEl ? pipelineQuoteEl.value : "";
+      if (qf) {
+        const hasQuote = quotes.some((q) => q.clientId === c.id);
+        if ((qf === "with") !== hasQuote) return false;
+      }
       return matchesSearch && clientInDateRange(c, fromStr, toStr) && matchesAssignee && matchesMine;
     });
   }
@@ -2721,7 +2730,7 @@
           <span class="pipeline-col-count${over ? " over" : ""}" title="${over ? "Pasaste el maximo de negocios de esta etapa" : "Leads"}">${o.list.length}${maxN ? "/" + maxN : ""}</span>
         </div>
         <div class="pipeline-col-value">${o.value > 0 ? formatMoney(o.value) : ""}</div>
-        <div class="pc-rules-panel" ${subsRulesOpen[o.key] ? "" : "hidden"}>${hasInfo ? rulesHtml(o.infoKeys) : ""}</div>
+        <div class="pc-rules-panel${subsRulesOpen[o.key] ? " open" : ""}">${hasInfo ? rulesHtml(o.infoKeys) : ""}</div>
         <div class="pipeline-col-body"></div>
       `;
       if (o.chips) col.querySelector(".pipeline-col-value").after(o.chips);
@@ -2731,10 +2740,10 @@
       const info = col.querySelector(".pc-info");
       if (info) info.addEventListener("click", () => {
         subsRulesOpen[o.key] = !subsRulesOpen[o.key];
-        col.querySelector(".pc-rules-panel").hidden = !subsRulesOpen[o.key];
+        col.querySelector(".pc-rules-panel").classList.toggle("open", !!subsRulesOpen[o.key]);
       });
       const ex = col.querySelector(".pc-expand");
-      if (ex) ex.addEventListener("click", () => { const v = viewOf(o.stage); v.expanded = !v.expanded; saveViews(); renderPipeline(); });
+      if (ex) ex.addEventListener("click", () => { const v = viewOf(o.stage); v.expanded = !v.expanded; plAnim = v.expanded ? "expand" : "collapse"; plScrollTo = o.stage; saveViews(); renderPipeline(); });
       body.addEventListener("dragover", (e) => { e.preventDefault(); body.classList.add("drag-over"); });
       body.addEventListener("dragleave", () => body.classList.remove("drag-over"));
       body.addEventListener("drop", (e) => {
@@ -2779,11 +2788,11 @@
           const i = cur.indexOf(sb);
           if (i !== -1) { if (cur.length > 1) cur.splice(i, 1); } else cur.push(sb);
           view.sel = cur.length === subs.length ? null : cur;
-          saveViews(); renderPipeline();
+          plAnim = "filter"; saveViews(); renderPipeline();
         }, "Mostrar u ocultar esta columna"));
       } else {
-        addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; saveViews(); renderPipeline(); });
-        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
+        addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; plAnim = "filter"; saveViews(); renderPipeline(); });
+        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; plAnim = "filter"; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
       }
 
       if (!view.expanded) {
@@ -2802,7 +2811,7 @@
       back.className = "pc-expand on";
       back.title = "Plegar las sub-etapas en una sola columna";
       back.innerHTML = "&#8646; Plegar";
-      back.addEventListener("click", () => { view.expanded = false; saveViews(); renderPipeline(); });
+      back.addEventListener("click", () => { view.expanded = false; plAnim = "collapse"; plScrollTo = stage; saveViews(); renderPipeline(); });
       head.appendChild(back);
       head.appendChild(chips);
       group.appendChild(head);
@@ -2811,13 +2820,30 @@
       visible.forEach((sb) => {
         const list = stageClients.filter((c) => clientSub(c) === sb);
         const st = METHOD.stages[sb] || {};
+        const subIdx = cols.children.length;
         cols.appendChild(makeCol({ stage, sub: sb, title: sb, key: `${stage}|${sb}`, list, value: sumValue(list), max: st.maxNegocios, dropSub: sb, infoKeys: [sb] }));
       });
+      Array.from(cols.children).forEach((c, i) => c.style.setProperty("--i", i));
       group.appendChild(cols);
+      group.dataset.stage = stage;
       board.appendChild(group);
     });
 
     fitPipelineColumns();
+    // Animaciones suaves segun lo que se hizo
+    if (plAnim === "expand") {
+      board.querySelectorAll(".pipeline-group").forEach((g) => g.classList.add("anim-in"));
+    } else if (plAnim === "collapse") {
+      Array.from(board.children).forEach((c) => { if (c.classList.contains("pipeline-col") && plScrollTo && c.querySelector(".status-" + plScrollTo)) c.classList.add("anim-in"); });
+    } else if (plAnim === "filter") {
+      board.querySelectorAll(".pipeline-col-body").forEach((b) => b.classList.add("anim-fade"));
+    }
+    if (plScrollTo) {
+      const target = Array.from(board.children).find((c) => c.querySelector(".status-" + plScrollTo));
+      if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+    }
+    plAnim = null;
+    plScrollTo = null;
     renderPipelineList();
   }
 
