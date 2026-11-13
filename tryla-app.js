@@ -2685,6 +2685,9 @@
     const keepY = window.scrollY, keepX = board.scrollLeft;
     const keepCols = {};
     board.querySelectorAll(".pipeline-col-body[data-key]").forEach((b) => { keepCols[b.dataset.key] = b.scrollTop; });
+    const stageKey = (el) => el.dataset.stage || ((el.querySelector('[class*="status-"]') || {}).className || "").replace(/^.*status-(\S+).*$/, "$1");
+    const firstLefts = {};
+    if (plAnim === "expand" || plAnim === "collapse") Array.from(board.children).forEach((el) => { firstLefts[stageKey(el)] = el.getBoundingClientRect().left; });
     board.style.minHeight = board.offsetHeight + "px";
     board.innerHTML = "";
     board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit" && pipelineLimitEl.value !== "tall");
@@ -2853,6 +2856,15 @@
     board.style.scrollBehavior = "auto";
     board.scrollLeft = keepX;
     board.style.scrollBehavior = "";
+    // Las demas columnas se recorren (y descorren) suavemente a su nueva posicion
+    if ((plAnim === "expand" || plAnim === "collapse") && board.animate && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      Array.from(board.children).forEach((el) => {
+        const k = stageKey(el);
+        if (k === plAnimStage || !(k in firstLefts)) return;
+        const dx = firstLefts[k] - el.getBoundingClientRect().left;
+        if (Math.abs(dx) > 1) el.animate([{ transform: `translateX(${dx}px)` }, { transform: "translateX(0)" }], { duration: 460, easing: "cubic-bezier(.22,.9,.3,1)" });
+      });
+    }
     if (plScrollTo) {
       const target = Array.from(board.children).find((c) => c.querySelector(".status-" + plScrollTo));
       if (target) {
