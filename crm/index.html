@@ -199,6 +199,37 @@
   }
   .tab-btn.active, .tab-btn:hover{ background:var(--blue); color:#fff; }
   .tab-btn:hover{ transform:translateY(-1px); box-shadow:0 4px 10px rgba(91,84,255,.25); }
+  /* Botones de pestanas en vidrio liquido */
+  .tab-btn{
+    position:relative; overflow:hidden; color:var(--blue);
+    background:linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.38));
+    -webkit-backdrop-filter:blur(14px) saturate(1.8); backdrop-filter:blur(14px) saturate(1.8);
+    border:1px solid rgba(91,84,255,.28);
+    box-shadow:0 5px 16px -6px rgba(6,3,141,.38), inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(91,84,255,.2);
+    transition: background .22s ease, color .2s ease, transform .15s cubic-bezier(.22,.9,.3,1), box-shadow .22s ease, border-color .2s ease;
+  }
+  .tab-btn::after{ content:""; position:absolute; left:8%; right:8%; top:1px; height:42%; border-radius:999px; background:linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,0)); pointer-events:none; opacity:.7; }
+  .tab-btn:hover{ background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.55)); color:#3B36D6; transform:translateY(-1px) scale(1.02); box-shadow:0 8px 20px -8px rgba(91,84,255,.5), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(91,84,255,.2); }
+  .tab-btn:active{ transform:scale(.97); }
+  .tab-btn.active{ color:#fff; background:linear-gradient(180deg, rgba(120,114,255,.95), rgba(76,69,235,.82)); border-color:rgba(255,255,255,.55);
+    box-shadow:0 8px 22px -8px rgba(91,84,255,.75), inset 0 1px 0 rgba(255,255,255,.65), inset 0 -1px 0 rgba(6,3,141,.25); }
+  .tab-btn.active::after{ opacity:.55; }
+  :root[data-theme="dark"] .tab-btn{ color:#cfcdff; background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05)); border-color:rgba(255,255,255,.2);
+    box-shadow:0 6px 16px -8px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.25); }
+  :root[data-theme="dark"] .tab-btn::after{ background:linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0)); opacity:.5; }
+  :root[data-theme="dark"] .tab-btn:hover{ color:#fff; background:linear-gradient(180deg, rgba(255,255,255,.24), rgba(255,255,255,.1)); }
+  :root[data-theme="dark"] .tab-btn.active{ color:#fff; background:linear-gradient(180deg, rgba(120,114,255,.9), rgba(76,69,235,.75)); border-color:rgba(255,255,255,.4); }
+  /* Embudo de conversion: forma de embudo, centrado */
+  .funnel-v{ display:flex; flex-direction:column; gap:3px; max-width:760px; margin:10px auto 0; }
+  .fv-row{ display:grid; grid-template-columns:96px 1fr 104px; align-items:center; gap:10px; }
+  .fv-label{ font-size:12.5px; font-weight:700; color:var(--text); text-align:right; }
+  .fv-wrap{ display:flex; justify-content:center; height:42px; }
+  .fv-shape{ height:100%; min-width:6%; opacity:0; transform:scaleX(.4); transform-origin:center; animation:fvIn .55s cubic-bezier(.22,.9,.3,1) forwards; animation-delay:calc(var(--i,0) * 70ms); box-shadow:inset 0 1px 0 rgba(255,255,255,.35); }
+  .fv-pct{ font-size:12.5px; color:var(--text2); }
+  .fv-pct b{ color:var(--text); }
+  @keyframes fvIn{ to{ opacity:1; transform:scaleX(1); } }
+  @media (max-width:640px){ .fv-row{ grid-template-columns:64px 1fr 78px; gap:6px; } .fv-wrap{ height:36px; } }
+  @media (prefers-reduced-motion: reduce){ .fv-shape{ animation:none; opacity:1; transform:none; } }
   .tab-btn:active{ transform:translateY(0); }
   /* Degradados en los bordes que avisan que hay mas pestanas por ese lado
      (solo se activan en movil, donde .tabs hace scroll horizontal) */

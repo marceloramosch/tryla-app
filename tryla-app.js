@@ -4052,15 +4052,25 @@
     const { funnel, avgTime, bySource } = computeStageReports();
     const dashFunnelEl = document.getElementById("dashFunnel");
     if (dashFunnelEl) {
+      // Embudo de verdad: cada etapa es un trapecio centrado que se angosta hacia la siguiente
+      const n = funnel.length;
+      const lerp = (a2, b2, t) => Math.round(a2 + (b2 - a2) * t);
+      dashFunnelEl.className = "funnel-v";
       dashFunnelEl.innerHTML = funnel
-        .map(
-          ({ stage, count, pct }) => `
-        <div class="funnel-row">
-          <div class="funnel-label">${escapeHtml(stage)}</div>
-          <div class="funnel-bar-bg"><div class="funnel-bar" style="width:${pct}%"></div></div>
-          <div class="funnel-pct">${pct}% (${count})</div>
-        </div>`
-        )
+        .map(({ stage, count, pct }, i) => {
+          const w = Math.max(7, pct);
+          const nextPct = i < n - 1 ? Math.max(5, funnel[i + 1].pct) : Math.max(4, w * 0.65);
+          const bottom = Math.min(w, nextPct);
+          const inset = ((w - bottom) / 2 / w) * 100;
+          const t = n > 1 ? i / (n - 1) : 0;
+          const col = `rgb(${lerp(110, 6, t)},${lerp(104, 3, t)},${lerp(255, 141, t)})`;
+          return `
+        <div class="fv-row">
+          <div class="fv-label">${escapeHtml(stage)}</div>
+          <div class="fv-wrap"><div class="fv-shape" style="--i:${i}; width:${w}%; background:${col}; clip-path:polygon(0 0,100% 0,${(100 - inset).toFixed(1)}% 100%,${inset.toFixed(1)}% 100%);"></div></div>
+          <div class="fv-pct"><b>${pct}%</b> (${count})</div>
+        </div>`;
+        })
         .join("");
     }
     const dashAvgTimeEl = document.getElementById("dashAvgTime");
