@@ -2687,7 +2687,12 @@
     board.querySelectorAll(".pipeline-col-body[data-key]").forEach((b) => { keepCols[b.dataset.key] = b.scrollTop; });
     const stageKey = (el) => el.dataset.stage || ((el.querySelector('[class*="status-"]') || {}).className || "").replace(/^.*status-(\S+).*$/, "$1");
     const firstLefts = {};
-    if (plAnim === "expand" || plAnim === "collapse") Array.from(board.children).forEach((el) => { firstLefts[stageKey(el)] = el.getBoundingClientRect().left; });
+    const flipOn = plAnim === "expand" || plAnim === "collapse" || plAnim === "toggle";
+    const recordLefts = () => {
+      Array.from(board.children).forEach((el) => { firstLefts["T:" + stageKey(el)] = el.getBoundingClientRect().left; });
+      board.querySelectorAll(".pipeline-subcol[data-key]").forEach((el) => { firstLefts["S:" + el.dataset.key] = el.getBoundingClientRect().left; });
+    };
+    if (flipOn) recordLefts();
     board.style.minHeight = board.offsetHeight + "px";
     board.innerHTML = "";
     board.classList.toggle("pl-expanded", !!pipelineLimitEl && pipelineLimitEl.value !== "fit" && pipelineLimitEl.value !== "tall");
@@ -2725,6 +2730,7 @@
     const makeCol = (o) => {
       const col = document.createElement("div");
       col.className = "pipeline-col" + (o.sub ? " pipeline-subcol" : "");
+      col.dataset.key = o.key;
       const maxN = o.max || 0;
       const over = maxN && o.list.length > maxN;
       const late = o.list.filter((c) => subDaysOver(c) > 0).length;
@@ -2798,7 +2804,7 @@
           const i = cur.indexOf(sb);
           if (i !== -1) { if (cur.length > 1) cur.splice(i, 1); } else cur.push(sb);
           view.sel = cur.length === subs.length ? null : cur;
-          plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline();
+          plAnim = "toggle"; plAnimStage = stage; saveViews(); renderPipeline();
         }, "Mostrar u ocultar esta columna"));
       } else {
         addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline(); });
@@ -2856,13 +2862,18 @@
     board.style.scrollBehavior = "auto";
     board.scrollLeft = keepX;
     board.style.scrollBehavior = "";
-    // Las demas columnas se recorren (y descorren) suavemente a su nueva posicion
-    if ((plAnim === "expand" || plAnim === "collapse") && board.animate && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
-      Array.from(board.children).forEach((el) => {
-        const k = stageKey(el);
-        if (k === plAnimStage || !(k in firstLefts)) return;
-        const dx = firstLefts[k] - el.getBoundingClientRect().left;
+    // Las demas columnas (y las sub-columnas) se recorren y descorren suavemente a su nueva posicion
+    if (flipOn && board.animate && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      const slide = (el, key) => {
+        if (!(key in firstLefts)) return false;
+        const dx = firstLefts[key] - el.getBoundingClientRect().left;
         if (Math.abs(dx) > 1) el.animate([{ transform: `translateX(${dx}px)` }, { transform: "translateX(0)" }], { duration: 460, easing: "cubic-bezier(.22,.9,.3,1)" });
+        return true;
+      };
+      Array.from(board.children).forEach((el) => { const k = stageKey(el); if (k !== plAnimStage || plAnim === "toggle") slide(el, "T:" + k); });
+      board.querySelectorAll(".pipeline-subcol[data-key]").forEach((el) => {
+        const known = slide(el, "S:" + el.dataset.key);
+        if (!known && plAnim === "toggle") el.classList.add("anim-in");
       });
     }
     if (plScrollTo) {
