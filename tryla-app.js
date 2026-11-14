@@ -3255,7 +3255,26 @@
     updateTotals();
   }
 
-  document.getElementById("btnSave").addEventListener("click", () => {
+  // Aviso corto que no interrumpe (para guardados automaticos)
+  function quickToast(msg) {
+    let t = document.getElementById("quickToast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "quickToast";
+      t.style.cssText = "position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);background:rgba(6,3,141,.92);color:#fff;padding:9px 16px;border-radius:999px;font:600 13px Barlow,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transition:opacity .25s ease, transform .25s ease;z-index:99999;pointer-events:none;";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = "1";
+    t.style.transform = "translateX(-50%) translateY(0)";
+    clearTimeout(t._h);
+    t._h = setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateX(-50%) translateY(12px)"; }, 2200);
+  }
+
+  // Guarda la cotizacion actual. silent=true: sin alert (al generar el PDF o la vista previa)
+  function saveCurrentQuote(silent) {
+    // Nada que guardar si esta vacia
+    if (silent && !fCliente.value.trim() && !lineItems.length) return null;
     const { subtotal, deposito, saldo } = updateTotals();
     const client = findOrCreateClient(fCliente.value.trim(), fContacto.value.trim(), fEntrega.value.trim(), fEstatus.value);
 
@@ -3303,8 +3322,11 @@
     renderClientSelect();
     renderClientsTable();
     refreshEstatusField();
-    alert("Cotizacion guardada.");
-  });
+    if (silent) quickToast("Cotizacion guardada");
+    else alert("Cotizacion guardada.");
+    return quoteData;
+  }
+  document.getElementById("btnSave").addEventListener("click", () => saveCurrentQuote(false));
 
   // ===== Traducciones del documento =====
   const I18N = {
@@ -3872,11 +3894,13 @@
   }
 
   document.getElementById("btnPreview").addEventListener("click", () => {
+    saveCurrentQuote(true);
     buildPreview();
     previewWrap.scrollIntoView({ behavior: "smooth" });
   });
 
   document.getElementById("btnPrint").addEventListener("click", () => {
+    saveCurrentQuote(true);
     buildPreview();
     printWithTitle(currentDocTitle);
   });
