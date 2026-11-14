@@ -2524,8 +2524,7 @@
       dragSrcClientId = null;
     });
 
-    card.addEventListener("mouseenter", () => showCardTooltipFor(card, c));
-    card.addEventListener("mouseleave", hideCardTooltipSoon);
+    // (Se quito el pop up azul al pasar el cursor: la info completa sale al hacer clic en la tarjeta)
     card.addEventListener("click", (e) => {
       if (e.target.closest("select, input, button, a")) return;
       openLeadDrawer(c);
