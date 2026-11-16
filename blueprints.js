@@ -959,6 +959,7 @@
       if (skipped.length) alert("Blueprint built from the quote lines I could recognize.\nNot placed:\n• " + skipped.slice(0, 12).join("\n• ") + "\n\nAdd them by hand from the palette.");
     },
     count: function (name, nums) { return docsFor(name, nums).length; },
+    list: function () { var all = loadAll(); return Object.keys(all).map(function (k) { var d = all[k]; return { cliente: (d.ficha && d.ficha.cliente) || "", folio: (d.ficha && d.ficha.folio) || "", size: d.sizeId ? d.sizeId + " ft" : "", updated: d.updated || 0 }; }); },
     showFor: function (name, nums) { listFilter = String(name || ""); api.open(); showView("list"); },
     newFor: function (name) {
       if (!root) return; if (doc.objs.length && !confirm("Start a new blueprint for " + name + "? The sheet currently open will be replaced (save it first if you need it).")) return;
