@@ -3965,6 +3965,7 @@
     });
 
     if (name === "dashboard") renderDashboard();
+    if (name === "report" && window.TrylaWeeklyReport) window.TrylaWeeklyReport.render();
     if (name === "pipeline") renderPipeline();
     else document.body.classList.remove("pl-fit");
     if (name === "tasks") renderTasksTab();
@@ -3976,6 +3977,15 @@
   }
 
   // API minima para que otros modulos (Blueprint) agreguen lineas al cotizador
+  // Datos del CRM para el Reporte semanal (solo lectura)
+  window.TrylaCRM = {
+    data: function () { return { clients: clients, quotes: quotes, activityLog: activityLog }; },
+    value: clientPipelineValue,
+    totals: quoteTotals,
+    isInvoice: isInvoice,
+    syncSet: function (k, v) { syncSet(k, v); },
+  };
+
   window.TrylaQuote = {
     addLineItem: addLineItem,
     switchTab: switchTab,

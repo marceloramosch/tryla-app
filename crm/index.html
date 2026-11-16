@@ -1052,6 +1052,47 @@
   .doc-footer{ text-align:center; padding-top:24px; margin-top:30px; border-top:1px solid var(--silver); font-size:11px; color:#5b6b8c; }
   .doc-footer b{ color:var(--dark); }
 
+  /* Reporte semanal */
+  .wr-prow{ display:grid; grid-template-columns:1.1fr .9fr 2fr auto; gap:8px; margin-bottom:6px; }
+  .wr-prow input,.wr-prow select{ width:100%; min-width:0; }
+  @media(max-width:700px){ .wr-prow{ grid-template-columns:1fr 1fr; } .wr-prow .wr-pt{ grid-column:1 / -1; } }
+  .wr-doc{ background:#fff; color:#1a1d29; border:1px solid var(--border,#D6D3FF); border-radius:12px; padding:0 0 18px; margin-top:16px; overflow:hidden; font-family:'Barlow',system-ui,sans-serif; }
+  .wr-bar{ height:8px; background:#5B54FF; }
+  .wr-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px 28px 0; flex-wrap:wrap; }
+  .wr-logo{ height:44px; }
+  .wr-hd-r{ font-size:12px; color:#5C6270; text-align:right; line-height:1.5; }
+  .wr-title{ font-family:'Sora',sans-serif; font-weight:700; color:#06038D; font-size:28px; margin:16px 28px 0; }
+  .wr-sub{ color:#5C6270; margin:2px 28px 12px; font-size:14px; }
+  .wr-doc > *:not(.wr-bar):not(.wr-head):not(.wr-title):not(.wr-sub):not(.wr-foot){ margin-left:28px; margin-right:28px; }
+  .wr-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+  .wr-kpi{ background:#F1F0FF; border:1px solid #D6D3FF; border-radius:8px; padding:10px 12px; }
+  .wr-kpi b{ display:block; font-size:22px; color:#06038D; font-weight:800; }
+  .wr-kpi span{ font-size:12px; color:#5C6270; }
+  .wr-h2{ font-family:'Sora',sans-serif; font-weight:700; color:#06038D; font-size:16px; margin-top:22px !important; margin-bottom:8px; padding-bottom:4px; border-bottom:2px solid #D6D3FF; break-after:avoid; }
+  .wr-cat{ font-weight:800; color:#5B54FF; font-size:12px; text-transform:uppercase; letter-spacing:.04em; margin-top:8px !important; }
+  .wr-pr{ padding:3px 0; font-size:14px; }
+  .wr-ins{ background:#F1F0FF; border:1px solid #D6D3FF; border-radius:8px; padding:10px 12px; font-size:14px; line-height:1.5; }
+  .wr-t{ width:calc(100% - 56px); border-collapse:collapse; font-size:12.5px; }
+  .wr-t th{ text-align:left; background:#F1F0FF; color:#06038D; padding:6px 8px; border:1px solid #D6D3FF; font-weight:700; }
+  .wr-t td{ padding:5px 8px; border:1px solid #D6D3FF; vertical-align:top; }
+  .wr-t tr{ break-inside:avoid; }
+  .wr-t small{ color:#5C6270; }
+  .wr-empty,.wr-note{ font-size:12.5px; color:#5C6270; padding:4px 0; }
+  .wr-funnel{ display:flex; flex-direction:column; gap:5px; }
+  .wr-fr{ display:grid; grid-template-columns:64px 1fr 170px; gap:8px; align-items:center; font-size:12.5px; }
+  .wr-fw{ display:flex; justify-content:center; background:#F1F0FF; border-radius:6px; height:20px; }
+  .wr-fb{ background:linear-gradient(90deg,#6E68FF,#06038D); border-radius:6px; height:100%; }
+  .wr-fl{ font-weight:700; color:#06038D; }
+  .wr-doc i.up{ color:#0a8a3a; font-style:normal; font-weight:700; } .wr-doc i.dn{ color:#c0392b; font-style:normal; font-weight:700; }
+  .wr-foot{ margin-top:22px; background:#06038D; color:#fff; font-size:11.5px; padding:10px 28px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  @media print{
+    body.wr-print .tab-panel{ display:none !important; }
+    body.wr-print #tab-report{ display:block !important; }
+    body.wr-print #tab-report > .panel, body.wr-print .tabs-wrap, body.wr-print .bottom-nav, body.wr-print .bn-sheet{ display:none !important; }
+    body.wr-print .wr-doc{ display:block !important; border:none; border-radius:0; margin:0; }
+    body.wr-print{ background:#fff; }
+    @page{ size:letter; margin:0.35in; }
+  }
   @media print{
     *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     header, .tabs, .layout, .actions, .panel, .pipeline-board, footer, #novaCloudChip, .preview-actions,
@@ -1323,6 +1364,7 @@
     <button class="tab-btn" data-tab="invoices">Invoices</button>
     <button class="tab-btn" data-tab="sites">Sitios Web</button>
     <button class="tab-btn" data-tab="dashboard">Resumen</button>
+    <button class="tab-btn" data-tab="report">Reporte</button>
   </div>
   </div>
 
@@ -2035,6 +2077,27 @@
   </div>
 
   <!-- ===================== TAB: RESUMEN ===================== -->
+  <div class="tab-panel" id="tab-report" data-no-i18n>
+    <div class="panel wr-controls">
+      <h2>Reporte semanal</h2>
+      <div class="field-row" style="align-items:end;gap:10px;flex-wrap:wrap;">
+        <div class="field"><label>Desde</label><input type="date" id="wrFrom"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="wrTo"></div>
+        <button type="button" class="btn-small" id="wrWeek">Semana pasada (lun–dom)</button>
+        <button type="button" class="btn-small" id="wrSnap">Congelar funnel (foto)</button>
+        <button type="button" class="btn-small" id="wrCopy">Copiar resumen</button>
+        <button type="button" id="wrPrint" class="btn-small" style="background:#5B54FF;color:#fff;border-color:#5B54FF;">Imprimir / guardar PDF</button>
+      </div>
+      <div id="wrSnaps" class="hint" style="margin-top:6px;"></div>
+      <h3 style="margin:16px 0 6px;">Prioridades de la semana</h3>
+      <div id="wrPrio"></div>
+      <button type="button" class="btn-small" id="wrAdd" style="margin-top:8px;">+ Agregar lead clave</button>
+      <h3 style="margin:16px 0 6px;">Insights</h3>
+      <textarea id="wrIns" rows="4" style="width:100%;" placeholder="Lo que quieres destacar esta semana..."></textarea>
+    </div>
+    <div id="wrDoc" class="wr-doc"></div>
+  </div>
+
   <div class="tab-panel" id="tab-dashboard">
     <div class="panel">
       <h2>Pipeline y ventas</h2>
@@ -2167,6 +2230,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
     <span>Cotizaciones</span>
   </button>
+  <button class="bn-sheet-item" data-tab="report" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+    <span>Reporte</span>
+  </button>
   <button class="bn-sheet-item" data-tab="blueprints" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
     <span>Blueprints</span>
@@ -2260,6 +2327,7 @@
 <script src="../data/components.js"></script>
 <script src="../blueprint-data.js"></script>
 <script src="../blueprints.js"></script>
+<script src="../weekly-report.js"></script>
 <script src="../crm-i18n.js"></script>
 <script src="../data/equipment-i18n.js"></script>
 <script src="../data/method.js"></script>
