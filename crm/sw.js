@@ -2,7 +2,7 @@
 // fuentes/iconos propios) para que abra al instante como una app instalada. Nunca
 // cachea Supabase ni nada fuera de este origen: el CRM siempre debe leer datos
 // frescos, el offline es solo para que la app no quede en blanco sin señal.
-const CACHE = "tryla-crm-v1";
+const CACHE = "tryla-crm-v2";
 const SHELL = [
   "./",
   "./index.html",
@@ -59,8 +59,23 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Estaticos propios: responde del cache al instante y refresca en segundo plano
-  // (la proxima carga ya trae lo nuevo).
+  // Codigo propio (JS/CSS/HTML): RED PRIMERO, para que cada carga traiga la version
+  // mas nueva (antes respondia del cache y mostraba codigo viejo hasta recargar 2 veces).
+  // Si no hay señal, usa lo cacheado.
+  const isCode = /\.(js|css|html|json)$/.test(url.pathname) || url.pathname.endsWith("/");
+  if (isCode) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) caches.open(CACHE).then((cache) => cache.put(req, res.clone()));
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Fuentes e imagenes: del cache al instante y se refrescan en segundo plano.
   event.respondWith(
     caches.match(req).then((cached) => {
       const network = fetch(req)
