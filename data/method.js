@@ -4,9 +4,10 @@ window.TRYLA_METHOD = {
   columns: {
     Cold: ["Potencial", "Interesado", "Contactado"],
     Warm: ["Calificado", "Agendado"],
+    HOT: ["Cita o Videollamada", "Financiamiento", "Cash"],
   },
   // Columnas sin sub-etapas: solo muestran la "i" con las reglas (Closed = pagado). La cotizacion no es una sub-etapa: es una marca "Cotizado" en cualquier columna.
-  info: { HOT: ["Cita o Videollamada", "Cotizacion Realizada"], Closed: ["Pagado"], Lost: ["Perdido"] },
+  info: { Closed: ["Pagado"], Lost: ["Perdido"] },
   stages: {
     "Potencial": {
       llegan: "Son todos los que creo que pueden comprar mi producto",
@@ -70,6 +71,18 @@ window.TRYLA_METHOD = {
       recibimos: "Validacion de caso de uso",
       automatizaciones: "Ingreso a audiencia",
       conversion: 0.35,
+    },
+    "Financiamiento": {
+      llegan: "Son los HOT que necesitan financiar el trailer.",
+      objetivo: "Conseguir la aprobacion del financiamiento y confirmar el downpayment.",
+      responsable: "Closer",
+      entregables: "Cotizacion final · Plan de financiamiento",
+    },
+    "Cash": {
+      llegan: "Son los HOT que van a pagar de contado.",
+      objetivo: "Cerrar la venta y recibir el deposito.",
+      responsable: "Closer",
+      entregables: "Cotizacion final · Instrucciones de pago",
     },
     "Cotizacion Realizada": {
       llegan: "Son los que ya tienen una cotizacion realizada y firmada por parte nuestra.",
