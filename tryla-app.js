@@ -163,7 +163,7 @@
   const SEQUENCES_KEY = "novaSequences";
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
-  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost", "Trash"];
+  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Closed", "Lost", "Trash"];
   // Trash = basura (no interesados, numeros malos, duplicados): no cuenta en el embudo ni genera avisos de tareas
   const FUNNEL_STAGES = PIPELINE_STAGES.filter((s) => s !== "Trash");
   // Grupo/campana: leads con c.grupo === "Utah Colds" viven en su propio pipeline ("Utah").
@@ -216,6 +216,17 @@
     clients.forEach((c) => {
       if (c.status && PIPELINE_STAGES.indexOf(c.status) === -1 && STATUS_MIGRATION[c.status]) {
         c.status = STATUS_MIGRATION[c.status];
+        migrated = true;
+      }
+    });
+    // Finance y Cash ya no son columnas: ahora son sub-etapas dentro de HOT
+    const LEGACY_HOT_SUB = { Finance: "Financiamiento", Cash: "Cash" };
+    clients.forEach((c) => {
+      if (LEGACY_HOT_SUB[c.status]) {
+        c.substage = LEGACY_HOT_SUB[c.status];
+        c.status = "HOT";
+        c.subAt = c.movedAt || c.subAt || Date.now();
+        if (c.substage === "Financiamiento") c.needsFinancing = true;
         migrated = true;
       }
     });
@@ -1593,7 +1604,8 @@
         skipped++;
         continue;
       }
-      const status = iEstatus !== -1 && PIPELINE_STAGES.indexOf(row[iEstatus]) !== -1 ? row[iEstatus] : "Cold";
+      const rawStatus = iEstatus !== -1 ? (row[iEstatus] === "Finance" || row[iEstatus] === "Cash" ? "HOT" : row[iEstatus]) : "";
+      const status = PIPELINE_STAGES.indexOf(rawStatus) !== -1 ? rawStatus : "Cold";
       const customFields = {};
       customIdx.forEach(({ f, idx }) => {
         if (idx !== -1 && row[idx]) customFields[f.id] = row[idx].trim();
@@ -2185,7 +2197,7 @@
 
     const value = clientPipelineValue(c);
     const quoteCount = quotes.filter((q) => q.clientId === c.id).length;
-    const needsFinancing = c.status === "Finance" || !!c.needsFinancing;
+    const needsFinancing = clientSub(c) === "Financiamiento" || !!c.needsFinancing;
     const href = telHref(c.contacto);
 
     const body = document.getElementById("ldBody");
@@ -2338,10 +2350,10 @@
 
   function buildPipelineCard(c) {
     const card = document.createElement("div");
-    const needsFinancing = c.status === "Finance" || !!c.needsFinancing;
+    const needsFinancing = clientSub(c) === "Financiamiento" || !!c.needsFinancing;
     // HOT + ya marcado que necesita financiamiento: tarjeta "apilada" --
     // el detras asoma para decir "esto tambien requiere lo otro"
-    const stacked = c.status === "HOT" && !!c.needsFinancing;
+    const stacked = c.status === "HOT" && !!c.needsFinancing && clientSub(c) !== "Financiamiento";
     card.className = "pipeline-card" + (stacked ? " pipeline-card-stacked" : "");
     card.draggable = true;
     if (c.id === lastMovedClientId) {
@@ -2982,8 +2994,8 @@
   // ===== Portal de Fundadores (solo lectura) =====
   function buildFounderLeadCard(c) {
     const card = document.createElement("div");
-    const needsFinancing = c.status === "Finance" || !!c.needsFinancing;
-    const stacked = c.status === "HOT" && !!c.needsFinancing;
+    const needsFinancing = clientSub(c) === "Financiamiento" || !!c.needsFinancing;
+    const stacked = c.status === "HOT" && !!c.needsFinancing && clientSub(c) !== "Financiamiento";
     card.className = "pipeline-card" + (stacked ? " pipeline-card-stacked" : "");
 
     const value = clientPipelineValue(c);
@@ -4485,7 +4497,7 @@
         else if (l.today) today.push(it);
       });
       clients.forEach((c) => {
-        if (c.status !== "HOT" && c.status !== "Finance") return;
+        if (c.status !== "HOT") return;
         const d = daysInactive(c);
         if (d !== null && d >= 3) cold.push({ client: c, days: d });
       });

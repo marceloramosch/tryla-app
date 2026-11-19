@@ -581,6 +581,10 @@
   .pc-info,.pc-expand{ transition:background .18s ease, color .18s ease, transform .15s ease; }
   .pc-info:active,.pc-expand:active{ transform:scale(.9); }
   .pipeline-board{ scroll-behavior:smooth; }
+  /* Tablero a todo el ancho de la pantalla: las columnas se ven hasta el borde, sin margenes invisibles */
+  #tab-pipeline .pipeline-board{ margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); padding-left:calc(50vw - 50%); padding-right:calc(50vw - 50%); scroll-padding-left:calc(50vw - 50%); scroll-padding-right:calc(50vw - 50%); }
+  html:has(#tab-pipeline.active) body{ overflow-x:hidden; }
+
   @media (prefers-reduced-motion: reduce){ .pipeline-group.anim-in, .pipeline-group.anim-in .pipeline-subcol, .pipeline-col.anim-in, .pipeline-col-body.anim-fade > *{ animation:none !important; } .pc-rules-panel{ transition:none; } .pipeline-board{ scroll-behavior:auto; } }
   .pc-rule-block h4{ font-size:12px; color:var(--blue); margin:6px 0 2px; }
   .pc-rule-block:first-child h4{ margin-top:0; }
@@ -1506,8 +1510,6 @@
             <option>Cold</option>
             <option>Warm</option>
             <option>HOT</option>
-            <option>Finance</option>
-            <option>Cash</option>
             <option>Closed</option>
             <option>Lost</option>
             <option>Trash</option>

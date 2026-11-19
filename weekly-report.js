@@ -7,8 +7,8 @@
   var KEY = "novaWeeklyReport";
   var DAY = 86400000;
   var CATS = ["Más cercano", "Por cotizar", "En cotización", "Seguimiento"];
-  var STAGES = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed", "Lost", "Trash"];
-  var FUNNEL = ["Cold", "Warm", "HOT", "Finance", "Cash", "Closed"];
+  var STAGES = ["Cold", "Warm", "HOT", "Closed", "Lost", "Trash"];
+  var FUNNEL = ["Cold", "Warm", "HOT", "Closed"];
 
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
   function money(n) { return "$" + Math.round(n || 0).toLocaleString("en-US"); }
@@ -68,7 +68,7 @@
       var s = out.stage[c.status] ? c.status : "Cold";
       out.stage[s].n++; out.stage[s].v += d.value(c);
     });
-    out.openValue = live.filter(function (c) { return ["Cold", "Warm", "HOT", "Finance"].indexOf(c.status) !== -1; }).reduce(function (s, c) { return s + d.value(c); }, 0);
+    out.openValue = live.filter(function (c) { return ["Cold", "Warm", "HOT"].indexOf(c.status) !== -1; }).reduce(function (s, c) { return s + d.value(c); }, 0);
 
     out.newLeads = clients.filter(function (c) { return c.createdAt >= f && c.createdAt <= t; });
     out.closedWeek = clients.filter(function (c) { return (c.stageHistory || []).some(function (h) { return h.stage === "Closed" && h.at >= f && h.at <= t; }); });
@@ -78,11 +78,11 @@
       q._createdAt = at; return at >= f && at <= t;
     }).sort(function (a, b) { return b._createdAt - a._createdAt; });
     out.quotesUpdated = quotes.filter(function (q) { return q.updatedAt >= f && q.updatedAt <= t && out.quotesWeek.indexOf(q) === -1; }).length;
-    out.hot = live.filter(function (c) { return c.status === "HOT" || c.status === "Finance"; })
+    out.hot = live.filter(function (c) { return c.status === "HOT"; })
       .sort(function (a, b) { return d.value(b) - d.value(a); });
     out.touched = live.map(function (c) { var l = lastTouch(c); return { c: c, at: l.at, label: l.label }; })
       .filter(function (x) { return x.at >= f && x.at <= t; }).sort(function (a, b) { return b.at - a.at; }).slice(0, 12);
-    out.cooling = live.filter(function (c) { return ["Warm", "HOT", "Finance"].indexOf(c.status) !== -1; })
+    out.cooling = live.filter(function (c) { return ["Warm", "HOT"].indexOf(c.status) !== -1; })
       .map(function (c) { return { c: c, days: Math.floor((now - lastTouch(c).at) / DAY) }; })
       .filter(function (x) { return x.days >= 7; }).sort(function (a, b) { return b.days - a.days; }).slice(0, 8);
 
@@ -155,7 +155,9 @@
       return '<div class="wr-fr"><span class="wr-fl">' + esc(s) + '</span><div class="wr-fw"><div class="wr-fb" style="width:' + w + '%"></div></div><span class="wr-fn"><b>' + n + "</b>" + dl + (R.stage[s].v ? " · " + money(R.stage[s].v) : "") + "</span></div>";
     }).join("") + "</div>" + (R.prev ? '<div class="wr-note">Cambio contra la foto del ' + esc(R.prev.date) + ". Lost: " + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + "</div>" : '<div class="wr-note">Lost: ' + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + ". Guarda la foto del funnel para comparar la próxima semana.</div>"));
 
-    h.push('<h2 class="wr-h2">Leads HOT y en financiamiento</h2>' + table(["Lead", "Etapa", "Sub-etapa", "Cotizado", "Último movimiento"], R.hot.slice(0, 20).map(function (c) {
+    var subN = {}; R.hot.forEach(function (c) { var k = c.substage || "Cita o Videollamada"; subN[k] = (subN[k] || 0) + 1; });
+    h.push('<div class="wr-note">HOT por sub-etapa: ' + Object.keys(subN).map(function (k) { return esc(k) + " " + subN[k]; }).join(" · ") + "</div>");
+    h.push('<h2 class="wr-h2">Leads HOT (con financiamiento y cash)</h2>' + table(["Lead", "Etapa", "Sub-etapa", "Cotizado", "Último movimiento"], R.hot.slice(0, 20).map(function (c) {
       var l = lastTouch(c);
       return ["<b>" + esc(c.name || "") + "</b>" + (c.negocio ? "<br><small>" + esc(c.negocio) + "</small>" : ""), esc(c.status), esc(c.substage || "—"), d.value(c) ? money(d.value(c)) : "—", esc(l.label + " · " + fdate(l.at))];
     })));
