@@ -155,11 +155,11 @@
       return '<div class="wr-fr"><span class="wr-fl">' + esc(s) + '</span><div class="wr-fw"><div class="wr-fb" style="width:' + w + '%"></div></div><span class="wr-fn"><b>' + n + "</b>" + dl + (R.stage[s].v ? " · " + money(R.stage[s].v) : "") + "</span></div>";
     }).join("") + "</div>" + (R.prev ? '<div class="wr-note">Cambio contra la foto del ' + esc(R.prev.date) + ". HOLD: " + R.stage.HOLD.n + " · Lost: " + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + "</div>" : '<div class="wr-note">HOLD: ' + R.stage.HOLD.n + " · Lost: " + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + ". Guarda la foto del funnel para comparar la próxima semana.</div>"));
 
-    var subN = {}; R.hot.forEach(function (c) { var k = c.substage || "Cita o Videollamada"; subN[k] = (subN[k] || 0) + 1; });
+    var subN = {}; R.hot.forEach(function (c) { var k = (c.substage === "Financiamiento" || c.substage === "Cash") ? c.substage : "Sin definir"; subN[k] = (subN[k] || 0) + 1; });
     h.push('<div class="wr-note">HOT por sub-etapa: ' + Object.keys(subN).map(function (k) { return esc(k) + " " + subN[k]; }).join(" · ") + "</div>");
     h.push('<h2 class="wr-h2">Leads HOT (con financiamiento y cash)</h2>' + table(["Lead", "Etapa", "Sub-etapa", "Cotizado", "Último movimiento"], R.hot.slice(0, 20).map(function (c) {
       var l = lastTouch(c);
-      return ["<b>" + esc(c.name || "") + "</b>" + (c.negocio ? "<br><small>" + esc(c.negocio) + "</small>" : ""), esc(c.status), esc(c.substage || "—"), d.value(c) ? money(d.value(c)) : "—", esc(l.label + " · " + fdate(l.at))];
+      return ["<b>" + esc(c.name || "") + "</b>" + (c.negocio ? "<br><small>" + esc(c.negocio) + "</small>" : ""), esc(c.status), esc((c.substage === "Financiamiento" || c.substage === "Cash") ? c.substage : "Sin definir"), d.value(c) ? money(d.value(c)) : "—", esc(l.label + " · " + fdate(l.at))];
     })));
 
     h.push('<h2 class="wr-h2">Cotizaciones hechas esta semana</h2>' + table(["Fecha", "Cliente", "Cotización", "Total", "Estado"], R.quotesWeek.map(function (q) {

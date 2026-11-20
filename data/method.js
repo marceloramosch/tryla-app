@@ -4,8 +4,14 @@ window.TRYLA_METHOD = {
   columns: {
     Cold: ["Potencial", "Interesado", "Contactado"],
     Warm: ["Calificado", "Agendado"],
-    HOT: ["Cita o Videollamada", "Financiamiento", "Cash"],
-    HOLD: ["Cita o Videollamada", "Financiamiento", "Cash"],
+    HOT: ["Financiamiento", "Cash"],
+    HOLD: ["Financiamiento", "Cash"],
+  },
+  // HOT/HOLD: estar ahi ya significa que se le hizo UNA DEMO (meeting o videollamada). Los leads sin
+  // Financiamiento/Cash definido viven en la columna base ("Sin definir"), cuyas reglas son las de "Cita o Videollamada".
+  base: {
+    HOT: { label: "Sin definir", rules: "Cita o Videollamada" },
+    HOLD: { label: "Sin definir", rules: "Cita o Videollamada" },
   },
   // Columnas sin sub-etapas: solo muestran la "i" con las reglas (Closed = pagado). La cotizacion no es una sub-etapa: es una marca "Cotizado" en cualquier columna.
   info: { Closed: ["Pagado"], Lost: ["Perdido"] },
@@ -62,7 +68,7 @@ window.TRYLA_METHOD = {
       conversion: 0.7,
     },
     "Cita o Videollamada": {
-      llegan: "Son aquellos con los que ya se realizo una presentacion del producto.",
+      llegan: "Estar en HOT significa que ya se le hizo UNA DEMO (meeting o videollamada) del producto.",
       objetivo: "Convencerlos del producto y esperar una confirmacion para generar el contrato y que sea firmado",
       responsable: "Closer",
       maxNegocios: 30, maxDias: 10, descuido: "2 dias",
