@@ -163,9 +163,10 @@
   const SEQUENCES_KEY = "novaSequences";
 
   // Etapas del pipeline de leads (columnas del Kanban y opciones de estatus del cliente)
-  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Closed", "Lost", "Trash"];
+  const PIPELINE_STAGES = ["Cold", "Warm", "HOT", "Closed", "HOLD", "Lost", "Trash"];
   // Trash = basura (no interesados, numeros malos, duplicados): no cuenta en el embudo ni genera avisos de tareas
-  const FUNNEL_STAGES = PIPELINE_STAGES.filter((s) => s !== "Trash");
+  // HOLD = en pausa (mismas sub-etapas que HOT): tampoco es parte del embudo
+  const FUNNEL_STAGES = PIPELINE_STAGES.filter((s) => s !== "Trash" && s !== "HOLD");
   // Grupo/campana: leads con c.grupo === "Utah Colds" viven en su propio pipeline ("Utah").
   // Es una etiqueta permanente: el estatus (Cold/Warm/...) se maneja aparte y el grupo no cambia al mover etapas.
   const COLD_GROUP = "Utah Colds";

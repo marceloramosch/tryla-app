@@ -7,7 +7,7 @@
   var KEY = "novaWeeklyReport";
   var DAY = 86400000;
   var CATS = ["Más cercano", "Por cotizar", "En cotización", "Seguimiento"];
-  var STAGES = ["Cold", "Warm", "HOT", "Closed", "Lost", "Trash"];
+  var STAGES = ["Cold", "Warm", "HOT", "Closed", "HOLD", "Lost", "Trash"];
   var FUNNEL = ["Cold", "Warm", "HOT", "Closed"];
 
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
@@ -153,7 +153,7 @@
       var n = R.stage[s].n, w = Math.max(6, Math.round(n / max * 100));
       var dl = ""; if (R.prev && R.prev.counts && R.prev.counts[s] != null) { var dd = n - R.prev.counts[s]; dl = dd ? ' <i class="' + (dd > 0 ? "up" : "dn") + '">' + (dd > 0 ? "+" : "") + dd + "</i>" : ""; }
       return '<div class="wr-fr"><span class="wr-fl">' + esc(s) + '</span><div class="wr-fw"><div class="wr-fb" style="width:' + w + '%"></div></div><span class="wr-fn"><b>' + n + "</b>" + dl + (R.stage[s].v ? " · " + money(R.stage[s].v) : "") + "</span></div>";
-    }).join("") + "</div>" + (R.prev ? '<div class="wr-note">Cambio contra la foto del ' + esc(R.prev.date) + ". Lost: " + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + "</div>" : '<div class="wr-note">Lost: ' + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + ". Guarda la foto del funnel para comparar la próxima semana.</div>"));
+    }).join("") + "</div>" + (R.prev ? '<div class="wr-note">Cambio contra la foto del ' + esc(R.prev.date) + ". HOLD: " + R.stage.HOLD.n + " · Lost: " + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + "</div>" : '<div class="wr-note">HOLD: ' + R.stage.HOLD.n + " · Lost: " + R.stage.Lost.n + " · Trash: " + R.stage.Trash.n + ". Guarda la foto del funnel para comparar la próxima semana.</div>"));
 
     var subN = {}; R.hot.forEach(function (c) { var k = c.substage || "Cita o Videollamada"; subN[k] = (subN[k] || 0) + 1; });
     h.push('<div class="wr-note">HOT por sub-etapa: ' + Object.keys(subN).map(function (k) { return esc(k) + " " + subN[k]; }).join(" · ") + "</div>");

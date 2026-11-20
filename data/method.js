@@ -5,6 +5,7 @@ window.TRYLA_METHOD = {
     Cold: ["Potencial", "Interesado", "Contactado"],
     Warm: ["Calificado", "Agendado"],
     HOT: ["Cita o Videollamada", "Financiamiento", "Cash"],
+    HOLD: ["Cita o Videollamada", "Financiamiento", "Cash"],
   },
   // Columnas sin sub-etapas: solo muestran la "i" con las reglas (Closed = pagado). La cotizacion no es una sub-etapa: es una marca "Cotizado" en cualquier columna.
   info: { Closed: ["Pagado"], Lost: ["Perdido"] },
