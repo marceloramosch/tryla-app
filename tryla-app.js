@@ -2418,6 +2418,14 @@
     });
     const subSelect = card.querySelector(".pc-sub-select");
     if (subSelect) {
+      const cardBase = baseOf(c.status || "Cold");
+      if (cardBase) {
+        const o = document.createElement("option");
+        o.value = "__base";
+        o.textContent = cardBase.label;
+        if (clientSub(c) === null) o.selected = true;
+        subSelect.appendChild(o);
+      }
       subsFor(c.status || "Cold").forEach((sb) => {
         const o = document.createElement("option");
         o.value = sb;
@@ -2558,13 +2566,17 @@
   const saveViews = () => { try { localStorage.setItem(VIEWS_KEY, JSON.stringify(subViews)); } catch (e) {} };
   const subsRulesOpen = {};
   function subsFor(stage) { return METHOD.columns[stage] || []; }
+  // Columna base de HOT/HOLD (leads sin Financiamiento/Cash definido): { label, rules } o null
+  function baseOf(stage) { return (METHOD.base && METHOD.base[stage]) || null; }
   function clientSub(c) {
-    const subs = subsFor(c.status || "Cold");
+    const stage = c.status || "Cold";
+    const subs = subsFor(stage);
     if (!subs.length) return null;
-    return subs.indexOf(c.substage) !== -1 ? c.substage : subs[0];
+    if (subs.indexOf(c.substage) !== -1) return c.substage;
+    return baseOf(stage) ? null : subs[0];
   }
   function subDaysOver(c) {
-    const sub = clientSub(c);
+    const sub = clientSub(c) || (baseOf(c.status || "Cold") || {}).rules;
     const st = sub && METHOD.stages[sub];
     if (!st || !st.maxDias || !c.subAt) return 0;
     const d = (Date.now() - c.subAt) / 86400000;
@@ -2578,7 +2590,7 @@
     const prevSub = clientSub(c);
     c.status = stage;
     const subs = subsFor(stage);
-    c.substage = subs.length ? (subs.indexOf(sub) !== -1 ? sub : subs[0]) : null;
+    c.substage = subs.length ? (subs.indexOf(sub) !== -1 ? sub : baseOf(stage) ? null : subs[0]) : null;
     const subChanged = (c.substage || null) !== (stageChanged ? null : prevSub);
     if (stageChanged || subChanged) c.subAt = Date.now();
     c.movedAt = Date.now();
@@ -2788,15 +2800,21 @@
         .filter((c) => (c.status || "Cold") === stage)
         .sort((a, b) => lastActivity(b).at - lastActivity(a).at);
       const sumValue = (list) => list.reduce((s, c) => s + clientPipelineValue(c), 0);
-      const subs = subsFor(stage);
-      const infoKeys = METHOD.info && METHOD.info[stage] ? METHOD.info[stage] : subs;
+      const subsReal = subsFor(stage);
+      const baseDef = baseOf(stage);
+      // Si la etapa tiene columna base (HOT/HOLD), va primero: clave "__base"
+      const subs = baseDef && subsReal.length ? ["__base"].concat(subsReal) : subsReal;
+      const subLabel = (sb) => (sb === "__base" ? baseDef.label : sb);
+      const ruleKey = (sb) => (sb === "__base" ? baseDef.rules : sb);
+      const subKey = (c) => clientSub(c) || "__base";
+      const infoKeys = METHOD.info && METHOD.info[stage] ? METHOD.info[stage] : subs.map(ruleKey);
       if (!subs.length) {
         board.appendChild(makeCol({ stage, title: stage, key: stage, list: stageClients, value: sumValue(stageClients), infoKeys }));
         return;
       }
       const view = viewOf(stage);
       const counts = {};
-      subs.forEach((sb) => { counts[sb] = stageClients.filter((c) => clientSub(c) === sb).length; });
+      subs.forEach((sb) => { counts[sb] = stageClients.filter((c) => subKey(c) === sb).length; });
       // Selector de sub-etapas: filtra (columna plegada) o elige que columnas ver (desplegada)
       const chips = document.createElement("div");
       chips.className = "pc-chips";
@@ -2811,7 +2829,7 @@
         chips.appendChild(b);
       };
       if (view.expanded) {
-        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, visible.indexOf(sb) !== -1, () => {
+        subs.forEach((sb) => addChip(`${subLabel(sb)} ${counts[sb]}`, visible.indexOf(sb) !== -1, () => {
           const cur = visible.slice();
           const i = cur.indexOf(sb);
           if (i !== -1) { if (cur.length > 1) cur.splice(i, 1); } else cur.push(sb);
@@ -2820,12 +2838,12 @@
         }, "Mostrar u ocultar esta columna"));
       } else {
         addChip(`Todos ${stageClients.length}`, !view.filter, () => { view.filter = null; plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline(); });
-        subs.forEach((sb) => addChip(`${sb} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
+        subs.forEach((sb) => addChip(`${subLabel(sb)} ${counts[sb]}`, view.filter === sb, () => { view.filter = view.filter === sb ? null : sb; plAnim = "filter"; plAnimStage = stage; saveViews(); renderPipeline(); }, "Ver solo esta sub-etapa"));
       }
 
       if (!view.expanded) {
-        const flat = view.filter ? stageClients.filter((c) => clientSub(c) === view.filter) : stageClients;
-        board.appendChild(makeCol({ stage, title: stage, key: stage, list: flat, value: sumValue(flat), chips, canExpand: true, dropSub: view.filter, infoKeys: view.filter ? [view.filter] : subs }));
+        const flat = view.filter ? stageClients.filter((c) => subKey(c) === view.filter) : stageClients;
+        board.appendChild(makeCol({ stage, title: stage, key: stage, list: flat, value: sumValue(flat), chips, canExpand: true, dropSub: view.filter, infoKeys: view.filter ? [ruleKey(view.filter)] : subs.map(ruleKey) }));
         return;
       }
       // Desplegada: cada sub-etapa es una columna al lado, con el mismo tamano
@@ -2846,10 +2864,10 @@
       const cols = document.createElement("div");
       cols.className = "pipeline-group-cols";
       visible.forEach((sb) => {
-        const list = stageClients.filter((c) => clientSub(c) === sb);
-        const st = METHOD.stages[sb] || {};
+        const list = stageClients.filter((c) => subKey(c) === sb);
+        const st = METHOD.stages[ruleKey(sb)] || {};
         const subIdx = cols.children.length;
-        cols.appendChild(makeCol({ stage, sub: sb, title: sb, key: `${stage}|${sb}`, list, value: sumValue(list), max: st.maxNegocios, dropSub: sb, infoKeys: [sb] }));
+        cols.appendChild(makeCol({ stage, sub: sb, title: subLabel(sb), key: `${stage}|${sb}`, list, value: sumValue(list), max: st.maxNegocios, dropSub: sb, infoKeys: [ruleKey(sb)] }));
       });
       Array.from(cols.children).forEach((c, i) => c.style.setProperty("--i", i));
       group.appendChild(cols);
