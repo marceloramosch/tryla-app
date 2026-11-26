@@ -3301,6 +3301,15 @@
     clearTimeout(t._h);
     t._h = setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateX(-50%) translateY(12px)"; }, 2200);
   }
+  // El aviso nunca debe salir en un PDF/impresion: se oculta al abrir el dialogo de imprimir
+  window.addEventListener("beforeprint", () => {
+    const t = document.getElementById("quickToast");
+    if (t) { clearTimeout(t._h); t.style.display = "none"; t.style.opacity = "0"; }
+  });
+  window.addEventListener("afterprint", () => {
+    const t = document.getElementById("quickToast");
+    if (t) t.style.display = "";
+  });
 
   // Guarda la cotizacion actual. silent=true: sin alert (al generar el PDF o la vista previa)
   function saveCurrentQuote(silent) {
