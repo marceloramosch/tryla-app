@@ -61,6 +61,9 @@
   }
 
   var REAL_RADIUS_MILES = 1.5;
+  // Empleos (Census LEHD LODES) dentro del radio que equivalen a demanda de gente "completa" (100).
+  // Valor inicial: centro de Dallas ~192,000, Las Colinas ~63,000, Frisco ~18,000, Mesquite ~13,000. Ajustar con mas puntos.
+  var JOBS_FULL = 60000;
 
   // El <select> de cocina muestra la etiqueta traducida (ES/EN) como su
   // propio "value" — para comparar contra el tag cuisine=... de OpenStreetMap
@@ -103,6 +106,7 @@
       construction: function (n) { return n + " obra(s) de construccion nueva cerca — senal de colonias/desarrollos en crecimiento."; },
       anchors: function (n) { return n + " otros puntos de interes cerca (gasolineras, templos, plazas, estadios, cines) que generan trafico peatonal."; },
       census: function (pop, income) { return "Zona censal con " + pop.toLocaleString("es-MX") + " habitantes y un ingreso mediano por hogar de $" + income.toLocaleString("es-MX") + " (datos del Census Bureau de USA)."; },
+      jobs: function (n, food) { return "Alrededor de " + n.toLocaleString("es-MX") + " empleos a menos de " + REAL_RADIUS_MILES + " millas" + (food ? " (" + food.toLocaleString("es-MX") + " en comida y hospedaje)" : "") + ": gente que trabaja aqui y come fuera durante el dia (Census LODES)."; },
       trafficHigh: "Trafico peatonal y de vehiculos estimado como alto para este punto — buena exposicion para venta al paso.",
       trafficLow: "Trafico estimado bajo-medio. Conviene reforzar visibilidad (senalizacion, redes, horario) mas que depender solo de paso.",
       noCompetitorsEst: function (cuisine) { return "No se detectaron conceptos similares de " + cuisine + " cerca en este estimado — posible espacio abierto."; },
@@ -126,6 +130,7 @@
       construction: function (n) { return n + " new construction project(s) nearby — a sign of growing neighborhoods/developments."; },
       anchors: function (n) { return n + " other points of interest nearby (gas stations, places of worship, plazas, stadiums, theaters) that drive foot traffic."; },
       census: function (pop, income) { return "Census area with " + pop.toLocaleString("en-US") + " residents and a median household income of $" + income.toLocaleString("en-US") + " (US Census Bureau data)."; },
+      jobs: function (n, food) { return "About " + n.toLocaleString("en-US") + " jobs within " + REAL_RADIUS_MILES + " miles" + (food ? " (" + food.toLocaleString("en-US") + " in food and accommodation)" : "") + ": people who work here and eat out during the day (Census LODES)."; },
       trafficHigh: "Estimated foot and vehicle traffic is high for this spot — good exposure for walk-up sales.",
       trafficLow: "Estimated traffic is low-to-medium. Lean on visibility (signage, social media, hours) rather than just foot traffic.",
       noCompetitorsEst: function (cuisine) { return "No similar " + cuisine + " concepts detected nearby in this estimate — possible open space."; },
@@ -286,6 +291,26 @@
       console.warn("Census no disponible, uso demografico neutral:", e);
     }
 
+    // Demanda laboral (empleos cercanos, Census LEHD LODES) via la funcion SQL li_jobs_near.
+    // Si la tabla/funcion aun no existe o falla, se ignora y el score queda como antes.
+    var jobsTotal = null, jobsFood = null, jobsRetail = null, workScore = null;
+    try {
+      var jr = await sbClient.rpc("li_jobs_near", { p_lat: point.lat, p_lon: point.lon, p_miles: REAL_RADIUS_MILES });
+      var jrow = !jr.error && Array.isArray(jr.data) ? jr.data[0] : null;
+      if (jrow && Number(jrow.blocks) > 0) {
+        jobsTotal = Number(jrow.jobs) || 0;
+        jobsFood = Number(jrow.food_jobs) || 0;
+        jobsRetail = Number(jrow.retail_jobs) || 0;
+        workScore = clamp(jobsTotal / JOBS_FULL * 100, 0, 100);
+        // Una zona es fuerte si mucha gente VIVE o TRABAJA ahi (la mayor de las dos), junto con el ingreso.
+        var popScore = censusPopulation != null ? clamp(censusPopulation / 8000 * 100, 0, 100) : 0;
+        var incomeScore = censusIncome != null ? clamp(censusIncome / 120000 * 100, 0, 100) : 55;
+        demo = Math.round((Math.max(popScore, workScore) + incomeScore) / 2);
+      }
+    } catch (e) {
+      console.warn("Empleos (LODES) no disponibles, se usa solo el Census residencial:", e);
+    }
+
     var overall10 = (f.traffic * 0.3 + f.space * 0.25 + demo * 0.25 + f.gap * 0.2) / 10;
     overall10 = applyHighDemandFloors(overall10, f.traffic, demo, nearby, point);
 
@@ -307,6 +332,10 @@
       constructionCount: f.construction.length,
       censusPopulation: censusPopulation,
       censusIncome: censusIncome,
+      jobsNearby: jobsTotal,
+      foodJobsNearby: jobsFood,
+      retailJobsNearby: jobsRetail,
+      workScore: workScore,
     };
   }
 
@@ -327,6 +356,7 @@
     if (r.censusPopulation != null && r.censusIncome != null) {
       out.push(s.census(r.censusPopulation, Math.round(r.censusIncome)));
     }
+    if (r.jobsNearby != null && r.jobsNearby > 0 && s.jobs) out.push(s.jobs(r.jobsNearby, r.foodJobsNearby));
     return out;
   }
 
