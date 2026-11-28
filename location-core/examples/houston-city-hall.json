@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "version_modelo": "0.1.0-sin-calibrar",
+  "input": {
+    "direccion": "901 Bagby St",
+    "ciudad": "Houston",
+    "zona": null,
+    "estado": "TX",
+    "cocina": null
+  },
+  "error": null,
+  "resuelto": {
+    "lat": 29.760724420884,
+    "lon": -95.369483289562,
+    "direccion_normalizada": "901 BAGBY ST, HOUSTON, TX, 77002",
+    "tract": "48201980700",
+    "condado": "48201",
+    "area_cobertura": "houston-se",
+    "confianza_geocoder": 0.95
+  },
+  "demanda": {
+    "poblacion": null,
+    "ingreso_mediano": null,
+    "empleos": 199101,
+    "empleos_comida": 12973,
+    "empleos_comercio": 2813,
+    "gasto_residentes_usd": null,
+    "gasto_trabajadores_usd": 238921200,
+    "gasto_total_usd": 238921200
+  },
+  "oferta": {
+    "restaurantes": 204,
+    "misma_cocina": 0,
+    "food_parks": 1,
+    "bares": 92,
+    "anclas": 61,
+    "ventas_estimadas_por_lugares_usd": 183600000,
+    "ventas_estimadas_por_empleos_usd": 713515000,
+    "ventas_usadas_usd": 713515000,
+    "criterio_oferta": "maximo entre lugares y empleos de comida, con piso de un restaurante"
+  },
+  "brecha": {
+    "razon_demanda_oferta": 0.335,
+    "score_0_10": 2,
+    "nivel": "baja"
+  },
+  "evidencia": [
+    {
+      "fuente": "US Census Bureau",
+      "dataset": "Geocoder (Public_AR_Current)",
+      "version": "Current_Current",
+      "url": "https://geocoding.geo.census.gov/geocoder/",
+      "fecha_consulta": "2026-11-28T00:14:49.088Z"
+    },
+    {
+      "fuente": "OpenStreetMap via Geoapify",
+      "dataset": "li_places",
+      "version": "carga sep-oct 2026",
+      "url": "https://www.geoapify.com/places-api/",
+      "fecha_consulta": "2026-11-28T00:14:49.088Z"
+    },
+    {
+      "fuente": "Tryla",
+      "dataset": "li_coverage_areas",
+      "version": "2026-09-30",
+      "url": "supabase:li_coverage_areas",
+      "fecha_consulta": "2026-11-28T00:14:49.088Z"
+    },
+    {
+      "fuente": "US Census Bureau (LEHD)",
+      "dataset": "LODES8 WAC (S000, JT00)",
+      "version": "2024",
+      "url": "https://lehd.ces.census.gov/data/lodes/",
+      "fecha_consulta": "2026-11-28T00:14:49.088Z"
+    }
+  ],
+  "calidad": {
+    "datos": "parciales",
+    "faltantes": [
+      "acs"
+    ],
+    "advertencias": [
+      "La oferta estimada por lugares y por empleos de comida difiere mas de 3x: posible cobertura incompleta de lugares o un empleo de comida atipico."
+    ],
+    "confianza_0_1": 0.64
+  }
+}

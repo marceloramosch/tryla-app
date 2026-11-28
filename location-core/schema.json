@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnalisisUbicacion",
+  "type": "object",
+  "required": [
+    "ok",
+    "version_modelo",
+    "input",
+    "evidencia",
+    "calidad"
+  ],
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "version_modelo": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "direccion",
+        "ciudad"
+      ],
+      "properties": {
+        "direccion": {
+          "type": "string"
+        },
+        "ciudad": {
+          "type": "string"
+        },
+        "zona": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "estado": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cocina": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "error": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "codigo",
+        "mensaje"
+      ],
+      "properties": {
+        "codigo": {
+          "type": "string",
+          "enum": [
+            "ENTRADA_INVALIDA",
+            "GEOCODER_SIN_RESULTADO",
+            "GEOCODER_FALLO"
+          ]
+        },
+        "mensaje": {
+          "type": "string"
+        }
+      }
+    },
+    "resuelto": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "lat",
+        "lon",
+        "direccion_normalizada",
+        "confianza_geocoder"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "direccion_normalizada": {
+          "type": "string"
+        },
+        "tract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "condado": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "area_cobertura": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confianza_geocoder": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "demanda": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "poblacion",
+        "ingreso_mediano",
+        "empleos",
+        "empleos_comida",
+        "empleos_comercio",
+        "gasto_residentes_usd",
+        "gasto_trabajadores_usd",
+        "gasto_total_usd"
+      ],
+      "properties": {
+        "poblacion": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ingreso_mediano": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "empleos": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "empleos_comida": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "empleos_comercio": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gasto_residentes_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gasto_trabajadores_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gasto_total_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "oferta": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "restaurantes",
+        "misma_cocina",
+        "food_parks",
+        "bares",
+        "anclas",
+        "ventas_estimadas_por_lugares_usd",
+        "ventas_estimadas_por_empleos_usd",
+        "ventas_usadas_usd",
+        "criterio_oferta"
+      ],
+      "properties": {
+        "restaurantes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "misma_cocina": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "food_parks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bares": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "anclas": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ventas_estimadas_por_lugares_usd": {
+          "type": "number"
+        },
+        "ventas_estimadas_por_empleos_usd": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ventas_usadas_usd": {
+          "type": "number"
+        },
+        "criterio_oferta": {
+          "type": "string"
+        }
+      }
+    },
+    "brecha": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "razon_demanda_oferta",
+        "score_0_10",
+        "nivel"
+      ],
+      "properties": {
+        "razon_demanda_oferta": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "score_0_10": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10
+        },
+        "nivel": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "alta",
+            "media",
+            "baja",
+            null
+          ]
+        }
+      }
+    },
+    "evidencia": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "fuente",
+          "dataset",
+          "version",
+          "url",
+          "fecha_consulta"
+        ],
+        "properties": {
+          "fuente": {
+            "type": "string"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "fecha_consulta": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "calidad": {
+      "type": "object",
+      "required": [
+        "datos",
+        "faltantes",
+        "advertencias",
+        "confianza_0_1"
+      ],
+      "properties": {
+        "datos": {
+          "type": "string",
+          "enum": [
+            "completos",
+            "parciales",
+            "insuficientes"
+          ]
+        },
+        "faltantes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "advertencias": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confianza_0_1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

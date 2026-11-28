@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "version_modelo": "0.1.0-sin-calibrar",
+  "input": {
+    "direccion": "6801 Gaylord Pkwy",
+    "ciudad": "Frisco",
+    "zona": null,
+    "estado": "TX",
+    "cocina": null
+  },
+  "error": null,
+  "resuelto": {
+    "lat": 33.102354009939,
+    "lon": -96.825908753402,
+    "direccion_normalizada": "6801 GAYLORD PKWY, FRISCO, TX, 75034",
+    "tract": "48085030504",
+    "condado": "48085",
+    "area_cobertura": "dfw-north-west",
+    "confianza_geocoder": 0.95
+  },
+  "demanda": {
+    "poblacion": null,
+    "ingreso_mediano": null,
+    "empleos": 74588,
+    "empleos_comida": 8774,
+    "empleos_comercio": 7023,
+    "gasto_residentes_usd": null,
+    "gasto_trabajadores_usd": 89505600,
+    "gasto_total_usd": 89505600
+  },
+  "oferta": {
+    "restaurantes": 222,
+    "misma_cocina": 0,
+    "food_parks": 0,
+    "bares": 6,
+    "anclas": 16,
+    "ventas_estimadas_por_lugares_usd": 199800000,
+    "ventas_estimadas_por_empleos_usd": 482570000,
+    "ventas_usadas_usd": 482570000,
+    "criterio_oferta": "maximo entre lugares y empleos de comida, con piso de un restaurante"
+  },
+  "brecha": {
+    "razon_demanda_oferta": 0.185,
+    "score_0_10": 1.1,
+    "nivel": "baja"
+  },
+  "evidencia": [
+    {
+      "fuente": "US Census Bureau",
+      "dataset": "Geocoder (Public_AR_Current)",
+      "version": "Current_Current",
+      "url": "https://geocoding.geo.census.gov/geocoder/",
+      "fecha_consulta": "2026-11-28T00:14:46.842Z"
+    },
+    {
+      "fuente": "OpenStreetMap via Geoapify",
+      "dataset": "li_places",
+      "version": "carga sep-oct 2026",
+      "url": "https://www.geoapify.com/places-api/",
+      "fecha_consulta": "2026-11-28T00:14:46.842Z"
+    },
+    {
+      "fuente": "Tryla",
+      "dataset": "li_coverage_areas",
+      "version": "2026-10-02",
+      "url": "supabase:li_coverage_areas",
+      "fecha_consulta": "2026-11-28T00:14:46.842Z"
+    },
+    {
+      "fuente": "US Census Bureau (LEHD)",
+      "dataset": "LODES8 WAC (S000, JT00)",
+      "version": "2024",
+      "url": "https://lehd.ces.census.gov/data/lodes/",
+      "fecha_consulta": "2026-11-28T00:14:46.842Z"
+    }
+  ],
+  "calidad": {
+    "datos": "parciales",
+    "faltantes": [
+      "acs"
+    ],
+    "advertencias": [],
+    "confianza_0_1": 0.79
+  }
+}

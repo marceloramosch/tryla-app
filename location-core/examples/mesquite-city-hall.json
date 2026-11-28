@@ -1,0 +1,85 @@
+{
+  "ok": true,
+  "version_modelo": "0.1.0-sin-calibrar",
+  "input": {
+    "direccion": "757 N Galloway Ave",
+    "ciudad": "Mesquite",
+    "zona": null,
+    "estado": "TX",
+    "cocina": null
+  },
+  "error": null,
+  "resuelto": {
+    "lat": 32.773605191446,
+    "lon": -96.599289900614,
+    "direccion_normalizada": "757 N GALLOWAY AVE, MESQUITE, TX, 75149",
+    "tract": "48113017704",
+    "condado": "48113",
+    "area_cobertura": "dallas-city",
+    "confianza_geocoder": 0.95
+  },
+  "demanda": {
+    "poblacion": null,
+    "ingreso_mediano": null,
+    "empleos": 15311,
+    "empleos_comida": 867,
+    "empleos_comercio": 1370,
+    "gasto_residentes_usd": null,
+    "gasto_trabajadores_usd": 18373200,
+    "gasto_total_usd": 18373200
+  },
+  "oferta": {
+    "restaurantes": 53,
+    "misma_cocina": 0,
+    "food_parks": 0,
+    "bares": 0,
+    "anclas": 45,
+    "ventas_estimadas_por_lugares_usd": 47700000,
+    "ventas_estimadas_por_empleos_usd": 47685000,
+    "ventas_usadas_usd": 47700000,
+    "criterio_oferta": "maximo entre lugares y empleos de comida, con piso de un restaurante"
+  },
+  "brecha": {
+    "razon_demanda_oferta": 0.385,
+    "score_0_10": 2.3,
+    "nivel": "baja"
+  },
+  "evidencia": [
+    {
+      "fuente": "US Census Bureau",
+      "dataset": "Geocoder (Public_AR_Current)",
+      "version": "Current_Current",
+      "url": "https://geocoding.geo.census.gov/geocoder/",
+      "fecha_consulta": "2026-11-28T00:14:50.226Z"
+    },
+    {
+      "fuente": "OpenStreetMap via Geoapify",
+      "dataset": "li_places",
+      "version": "carga sep-oct 2026",
+      "url": "https://www.geoapify.com/places-api/",
+      "fecha_consulta": "2026-11-28T00:14:50.226Z"
+    },
+    {
+      "fuente": "Tryla",
+      "dataset": "li_coverage_areas",
+      "version": "2026-09-30",
+      "url": "supabase:li_coverage_areas",
+      "fecha_consulta": "2026-11-28T00:14:50.226Z"
+    },
+    {
+      "fuente": "US Census Bureau (LEHD)",
+      "dataset": "LODES8 WAC (S000, JT00)",
+      "version": "2024",
+      "url": "https://lehd.ces.census.gov/data/lodes/",
+      "fecha_consulta": "2026-11-28T00:14:50.226Z"
+    }
+  ],
+  "calidad": {
+    "datos": "parciales",
+    "faltantes": [
+      "acs"
+    ],
+    "advertencias": [],
+    "confianza_0_1": 0.79
+  }
+}
