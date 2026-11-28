@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "version_modelo": "0.1.0-sin-calibrar",
+  "input": {
+    "direccion": "350 5th Ave",
+    "ciudad": "New York",
+    "zona": null,
+    "estado": "NY",
+    "cocina": null
+  },
+  "error": null,
+  "resuelto": {
+    "lat": 40.747850846857,
+    "lon": -73.985075577551,
+    "direccion_normalizada": "350 5TH AVE, NEW YORK, NY, 10118",
+    "tract": "36061007600",
+    "condado": "36061",
+    "area_cobertura": "nyc-manhattan",
+    "confianza_geocoder": 0.95
+  },
+  "demanda": {
+    "poblacion": null,
+    "ingreso_mediano": null,
+    "empleos": 1600039,
+    "empleos_comida": 131195,
+    "empleos_comercio": 73316,
+    "gasto_residentes_usd": null,
+    "gasto_trabajadores_usd": 1920046800,
+    "gasto_total_usd": 1920046800
+  },
+  "oferta": {
+    "restaurantes": 516,
+    "misma_cocina": 0,
+    "food_parks": 0,
+    "bares": 108,
+    "anclas": 45,
+    "ventas_estimadas_por_lugares_usd": 464400000,
+    "ventas_estimadas_por_empleos_usd": 7215725000,
+    "ventas_usadas_usd": 7215725000,
+    "criterio_oferta": "maximo entre lugares y empleos de comida, con piso de un restaurante"
+  },
+  "brecha": {
+    "razon_demanda_oferta": 0.266,
+    "score_0_10": 1.6,
+    "nivel": "baja"
+  },
+  "evidencia": [
+    {
+      "fuente": "US Census Bureau",
+      "dataset": "Geocoder (Public_AR_Current)",
+      "version": "Current_Current",
+      "url": "https://geocoding.geo.census.gov/geocoder/",
+      "fecha_consulta": "2026-11-28T00:14:47.884Z"
+    },
+    {
+      "fuente": "OpenStreetMap via Geoapify",
+      "dataset": "li_places",
+      "version": "carga sep-oct 2026",
+      "url": "https://www.geoapify.com/places-api/",
+      "fecha_consulta": "2026-11-28T00:14:47.884Z"
+    },
+    {
+      "fuente": "Tryla",
+      "dataset": "li_coverage_areas",
+      "version": "2026-09-30",
+      "url": "supabase:li_coverage_areas",
+      "fecha_consulta": "2026-11-28T00:14:47.884Z"
+    },
+    {
+      "fuente": "US Census Bureau (LEHD)",
+      "dataset": "LODES8 WAC (S000, JT00)",
+      "version": "2024",
+      "url": "https://lehd.ces.census.gov/data/lodes/",
+      "fecha_consulta": "2026-11-28T00:14:47.884Z"
+    }
+  ],
+  "calidad": {
+    "datos": "parciales",
+    "faltantes": [
+      "acs"
+    ],
+    "advertencias": [
+      "La oferta estimada por lugares y por empleos de comida difiere mas de 3x: posible cobertura incompleta de lugares o un empleo de comida atipico."
+    ],
+    "confianza_0_1": 0.64
+  }
+}

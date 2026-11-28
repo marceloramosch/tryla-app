@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "version_modelo": "0.1.0-sin-calibrar",
+  "input": {
+    "direccion": "1500 Marilla St",
+    "ciudad": "Dallas",
+    "zona": null,
+    "estado": "TX",
+    "cocina": "tacos / mexicana"
+  },
+  "error": null,
+  "resuelto": {
+    "lat": 32.776661403645,
+    "lon": -96.795838517178,
+    "direccion_normalizada": "1500 MARILLA ST, DALLAS, TX, 75201",
+    "tract": "48113020402",
+    "condado": "48113",
+    "area_cobertura": "dallas-city",
+    "confianza_geocoder": 0.95
+  },
+  "demanda": {
+    "poblacion": null,
+    "ingreso_mediano": null,
+    "empleos": 192244,
+    "empleos_comida": 14610,
+    "empleos_comercio": 3563,
+    "gasto_residentes_usd": null,
+    "gasto_trabajadores_usd": 230692800,
+    "gasto_total_usd": 230692800
+  },
+  "oferta": {
+    "restaurantes": 220,
+    "misma_cocina": 33,
+    "food_parks": 0,
+    "bares": 61,
+    "anclas": 40,
+    "ventas_estimadas_por_lugares_usd": 198000000,
+    "ventas_estimadas_por_empleos_usd": 803550000,
+    "ventas_usadas_usd": 803550000,
+    "criterio_oferta": "maximo entre lugares y empleos de comida, con piso de un restaurante"
+  },
+  "brecha": {
+    "razon_demanda_oferta": 0.287,
+    "score_0_10": 1.7,
+    "nivel": "baja"
+  },
+  "evidencia": [
+    {
+      "fuente": "US Census Bureau",
+      "dataset": "Geocoder (Public_AR_Current)",
+      "version": "Current_Current",
+      "url": "https://geocoding.geo.census.gov/geocoder/",
+      "fecha_consulta": "2026-11-28T00:14:33.623Z"
+    },
+    {
+      "fuente": "OpenStreetMap via Geoapify",
+      "dataset": "li_places",
+      "version": "carga sep-oct 2026",
+      "url": "https://www.geoapify.com/places-api/",
+      "fecha_consulta": "2026-11-28T00:14:33.623Z"
+    },
+    {
+      "fuente": "Tryla",
+      "dataset": "li_coverage_areas",
+      "version": "2026-09-30",
+      "url": "supabase:li_coverage_areas",
+      "fecha_consulta": "2026-11-28T00:14:33.623Z"
+    },
+    {
+      "fuente": "US Census Bureau (LEHD)",
+      "dataset": "LODES8 WAC (S000, JT00)",
+      "version": "2024",
+      "url": "https://lehd.ces.census.gov/data/lodes/",
+      "fecha_consulta": "2026-11-28T00:14:33.623Z"
+    }
+  ],
+  "calidad": {
+    "datos": "parciales",
+    "faltantes": [
+      "acs"
+    ],
+    "advertencias": [
+      "La oferta estimada por lugares y por empleos de comida difiere mas de 3x: posible cobertura incompleta de lugares o un empleo de comida atipico."
+    ],
+    "confianza_0_1": 0.64
+  }
+}

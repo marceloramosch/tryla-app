@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0-sin-calibrar",
+  "nota": "Todos los valores son INICIALES y no estan calibrados. Se ajustan por iteracion contra ventas reales (ver plan, punto 4). Cambiar un valor aqui cambia el resultado: subir la version.",
+  "radio_millas": 1.5,
+  "gasto_comida_fuera_por_residente_usd": 1500,
+  "ingreso_referencia_usd": 75000,
+  "elasticidad_ingreso": 0.5,
+  "factor_ingreso_min": 0.6,
+  "factor_ingreso_max": 1.6,
+  "gasto_comida_fuera_por_empleo_usd": 1200,
+  "ventas_por_restaurante_usd": 900000,
+  "ventas_por_empleo_comida_usd": 55000,
+  "razon_equilibrio": 1.0,
+  "pendiente_logistica": 1.26,
+  "umbral_alta": 8,
+  "umbral_media": 6,
+  "umbral_inconsistencia_oferta": 3
+}
